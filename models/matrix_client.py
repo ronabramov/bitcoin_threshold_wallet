@@ -38,7 +38,7 @@ class MatrixClient:
 
 # Example usage
 async def main():
-    client = MatrixClient("https://matrix.org", "your_username", "your_password")
+    client = MatrixClient("https://matrix.org", "@ronabramovich:matrix.org", "Roniparon3")
     await client.login()
     await client.join_room("!yourRoomId:matrix.org")
     await client.send_message("!yourRoomId:matrix.org", "Hello, Matrix!")

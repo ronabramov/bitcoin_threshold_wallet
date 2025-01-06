@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from db import wallets_collection
-from models import TransactionInfo
+from models.models import TransactionInfo
 
 router = APIRouter()
 

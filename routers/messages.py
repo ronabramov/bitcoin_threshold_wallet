@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from models import Message
+from models.models import Message
 
 router = APIRouter()
 

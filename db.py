@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 
 DEFAULT_CONNECTION_STRING = "mongodb+srv://ronabram:ic6UYRx1onTf5rKm@tresholdecdsawallet.fdncb.mongodb.net/?retryWrites=true&w=majority&appName=TresholdECDSAwallet"
-DB_NAME = "TresholdECDSAwallet" 
+DB_NAME = "ecdsa-db" 
 
 class Database:
     def __init__(self, connection_string, database_name):

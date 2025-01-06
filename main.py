@@ -1,12 +1,13 @@
 import webbrowser
 from fastapi import FastAPI
-from routers import transactions, messages
+from routers import transactions, messages, wallets
 
 app = FastAPI()
 
 # Include API routes
 app.include_router(transactions.router, prefix="/transactions")
 app.include_router(messages.router, prefix="/messages")
+app.include_router(wallets.router, prefix="/wallets")
 
 @app.on_event("startup")
 async def open_swagger_ui():
