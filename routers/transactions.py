@@ -43,7 +43,7 @@ async def request_new_transaction(wallet_id: int, user_id : str, description: st
     }
 
 @router.post("/transactions/respond")
-async def respond_to_transaction(transaction_id: str, user_id: str, response: bool):
+async def respond_to_transaction(transaction_id: str, user_id: str, acceptence: bool):
     transaction = transactions_collection.find_one({"_id": ObjectId(transaction_id)})
     if not transaction:
         raise HTTPException(status_code=404, detail="Transaction not found")
@@ -54,7 +54,7 @@ async def respond_to_transaction(transaction_id: str, user_id: str, response: bo
 
     for response in transaction["responses"]:
         if response["user_id"] == user_id:
-            response["response"] = response
+            response["response"] = acceptence
             break
     else:
         raise HTTPException(status_code=404, detail="User not part of the transaction")
