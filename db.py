@@ -17,3 +17,4 @@ db = Database(
 )
 
 wallets_collection = db.get_collection("wallets")
+transactions_collection = db.get_collection("transactions")
