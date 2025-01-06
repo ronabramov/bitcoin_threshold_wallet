@@ -13,3 +13,6 @@ env/
 
 # Ignore logs and debug files
 *.log
+
+# Ignore dependendencies 
+requirements/
