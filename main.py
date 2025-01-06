@@ -1,8 +1,13 @@
 import webbrowser
 from fastapi import FastAPI
 from routers import transactions, messages, wallets
+import os
 
 app = FastAPI()
+
+@app.get("/")
+async def read_root():
+    return {"message": "Welcome to the Bitcoin Threshold Wallet"}
 
 # Include API routes
 app.include_router(transactions.router, prefix="/transactions")
