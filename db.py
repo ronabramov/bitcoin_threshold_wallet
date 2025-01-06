@@ -18,3 +18,4 @@ db = Database(
 
 wallets_collection = db.get_collection("wallets")
 transactions_collection = db.get_collection("transactions")
+users_collection = db.get_collection("users")

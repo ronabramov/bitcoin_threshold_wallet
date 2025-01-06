@@ -1,44 +1,64 @@
-from bson import ObjectId
 from fastapi import APIRouter, HTTPException
-from db import wallets_collection, transactions_collection
+from db import wallets_collection, transactions_collection, users_collection
 from datetime import datetime, timezone
+from bson import ObjectId
+from matrix_client import MatrixClient
 
+WAITING = "waiting"
+ACCEPTED = "accepted"
+DECLINED = "declined"
 router = APIRouter()
 
 @router.post("/transactions/request")
-async def request_new_transaction(wallet_id: int, user_id : str, description: str):
+async def create_new_transaction(wallet_id: int, user_id: str, description: str):
+    # Fetch the wallet
     wallet = wallets_collection.find_one({"wallet_id": wallet_id})
     if not wallet:
         raise HTTPException(status_code=404, detail="Wallet not found")
-    if not any(user["user_id"] == user_id for user in wallet["users"]):
+
+    # Check if the user is part of the wallet
+    if user_id not in wallet["users"]:
         raise HTTPException(status_code=403, detail="User is not a participant in this wallet")
 
+    # Create the transaction
     transaction = {
         "wallet_id": wallet_id,
         "description": description,
-        "status": "waiting",  # Initial status
+        "status": "waiting",
         "date": datetime.now(timezone.utc).isoformat(),
-        "responses": [
-            {"user_id": user["user_id"], "response": True if user["user_id"] == user_id else None}
-            for user in wallet["users"]
-        ]
+        "responses": [{"user_id": uid, "response": True if uid == user_id else None} for uid in wallet["users"]]
     }
     transaction_id = transactions_collection.insert_one(transaction).inserted_id
 
-    # Notify each user
+    # Notify other users
     failed_notifications = []
-    for user in wallet["users"]:
-        try:
-            # Send the transaction request to the user's homeserver
-            # You'd use a real API call here, replaced with logging for simplicity
-            # We also should skip the sending user here. 
-            print(f"Sending new transaction request to {user['homeserver']} for user {user['user_id']}")
-        except Exception as e:
-            failed_notifications.append({"user_id": user["user_id"], "error": str(e)})
-    
+    for uid in wallet["users"]:
+        if uid == user_id:
+            continue  # Skip the sender
+
+        # Fetch user details
+        user = users_collection.find_one({"user_id": uid})
+        if not user:
+            failed_notifications.append({"user_id": uid, "error": "User not found"})
+            continue
+
+        # try:
+        # This is a place holder- we would like a user to login with his JWT (?) and then run that procedure below   
+            # Send the notification via Matrix
+            # homeserver = "https://matrix.org"
+            # matrix_client = MatrixClient(homeserver, "@ronabramovich:matrix.org", "Roniparon3")
+            # await matrix_client.login()
+            # await matrix_client.send_message(
+            #     room_id=f"@{uid}:{homeserver}",
+            #     message=f"New transaction request in wallet {wallet_id}: {description}"
+            # )
+            # await matrix_client.logout()
+        # except Exception as e:
+        #     failed_notifications.append({"user_id": uid, "error": str(e)})
+
     return {
         "transaction_id": str(transaction_id),
-        "status": "Transaction created and notifications sent",
+        "status": "Transaction created",
         "failed_notifications": failed_notifications
     }
 
@@ -59,21 +79,20 @@ async def respond_to_transaction(transaction_id: str, user_id: str, acceptence: 
     else:
         raise HTTPException(status_code=404, detail="User not part of the transaction")
 
-    # Count approvals
-    approvals = sum(1 for res in transaction["responses"] if res["response"] is True)
-    if approvals >= wallet["threshold"]:
-        new_status = "accepted"
-    elif all(res["response"] is not None for res in transaction["responses"]):
-        new_status = "declined"  # All responses received but threshold not met
-    else:
-        new_status = "waiting"
-
-    # HERE - if new_status = accepted, we would like to start the protocol among all room's users.
-
-    # Update the transaction
+    new_status = handle_transaction_status(wallet, transaction)
     transactions_collection.update_one(
         {"_id": ObjectId(transaction_id)},
         {"$set": {"responses": transaction["responses"], "status": new_status}}
     )
     return {"status": "Response recorded", "new_status": new_status}
+
+def handle_transaction_status(wallet, transaction) -> str:
+    approvals = sum(1 for res in transaction["responses"] if res["response"] is True)
+    if approvals >= wallet["threshold"]:
+        return ACCEPTED
+    elif all(res["response"] is not None for res in transaction["responses"]):
+        return DECLINED  # All responses received but threshold not met
+    else:
+        return WAITING
+
 
