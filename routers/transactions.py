@@ -11,16 +11,13 @@ router = APIRouter()
 
 @router.post("/transactions/request")
 async def create_new_transaction(wallet_id: int, user_id: str, description: str):
-    # Fetch the wallet
     wallet = wallets_collection.find_one({"wallet_id": wallet_id})
     if not wallet:
-        raise HTTPException(status_code=404, detail="Wallet not found")
+        raise_not_found_exception("Wallet not found")
 
-    # Check if the user is part of the wallet
     if user_id not in wallet["users"]:
         raise HTTPException(status_code=403, detail="User is not a participant in this wallet")
 
-    # Create the transaction
     transaction = {
         "wallet_id": wallet_id,
         "description": description,
@@ -29,14 +26,10 @@ async def create_new_transaction(wallet_id: int, user_id: str, description: str)
         "responses": [{"user_id": uid, "response": True if uid == user_id else None} for uid in wallet["users"]]
     }
     transaction_id = transactions_collection.insert_one(transaction).inserted_id
-
-    # Notify other users
     failed_notifications = []
     for uid in wallet["users"]:
         if uid == user_id:
-            continue  # Skip the sender
-
-        # Fetch user details
+            continue
         user = users_collection.find_one({"user_id": uid})
         if not user:
             failed_notifications.append({"user_id": uid, "error": "User not found"})
@@ -66,8 +59,7 @@ async def create_new_transaction(wallet_id: int, user_id: str, description: str)
 async def respond_to_transaction(transaction_id: str, user_id: str, acceptence: bool):
     transaction = transactions_collection.find_one({"_id": ObjectId(transaction_id)})
     if not transaction:
-        raise HTTPException(status_code=404, detail="Transaction not found")
-
+        raise_not_found_exception("Transaction not found")
     wallet = wallets_collection.find_one({"wallet_id": transaction["wallet_id"]})
     if not wallet:
         raise HTTPException(status_code=404, detail="Wallet not found")
@@ -77,7 +69,7 @@ async def respond_to_transaction(transaction_id: str, user_id: str, acceptence: 
             response["response"] = acceptence
             break
     else:
-        raise HTTPException(status_code=404, detail="User not part of the transaction")
+        raise_not_found_exception("User not part of the transaction")
 
     new_status = handle_transaction_status(wallet, transaction)
     transactions_collection.update_one(
@@ -95,4 +87,5 @@ def handle_transaction_status(wallet, transaction) -> str:
     else:
         return WAITING
 
-
+def raise_not_found_exception(detail):
+    raise HTTPException(status_code=404, detail= detail)
