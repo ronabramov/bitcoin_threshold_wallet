@@ -1,4 +1,4 @@
-# bitcoin_treshold_wallet
+# bitcoin_threshold_wallet
 Treshold wallet app , supporting fast ECDSA with treshold signature algorithm
 
 Inspired by the paper
