@@ -1,9 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-
-const App = () => {
-    return <h1>Hello, React!</h1>;
-};
+import App from './App'; // Ensure App.js exists in the same directory
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
