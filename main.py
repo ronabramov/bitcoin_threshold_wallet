@@ -2,8 +2,18 @@ import webbrowser
 from fastapi import FastAPI
 from routers import transactions, messages, wallets
 import os
+from fastapi.middleware.cors import CORSMiddleware
+
+FRONT_END_LOCALHOST_URL = "http://localhost:3000"
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[FRONT_END_LOCALHOST_URL],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 async def read_root():

@@ -9,6 +9,21 @@ ACCEPTED = "accepted"
 DECLINED = "declined"
 router = APIRouter()
 
+@router.get("/{wallet_id}")
+async def get_transactions(wallet_id : int):
+    transactions = transactions_collection.find({"wallet_id" : wallet_id})
+    if not transactions:
+        raise_not_found_exception(f"Wallet {wallet_id} has no previous transactions")
+    return [
+        {
+            "id": str(tx["_id"]),
+            "wallet_id": tx["wallet_id"],
+            "description": tx["description"],
+            "status": tx["status"],
+        }
+        for tx in transactions
+    ]
+
 @router.post("/transactions/request")
 async def create_new_transaction(wallet_id: int, user_id: str, description: str):
     wallet = wallets_collection.find_one({"wallet_id": wallet_id})

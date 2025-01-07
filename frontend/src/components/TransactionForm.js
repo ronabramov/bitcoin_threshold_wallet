@@ -1,22 +1,24 @@
 import React, { useState } from "react";
 import { createTransaction } from "../api/api";
 
-const TransactionForm = ({ wallet, userId }) => {
+const TransactionForm = ({ wallet, userId, refreshTransactions }) => {
     const [description, setDescription] = useState("");
     const [status, setStatus] = useState("");
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await createTransaction({
+            await createTransaction({
                 wallet_id: wallet.wallet_id,
                 user_id: userId,
                 description,
             });
-            setStatus(`Transaction created with ID: ${response.transaction_id}`);
+            setStatus("Transaction created successfully.");
+            setDescription(""); // Clear the input field
+            refreshTransactions(); // Reload the transaction list
         } catch (error) {
             console.error("Failed to create transaction:", error);
-            setStatus("Error: Failed to create transaction");
+            setStatus("Error: Failed to create transaction.");
         }
     };
 
