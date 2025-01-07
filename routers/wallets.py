@@ -13,7 +13,7 @@ async def get_user_wallets(user_id: str):
     wallets = []
     for wallet in wallets_cursor:
         # Fetch user details for each user in the wallet
-        user_details = list(users_collection.find({"user_id": {"$in": wallet["users"]}}))
+        user_details = list(users_collection.find({ "users": user_id }))
         for user in user_details:
             user["_id"] = str(user["_id"])  # Serialize ObjectId
         wallets.append({
