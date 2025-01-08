@@ -35,7 +35,7 @@ const App = () => {
             ) : (
                 <div style={{ display: "flex" }}>
                     {/* Left side: Transactions */}
-                    <div style={{ flex: 1, padding: "10px", borderRight: "1px solid #ccc" }}>
+                    <div style={{ flex: 1, padding: "10px", borderRight: "none" }}>
                         <TransactionList
                             ref={transactionListRef}
                             walletId={selectedWallet.wallet_id}
@@ -53,7 +53,7 @@ const App = () => {
                     <Box
                         component="footer"
                         sx={{
-                            backgroundColor: "rgba(186, 186, 227, 0.8)", // Translucent navy blue
+                            backgroundColor: "rgba(186, 186, 227, 0.46)", // Translucent navy blue
                             color: "#d2e3eb", // Light blue for text
                             padding: "2px",
                             textAlign: "center",
@@ -67,9 +67,7 @@ const App = () => {
                     </Box>
                 </div>
             )}
-            {selectedWallet && (
-                <button onClick={() => setSelectedWallet(null)}>Back to Wallet List</button>
-            )}
+            
         </div>
     );
 };

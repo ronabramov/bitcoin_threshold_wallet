@@ -9,7 +9,7 @@ import DialogActions from "@mui/material/DialogActions";
 
 const API_URL = "http://127.0.0.1:8000"; // Replace with your backend URL if needed
 
-const TransactionList = forwardRef(({ walletId }, ref) => {
+const TransactionList = forwardRef(({ walletId, onBackToWallets }, ref) => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -69,39 +69,75 @@ const TransactionList = forwardRef(({ walletId }, ref) => {
     if (loading) return <p>Loading transactions...</p>;
 
     return (
-        <Box sx={{ padding: "10px" }}>
-            <h2>Transactions for Wallet ID: {walletId}</h2>
+        <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+            {/* Scrollable Transactions Section */}
             <Box
-                sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "15px", // Space between transactions
+                 sx={{
+                    flex: 1,
+                    overflowY: "scroll", // Enable scrolling
+                    padding: "10px",
+                    backgroundColor: "rgba(249, 249, 249, 0.02)",
+                    "::-webkit-scrollbar": {
+                        display: "none", // Hide scrollbar for Webkit-based browsers
+                    },
+                    scrollbarWidth: "none", // Hide scrollbar for Firefox
                 }}
             >
-                {transactions.map((tx, index) => (
-                    <Box
-                        key={tx.id}
-                        sx={{
-                            backgroundColor: index % 2 === 0 ? "rgb(82, 107, 183)" : "rgb(152, 184, 207)", // Alternating colors
-                            padding: "15px",
-                            borderRadius: "10px",
-                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
-                        }}
-                    >
-                        <strong>Description:</strong> {tx.description} <br />
-                        <strong>Status:</strong> {tx.status}
-                        {tx.status === "waiting" && (
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                sx={{ marginTop: "10px" }}
-                                onClick={() => setSelectedTransaction(tx)}
-                            >
-                                Submit Response
-                            </Button>
-                        )}
-                    </Box>
-                ))}
+                <h2>Transactions for Wallet ID: {walletId}</h2>
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "15px", // Space between transactions
+                    }}
+                >
+                    {transactions.map((tx, index) => (
+                        <Box
+                            key={tx.id}
+                            sx={{
+                                backgroundColor: index % 2 === 0 ? "rgba(82, 107, 183, 0.32)" : "rgba(152, 184, 207, 0.33)", // Alternating colors
+                                padding: "15px",
+                                borderRadius: "10px",
+                                boxShadow: "0 2px 5px rgba(0, 0, 0, 0.01)",
+                            }}
+                        >
+                            <strong>Description:</strong> {tx.description} <br />
+                            <strong>Status:</strong> {tx.status}
+                            {tx.status === "waiting" && (
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    sx={{ marginTop: "5px" }}
+                                    onClick={() => setSelectedTransaction(tx)}
+                                >
+                                    Submit Response
+                                </Button>
+                            )}
+                        </Box>
+                    ))}
+                </Box>
+            </Box>
+
+            {/* Fixed Back to Wallets Button */}
+            <Box
+                sx={{
+                    position: "fixed",
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    backgroundColor: "rgba(245, 245, 245, 0)",
+                    borderTop: "none",
+                    padding: "10px",
+                    textAlign: "center",
+                }}
+            >
+                <Button
+                    variant="contained"
+                    color="secondary"
+                    onClick={onBackToWallets} // Call the provided back-to-wallets handler
+                >
+                    Back to Wallets List
+                </Button>
             </Box>
 
             {/* Material UI Dialog for Accept/Decline */}

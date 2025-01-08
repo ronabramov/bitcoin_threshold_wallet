@@ -3,7 +3,7 @@ body {
     background-size: cover;
     background-repeat: no-repeat;
     background-position: center center;
-    color: #d2e3eb;
+    color: #d2e3ebe7;
     min-height: 100vh;
     margin: 0;
     padding: 0;
@@ -50,11 +50,11 @@ div {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(182, 235, 240, 0.9);
+    background: rgba(182, 235, 240, 0.745);
     border: 1px solid #ccc;
     padding: 20px;
     z-index: 1000;
-    box-shadow: 0 4px 8px rgba(239, 235, 235, 0.2);
+    box-shadow: 0 4px 8px rgba(239, 235, 235, 0);
 }
 
 .backdrop {
