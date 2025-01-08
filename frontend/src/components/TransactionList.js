@@ -1,5 +1,11 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import axios from "axios";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
 
 const API_URL = "http://127.0.0.1:8000"; // Replace with your backend URL if needed
 
@@ -10,7 +16,7 @@ const TransactionList = forwardRef(({ walletId }, ref) => {
 
     // Fetch transactions from the backend
     const fetchTransactions = async () => {
-        setLoading(true); // Show loading state during fetch
+        setLoading(true);
         try {
             const response = await axios.get(`${API_URL}/transactions/${walletId}`);
             const formattedTransactions = response.data.map((tx) => ({
@@ -21,11 +27,11 @@ const TransactionList = forwardRef(({ walletId }, ref) => {
         } catch (error) {
             console.error("Failed to fetch transactions:", error);
         } finally {
-            setLoading(false); // Stop loading state
+            setLoading(false);
         }
     };
 
-    // Expose the fetchTransactions function to the parent component via ref
+    // Expose the fetchTransactions function
     useImperativeHandle(ref, () => ({
         fetchTransactions,
     }));
@@ -34,7 +40,6 @@ const TransactionList = forwardRef(({ walletId }, ref) => {
         fetchTransactions();
     }, [walletId]);
 
-    // Handle user response (Accept/Decline)
     const handleResponse = async (response) => {
         if (!selectedTransaction || !selectedTransaction.id) {
             console.error("Transaction ID is missing:", selectedTransaction);
@@ -43,7 +48,7 @@ const TransactionList = forwardRef(({ walletId }, ref) => {
 
         try {
             const params = {
-                transaction_id: selectedTransaction.id, // Use transaction ID from backend
+                transaction_id: selectedTransaction.id,
                 user_id: "User2", // Replace with dynamic user ID if needed
                 acceptence: response === "accept",
             };
@@ -53,7 +58,7 @@ const TransactionList = forwardRef(({ walletId }, ref) => {
 
             await axios.post(requestUrl);
             alert(`Response "${response}" submitted successfully.`);
-            setSelectedTransaction(null); // Close the modal
+            setSelectedTransaction(null); // Close the dialog
             fetchTransactions(); // Refresh the transaction list
         } catch (error) {
             console.error("Failed to submit response:", error);
@@ -64,80 +69,75 @@ const TransactionList = forwardRef(({ walletId }, ref) => {
     if (loading) return <p>Loading transactions...</p>;
 
     return (
-        <div>
+        <Box sx={{ padding: "10px" }}>
             <h2>Transactions for Wallet ID: {walletId}</h2>
-            <ul>
-                {transactions.map((tx) => (
-                    <li key={tx.id}>
+            <Box
+                sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "15px", // Space between transactions
+                }}
+            >
+                {transactions.map((tx, index) => (
+                    <Box
+                        key={tx.id}
+                        sx={{
+                            backgroundColor: index % 2 === 0 ? "rgb(82, 107, 183)" : "rgb(152, 184, 207)", // Alternating colors
+                            padding: "15px",
+                            borderRadius: "10px",
+                            boxShadow: "0 2px 5px rgba(0, 0, 0, 0.2)",
+                        }}
+                    >
                         <strong>Description:</strong> {tx.description} <br />
                         <strong>Status:</strong> {tx.status}
                         {tx.status === "waiting" && (
-                            <button
-                                style={{ marginLeft: "10px" }}
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                sx={{ marginTop: "10px" }}
                                 onClick={() => setSelectedTransaction(tx)}
                             >
                                 Submit Response
-                            </button>
+                            </Button>
                         )}
-                    </li>
+                    </Box>
                 ))}
-            </ul>
+            </Box>
 
-            {/* Modal for Accept/Decline */}
+            {/* Material UI Dialog for Accept/Decline */}
             {selectedTransaction && (
-                <div
-                    style={{
-                        position: "fixed",
-                        top: "50%",
-                        left: "50%",
-                        transform: "translate(-50%, -50%)",
-                        background: "white",
-                        border: "1px solid #ccc",
-                        padding: "20px",
-                        zIndex: 1000,
-                        boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-                    }}
+                <Dialog
+                    open={Boolean(selectedTransaction)}
+                    onClose={() => setSelectedTransaction(null)} // Close dialog on backdrop click
                 >
-                    <h3>Transaction Details</h3>
-                    <p>
-                        <strong>Description:</strong> {selectedTransaction.description}
-                    </p>
-                    <p>
-                        <strong>Status:</strong> {selectedTransaction.status}
-                    </p>
-                    <div style={{ marginTop: "10px" }}>
-                        <button
-                            style={{ marginRight: "10px", background: "green", color: "white" }}
+                    <DialogTitle>Transaction Details</DialogTitle>
+                    <DialogContent>
+                        <p>
+                            <strong>Description:</strong> {selectedTransaction.description}
+                        </p>
+                        <p>
+                            <strong>Status:</strong> {selectedTransaction.status}
+                        </p>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            variant="contained"
+                            color="success"
                             onClick={() => handleResponse("accept")}
                         >
                             Accept
-                        </button>
-                        <button
-                            style={{ background: "red", color: "white" }}
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="error"
                             onClick={() => handleResponse("decline")}
                         >
                             Decline
-                        </button>
-                    </div>
-                </div>
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             )}
-
-            {/* Backdrop for Modal */}
-            {selectedTransaction && (
-                <div
-                    onClick={() => setSelectedTransaction(null)} // Close modal on backdrop click
-                    style={{
-                        position: "fixed",
-                        top: 0,
-                        left: 0,
-                        width: "100%",
-                        height: "100%",
-                        background: "rgba(0, 0, 0, 0.5)",
-                        zIndex: 999,
-                    }}
-                />
-            )}
-        </div>
+        </Box>
     );
 });
 

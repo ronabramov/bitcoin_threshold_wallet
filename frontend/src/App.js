@@ -2,6 +2,11 @@ import React, { useState, useRef } from "react";
 import WalletList from "./components/WalletList";
 import TransactionForm from "./components/TransactionForm";
 import TransactionList from "./components/TransactionList";
+import AppBar from "@mui/material/AppBar";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
+
 
 const App = () => {
     const [selectedWallet, setSelectedWallet] = useState(null);
@@ -17,7 +22,14 @@ const App = () => {
 
     return (
         <div>
-            <h1>Bitcoin Threshold Wallet</h1>
+            <AppBar position="static">
+                <Toolbar >
+                    <Typography variant="h6" component="div" color="#d2e3eb">
+                        Threshold Wallet
+                    </Typography>
+                </Toolbar>
+            </AppBar>
+            <h1>ECDSA Threshold Wallet</h1>
             {!selectedWallet ? (
                 <WalletList userId={userId} onSelectWallet={setSelectedWallet} />
             ) : (
@@ -38,6 +50,21 @@ const App = () => {
                             refreshTransactions={refreshTransactions}
                         />
                     </div>
+                    <Box
+                        component="footer"
+                        sx={{
+                            backgroundColor: "rgba(186, 186, 227, 0.8)", // Translucent navy blue
+                            color: "#d2e3eb", // Light blue for text
+                            padding: "2px",
+                            textAlign: "center",
+                            fontSize: "24px",
+                            fontWeight: "bold",
+                        }}
+                    >
+                        <Typography variant="body2" color="textSecondary">
+                            © 2025 Crypto Wallet. All rights reserved.
+                        </Typography>
+                    </Box>
                 </div>
             )}
             {selectedWallet && (
