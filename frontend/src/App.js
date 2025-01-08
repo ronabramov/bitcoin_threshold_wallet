@@ -7,7 +7,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 
-
+``
 const App = () => {
     const [selectedWallet, setSelectedWallet] = useState(null);
     const transactionListRef = useRef(); // Reference to the TransactionList component
@@ -39,6 +39,7 @@ const App = () => {
                         <TransactionList
                             ref={transactionListRef}
                             walletId={selectedWallet.wallet_id}
+                            onBackToWallets={() => setSelectedWallet(null)} // Pass function to go back
                         />
                     </div>
 
@@ -67,7 +68,7 @@ const App = () => {
                     </Box>
                 </div>
             )}
-            
+
         </div>
     );
 };
