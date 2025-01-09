@@ -24,7 +24,7 @@ async def get_transactions(wallet_id : int):
         for tx in transactions
     ]
 
-@router.post("/transactions/request")
+@router.post("/request")
 async def create_new_transaction(wallet_id: int, user_id: str, description: str):
     wallet = wallets_collection.find_one({"wallet_id": wallet_id})
     if not wallet:
@@ -70,7 +70,7 @@ async def create_new_transaction(wallet_id: int, user_id: str, description: str)
         "failed_notifications": failed_notifications
     }
 
-@router.post("/transactions/respond")
+@router.post("/respond")
 async def respond_to_transaction(transaction_id: str, user_id: str, acceptence: bool):
     transaction = transactions_collection.find_one({"_id": ObjectId(transaction_id)})
     if not transaction:

@@ -6,7 +6,7 @@ logger = logging.getLogger("uvicorn")
 
 router = APIRouter()
 
-@router.get("/wallets/{user_id}")
+@router.get("/{user_id}")
 async def get_user_wallets(user_id: str):
     # Find wallets containing the user
     wallets_cursor = wallets_collection.find({"users": user_id})
@@ -25,7 +25,7 @@ async def get_user_wallets(user_id: str):
         })
     return wallets
 
-@router.post("/wallets/create")
+@router.post("/create")
 async def create_wallet(wallet_id: str, wallet_name: str, threshold: int, users: list, metadata: dict):
     # Validate the threshold
     if threshold > len(users):
