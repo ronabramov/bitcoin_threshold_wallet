@@ -17,3 +17,5 @@ env/
 # Ignore dependendencies 
 requirements/
 runtime/
+
+frontend/node_modules
