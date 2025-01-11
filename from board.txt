@@ -1,0 +1,55 @@
+Data:
+- User:
+    -  WaleList (+ Token)
+    - Authentication (password,email)
+    - home service url
+- Wallet:
+    - ID
+    - threshold
+    - home service url
+    -  UsersList
+- Transaction:
+    - ID
+    - details
+    - WalletID
+    - status
+    - approvers
+
+Actions:
+1. Register (password, email)
+    - create your homeService
+    - save to local db the homeService
+
+2. Login (password, email)
+    - Authentication
+    - get session token (per wallet?)
+
+3. Create Wallet ( Threshold, list[users])
+    - Create Home Server
+    - Add token to WalletList
+    - invite all users
+    - Send Wallets Threshold value 
+    *   
+        - Save Wallet's properties to local D.B 
+        - save threshold va;ue, users list in safe place
+
+4. Answer Wallet's invitation(walletID):
+    - receive email (?) invitation to new room
+    - Including credentials for connection
+    - If connected, run 3 *.
+
+5. Create Transaction(transactionDetails, WalletID, token)
+    - send transaction message in wallet's home service.
+    - save new entity to local transaction list.
+    
+6. Respond To Transaction Request(transactionMessage)
+    - If Accept: 
+        - Save Message
+        -SEnd Approve to wallet's room
+    - else
+        - send 'no' to wallet room.
+7. Track transaction(transationId)
+    -   if accept:
+        - update transaction approvers
+        - if transaction approvers > threshold:
+            - init protocol
