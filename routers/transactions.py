@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from db import wallets_collection, transactions_collection, users_collection
 from datetime import datetime, timezone
 from bson import ObjectId
-from matrix_client import MatrixClient
+
 
 WAITING = "waiting"
 ACCEPTED = "accepted"
