@@ -102,3 +102,4 @@ urllib3==2.2.1
 uvicorn==0.34.0
 wcwidth==0.2.13
 yarl==1.18.3
+sqlalchemy==2.0.36
