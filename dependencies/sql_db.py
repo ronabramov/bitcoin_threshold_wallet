@@ -1,6 +1,7 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, Table
+import os
+from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, relationship
 
 
 Base = declarative_base()
@@ -21,21 +22,28 @@ class Wallet(Base):
     threshold = Column(Integer, nullable=False)
     users = Column(Text, nullable=True)
     configuration = Column(Text, nullable=True)
+    transactions = relationship("Transaction", back_populates="wallet")
+    
 
 
 class Transaction(Base):
     __tablename__ = "transactions"
     transaction_id = Column(String, primary_key=True, nullable=False)
-    wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     details = Column(Text, nullable=True)
     approvers = Column(Text, nullable=True)
+    wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
+    wallet = relationship("Wallet", back_populates="transactions")
 
-# Create SQLite engine
-engine = create_engine(f"sqlite:///{DB_FILE}")
-
-# Create all tables
-Base.metadata.create_all(engine)
+# check if the database exists
+if not os.path.exists(DB_FILE):
+    # Create SQLite engine
+    engine = create_engine(f"sqlite:///{DB_FILE}")
+    Base.metadata.create_all(engine)
+else:
+    engine = create_engine(f"sqlite:///{DB_FILE}")
 
 # Session maker
 Session = sessionmaker(bind=engine)
+
+# this is the session that will be used to interact with the database
 session = Session()
