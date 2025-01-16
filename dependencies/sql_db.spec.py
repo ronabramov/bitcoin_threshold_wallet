@@ -2,9 +2,10 @@ import sql_db
 
 # test sql_db
 def basic_functionality():
-    # test that all tables are created
+    # reset the database
+    sql_db.Base.metadata.drop_all(sql_db.engine)
     sql_db.Base.metadata.create_all(sql_db.engine)
-
+    
     # test that the tables are empty
     assert sql_db.session.query(sql_db.User).count() == 0
     assert sql_db.session.query(sql_db.Wallet).count() == 0
@@ -25,4 +26,20 @@ def basic_functionality():
     sql_db.session.commit()
     assert sql_db.session.query(sql_db.User).count() == 0
 
+def relational_functionality():
+    # given a wallet exists
+    wallet = sql_db.Wallet(wallet_id="test", threshold=1, users="test", configuration="test")
+    sql_db.session.add(wallet)
+    sql_db.session.commit()
+    
+    # given a transaction exists
+    transaction = sql_db.Transaction(transaction_id="test", wallet_id="test", details="test", approvers="test")
+    sql_db.session.add(transaction)
+    sql_db.session.commit()
+    
+    # when we get the wallet we should see the transaction
+    assert wallet.transactions == [transaction]
+
 basic_functionality()
+
+relational_functionality()
