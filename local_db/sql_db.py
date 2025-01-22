@@ -2,6 +2,7 @@ import os
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+from transaction import Transaction as TransactionDTO
 
 
 Base = declarative_base()
@@ -31,8 +32,19 @@ class Transaction(Base):
     transaction_id = Column(String, primary_key=True, nullable=False)
     details = Column(Text, nullable=True)
     approvers = Column(Text, nullable=True)
+    approvals_counter = Column(Integer, nullable=True)
+    status = Column(String, nullable=True)
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
+
+    def _init_(self, transaction_dto : TransactionDTO):
+        self.transaction_id = transaction_dto.id
+        self.details = transaction_dto.details
+        self.approvers = transaction_dto.approvers
+        self.wallet_id = transaction_dto.wallet_id
+        self.approvals_counter = transaction_dto.counter
+        self.status = transaction_dto.stage.value
+        
 
 # check if the database exists
 if not os.path.exists(DB_FILE):
