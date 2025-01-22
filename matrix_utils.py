@@ -4,6 +4,12 @@ import requests
 
 HOMESERVER_URL = "https://matrix.org"
 
+def create_room(room_name : str, matrix_client : MatrixClient):
+    new_room = matrix_client.create_room(alias=room_name)
+    # TODO : implement saving the new room in the local db.
+    #        make all rooms creation use that method. 
+    #        This is mainly required in case of new wallet, consider other cases 
+
 def send_message_to_wallet_room(room_id: str, message: str, admin_user: str, admin_password: str): #Here is some of sdk work with examples.
     """Send a message to the Matrix room for a wallet."""
     client = MatrixClient(HOMESERVER_URL)
@@ -70,8 +76,24 @@ def get_room_history(room_id, admin_user, admin_password, num_of_meesages_to_ret
     else:
         print(f"Failed to retrieve messages: {response.status_code} - {response.text}")
 
-
-
+def send_private_message_to_user(target_user_matrix_id : str , message : str):
+    client = MatrixClient(HOMESERVER_URL)
+    client.login_with_password(username=admin_user, password=admin_password)
+    rooms = client.rooms
+    target_room_id = None
+    for room_id in rooms:
+        room = client.join_room(room_id)
+        members = room._members
+        if target_user_matrix_id in members and len(members) == 2:
+            target_room_id = room_id
+            break
+    if not target_room_id:
+        new_room = client.create_room(alias= f"private_room_for_{admin_user}_and_{target_user_matrix_id}")
+        target_room_id = new_room.room_id
+    
+    private_room = client.join_room(target_room_id)
+    private_room.send_text(message)
+    print(f"Successfuly sent private message in room {target_room_id}")
 
 # Example usage
 if __name__ == "__main__":
@@ -79,6 +101,9 @@ if __name__ == "__main__":
     message = "Hello, Wallet Members!"
     admin_user = "ron_test"
     admin_password = "Roniparon32"
+    user_matrix_id = '@ron_test:matrix.org'
+    destination_user_matrix_id = '@ronabramovich:matrix.org'
+    send_private_message_to_user(destination_user_matrix_id, "This is a privatenessage")
     create_user_backup_room(admin_user, admin_password)
     get_room_history(room_id, admin_user, admin_password)
     send_message_to_wallet_room(room_id, message, admin_user, admin_password)

@@ -18,9 +18,9 @@ class User(Base):
 
 class Wallet(Base):
     __tablename__ = "wallets"
-    wallet_id = Column(String, primary_key=True, nullable=False)
+    wallet_id = Column(String, primary_key=True, nullable=False) #This will be the room Id.
     threshold = Column(Integer, nullable=False)
-    users = Column(Text, nullable=True)
+    users = Column(Text, nullable=True) #@alice:matrix.org,@bob:matrix.org - we will save comma parsed absolute path for participating users
     configuration = Column(Text, nullable=True)
     transactions = relationship("Transaction", back_populates="wallet")
     
