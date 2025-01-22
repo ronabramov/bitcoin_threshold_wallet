@@ -4,20 +4,27 @@ import requests
 
 HOMESERVER_URL = "https://matrix.org"
 
+def create_matrix_cleint(matrix_user_id : str , matrix_user_password):
+    client = MatrixClient(HOMESERVER_URL)
+    # Log in as the admin      
+    token = client.login_with_password(username=matrix_user_id, password=matrix_user_password)
+    print(f"Admin logged in successfully. Token: {token}")
+
 def create_room(room_name : str, matrix_client : MatrixClient):
     new_room = matrix_client.create_room(alias=room_name)
     # TODO : implement saving the new room in the local db.
     #        make all rooms creation use that method. 
     #        This is mainly required in case of new wallet, consider other cases 
 
-def send_message_to_wallet_room(room_id: str, message: str, admin_user: str, admin_password: str): #Here is some of sdk work with examples.
+def send_message_to_wallet_room(room_id: str, message: str, admin_user: str | None = None, admin_password: str | None = None, client : MatrixClient | None = None): #Here is some of sdk work with examples.
     """Send a message to the Matrix room for a wallet."""
-    client = MatrixClient(HOMESERVER_URL)
 
     try:
-        # Log in as the admin
-        token = client.login_with_password(username=admin_user, password=admin_password)
-        print(f"Admin logged in successfully. Token: {token}")
+        if not client : 
+            client = MatrixClient(HOMESERVER_URL)
+            # Log in as the admin
+            token = client.login_with_password(username=admin_user, password=admin_password)
+            print(f"Admin logged in successfully. Token: {token}")
 
         # Retrieve the room and send a message
         room = client.join_room(room_id)

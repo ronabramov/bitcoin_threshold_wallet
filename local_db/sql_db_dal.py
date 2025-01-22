@@ -1,5 +1,5 @@
 import local_db.sql_db as sql_db
-from transaction import Transaction as TransactionDTO
+from ..models.transaction import Transaction as TransactionDTO
 
 def get_user_by_email(user_email : str) -> sql_db.User :
     try:

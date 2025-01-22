@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from transaction import Transaction as TransactionDTO
+from ..models.transaction import Transaction as TransactionDTO
 
 
 Base = declarative_base()
@@ -42,7 +42,7 @@ class Transaction(Base):
         self.details = transaction_dto.details
         self.approvers = transaction_dto.approvers
         self.wallet_id = transaction_dto.wallet_id
-        self.approvals_counter = transaction_dto.counter
+        self.approvals_counter = transaction_dto.approvers_counter
         self.status = transaction_dto.stage.value
         
 

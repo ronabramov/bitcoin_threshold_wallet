@@ -1,6 +1,6 @@
 
 import common_utils
-import dependencies.sql_db as sql_db
+import local_db.sql_db as sql_db
 
 
 def save_user_data(email: str, password: str, homeserver):
