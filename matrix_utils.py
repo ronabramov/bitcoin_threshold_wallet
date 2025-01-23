@@ -5,12 +5,13 @@ import common_utils
 import requests
 import json
 from typing import List
+import time
+
 HOMESERVER_URL = "https://matrix.org"
 
 # should be in a config file
 matrix_user_id = "ron_test"
 matrix_user_password = "Roniparon32"
-
 
 class MatrixService:
     _instance = None
@@ -21,8 +22,8 @@ class MatrixService:
         self.matrix_user_password = matrix_user_password
         self._client = None
 
-    @property
     @classmethod
+    @property
     def instance(cls):
         if cls._instance is None:
             cls._instance = cls()
@@ -74,12 +75,12 @@ class MatrixService:
             except Exception as e:
                 print(f"Failed saving {message} to backup server : {e}")
 
-    def get_room_history(self, room_id: str, admin_user: str, admin_password: str, num_of_meesages_to_retrieve: int):
-        token = self.client.login_with_password(username=admin_user, password=admin_password)
+    def get_room_history(self, room_id: str, num_of_messages_to_retrieve: int = 20):
+        token = self.client.token
         url = f"{HOMESERVER_URL}/_matrix/client/v3/rooms/{room_id}/messages"
         params = {
             "dir": "b",  # Retrieve messages in reverse (backward)
-            "limit": num_of_meesages_to_retrieve  # Number of messages to fetch
+            "limit": num_of_messages_to_retrieve  # Number of messages to fetch
         }
         headers = {
             "Authorization": f"Bearer {token}"
@@ -103,12 +104,14 @@ class MatrixService:
         room: Room 
         for room in rooms.values():
             members: List[User]  = room.get_joined_members()
-            if members and len(members) == 2 and 'private_room_for_' in room.canonical_alias and target_user_matrix_id in [member.user_id for member in members]:
+            if members and len(members) == 2  and target_user_matrix_id in [member.user_id for member in members]:
                 target_room = room
+                print(f"Found private room with user {target_user_matrix_id} in room {room.room_id}")
                 break
         if not target_room:
-            room_name = f"private_room_for_{self.__user_matrix_id_to_room_name(self.matrix_user_id)}_and_{self.__user_matrix_id_to_room_name(target_user_matrix_id)}"
-            new_room = self.client.create_room(alias=room_name)
+            unix_timestamp = int(time.time())
+            room_name = f"private_room_for_{self.__user_matrix_id_to_room_name(self.matrix_user_id)}_and_{self.__user_matrix_id_to_room_name(target_user_matrix_id)}_{unix_timestamp}"
+            new_room: Room = self.client.create_room(alias=room_name, invitees=[ target_user_matrix_id])
             target_room = new_room
         return target_room
     
@@ -120,10 +123,10 @@ class MatrixService:
 # Example usage
 if __name__ == "__main__":
     room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
-    message = "Hello, Wallet Members!"
+    
   
     destination_user_matrix_id = '@ronabramovich:matrix.org'
     MatrixService.instance.send_private_message_to_user(destination_user_matrix_id, "This is a privatenessage")
     MatrixService.instance.create_user_backup_room()
-    MatrixService.instance.get_room_history(room_id, )
+    MatrixService.instance.get_room_history(room_id )
     MatrixService.instance.send_message_to_wallet_room(room_id, message)
