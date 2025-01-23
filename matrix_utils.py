@@ -1,14 +1,16 @@
 from matrix_client.client import MatrixClient
 import common_utils
 import requests
+import json
 
 HOMESERVER_URL = "https://matrix.org"
 
-def create_matrix_cleint(matrix_user_id : str , matrix_user_password):
+def create_matrix_cleint(matrix_user_id : str , matrix_user_password) -> MatrixClient:
     client = MatrixClient(HOMESERVER_URL)
     # Log in as the admin      
     token = client.login_with_password(username=matrix_user_id, password=matrix_user_password)
     print(f"Admin logged in successfully. Token: {token}")
+    return client
 
 def create_room(room_name : str, matrix_client : MatrixClient):
     new_room = matrix_client.create_room(alias=room_name)
@@ -16,9 +18,8 @@ def create_room(room_name : str, matrix_client : MatrixClient):
     #        make all rooms creation use that method. 
     #        This is mainly required in case of new wallet, consider other cases 
 
-def send_message_to_wallet_room(room_id: str, message: str, admin_user: str | None = None, admin_password: str | None = None, client : MatrixClient | None = None): #Here is some of sdk work with examples.
+def send_message_to_wallet_room(room_id: str, message: str, admin_user: str | None = None, admin_password: str | None = None, client : MatrixClient | None = None) -> bool:
     """Send a message to the Matrix room for a wallet."""
-
     try:
         if not client : 
             client = MatrixClient(HOMESERVER_URL)
@@ -26,20 +27,13 @@ def send_message_to_wallet_room(room_id: str, message: str, admin_user: str | No
             token = client.login_with_password(username=admin_user, password=admin_password)
             print(f"Admin logged in successfully. Token: {token}")
 
-        # Retrieve the room and send a message
         room = client.join_room(room_id)
-        room.send_text(message)
+        room.send_text(json.dumps(message["content"]))
         print(f"Message sent to room {room_id}: {message}")
-
-        new_room = client.create_room(alias=f"new_room_for_test_11112222222111111231", is_public=False)
-        new_room_id = new_room.room_id
-        print(f"the new room id is {new_room_id}")
-        x = client.join_room(new_room_id)
-        new_room.send_text(f"{message} and this is meeee")
-        check = True
-
+        return True
     except Exception as e:
         print(f"Error sending message to room: {e}")
+        return False
 
 def create_user_backup_room(admin_user_name: str, admin_password: str):
     client = MatrixClient(HOMESERVER_URL)
