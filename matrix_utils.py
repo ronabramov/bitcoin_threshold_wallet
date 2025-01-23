@@ -123,9 +123,8 @@ class MatrixService:
 # Example usage
 if __name__ == "__main__":
     room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
-    
-  
     destination_user_matrix_id = '@ronabramovich:matrix.org'
+    
     MatrixService.instance.send_private_message_to_user(destination_user_matrix_id, "This is a privatenessage")
     MatrixService.instance.create_user_backup_room()
     MatrixService.instance.get_room_history(room_id )
