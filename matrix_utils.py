@@ -1,110 +1,129 @@
 from matrix_client.client import MatrixClient
+from matrix_client.room import Room
+from matrix_client.user import User
 import common_utils
 import requests
 import json
-
+from typing import List
 HOMESERVER_URL = "https://matrix.org"
 
-def create_matrix_cleint(matrix_user_id : str , matrix_user_password) -> MatrixClient:
-    client = MatrixClient(HOMESERVER_URL)
-    # Log in as the admin      
-    token = client.login_with_password(username=matrix_user_id, password=matrix_user_password)
-    print(f"Admin logged in successfully. Token: {token}")
-    return client
+# should be in a config file
+matrix_user_id = "ron_test"
+matrix_user_password = "Roniparon32"
 
-def create_room(room_name : str, matrix_client : MatrixClient):
-    new_room = matrix_client.create_room(alias=room_name)
-    # TODO : implement saving the new room in the local db.
-    #        make all rooms creation use that method. 
-    #        This is mainly required in case of new wallet, consider other cases 
 
-def send_message_to_wallet_room(room_id: str, message: str, admin_user: str | None = None, admin_password: str | None = None, client : MatrixClient | None = None) -> bool:
-    """Send a message to the Matrix room for a wallet."""
-    try:
-        if not client : 
-            client = MatrixClient(HOMESERVER_URL)
-            # Log in as the admin
-            token = client.login_with_password(username=admin_user, password=admin_password)
-            print(f"Admin logged in successfully. Token: {token}")
+class MatrixService:
+    _instance = None
+    def __init__(self):
+        if MatrixService._instance is not None:
+            raise Exception("This class is a singleton! Use MatrixService.instance to access it.")
+        self.matrix_user_id = matrix_user_id
+        self.matrix_user_password = matrix_user_password
+        self._client = None
 
-        room = client.join_room(room_id)
-        room.send_text(json.dumps(message["content"]))
-        print(f"Message sent to room {room_id}: {message}")
-        return True
-    except Exception as e:
-        print(f"Error sending message to room: {e}")
-        return False
-
-def create_user_backup_room(admin_user_name: str, admin_password: str):
-    client = MatrixClient(HOMESERVER_URL)
-    try:
-        token = client.login_with_password(username=admin_user, password=admin_password)
+    @property
+    @classmethod
+    def instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+            
+    @property
+    def client(self) -> MatrixClient:
+        if self._client and self._client.token:
+            return self._client
+        client = MatrixClient(HOMESERVER_URL)
+        # Log in as the admin      
+        token = client.login_with_password(username=self.matrix_user_id, password=self.matrix_user_password)
         print(f"Admin logged in successfully. Token: {token}")
-        backup_room = client.create_room(alias=f"remote_user_backup_{admin_user_name}", is_public=False)
-        room_id = backup_room.room_id
-        client.join_room(room_id)
-        encrypted_password = common_utils.hash_password(admin_password)
-        save_data_to_backup({admin_user_name, encrypted_password, token, room_id}, client, backup_room)
-        client.logout()
-    except Exception as e:
-        print(f"Error creating backup room to user {admin_user_name}: {e}")
+        self._client = client
+        return client
 
-def save_data_to_backup(data : list, client : MatrixClient, room):
-    for message in data:
+    def create_room(self, room_name : str):
+        new_room = self.client.create_room(alias=room_name)
+        # TODO : implement saving the new room in the local db.
+        #        make all rooms creation use that method. 
+        #        This is mainly required in case of new wallet, consider other cases 
+
+    def send_message_to_wallet_room(self,room_id: str, message: str) -> bool:
+        """Send a message to the Matrix room for a wallet."""
         try:
-            room.send_text(message)
+            room = self.client.join_room(room_id)
+            room.send_text(json.dumps(message["content"]))
+            print(f"Message sent to room {room_id}: {message}")
+            return True
         except Exception as e:
-            print(f"Failed saving {message} to backup server : {e}")
+            print(f"Error sending message to room: {e}")
+            return False
 
-def get_room_history(room_id, admin_user, admin_password, num_of_meesages_to_retrieve):
-    client = MatrixClient(HOMESERVER_URL)
-    token = client.login_with_password(username=admin_user, password=admin_password)
-    url = f"{HOMESERVER_URL}/_matrix/client/v3/rooms/{room_id}/messages"
-    params = {
-        "dir": "b",  # Retrieve messages in reverse (backward)
-        "limit": num_of_meesages_to_retrieve  # Number of messages to fetch
-    }
-    headers = {
-        "Authorization": f"Bearer {token}"
-    }
+    def create_user_backup_room(self):
+        try:
+            backup_room: Room = self.client.create_room(alias=f"remote_user_backup_{self.matrix_user_id}", is_public=False)
+            room_id = backup_room.room_id
+            self.client.join_room(room_id)
+            encrypted_password = common_utils.hash_password(self.matrix_user_password)
+            self.save_data_to_backup({self.matrix_user_id, encrypted_password, self.client.token, room_id}, backup_room)
+            self.client.logout()
+        except Exception as e:
+            print(f"Error creating backup room to user {self.matrix_user_id}: {e}")
 
-    response = requests.get(url, params=params, headers=headers)
-    if response.status_code == 200:
-        messages = response.json()["chunk"]
-        for message in messages:
-            if message["type"] == "m.room.message":
-                print(f"{message['sender']}: {message['content']['body']}")
-    else:
-        print(f"Failed to retrieve messages: {response.status_code} - {response.text}")
+    def save_data_to_backup(self, data : list, room: Room):
+        for message in data:
+            try:
+                room.send_text(message)
+            except Exception as e:
+                print(f"Failed saving {message} to backup server : {e}")
 
-def send_private_message_to_user(target_user_matrix_id : str , message : str):
-    client = MatrixClient(HOMESERVER_URL)
-    client.login_with_password(username=admin_user, password=admin_password)
-    rooms = client.rooms
-    target_room_id = None
-    for room_id in rooms:
-        room = client.join_room(room_id)
-        members = room._members
-        if target_user_matrix_id in members and len(members) == 2:
-            target_room_id = room_id
-            break
-    if not target_room_id:
-        new_room = client.create_room(alias= f"private_room_for_{admin_user}_and_{target_user_matrix_id}")
-        target_room_id = new_room.room_id
+    def get_room_history(self, room_id: str, admin_user: str, admin_password: str, num_of_meesages_to_retrieve: int):
+        token = self.client.login_with_password(username=admin_user, password=admin_password)
+        url = f"{HOMESERVER_URL}/_matrix/client/v3/rooms/{room_id}/messages"
+        params = {
+            "dir": "b",  # Retrieve messages in reverse (backward)
+            "limit": num_of_meesages_to_retrieve  # Number of messages to fetch
+        }
+        headers = {
+            "Authorization": f"Bearer {token}"
+        }
+
+        response = requests.get(url, params=params, headers=headers)
+        if response.status_code == 200:
+            messages = response.json()["chunk"]
+            for message in messages:
+                if message["type"] == "m.room.message":
+                    print(f"{message['sender']}: {message['content']['body']}")
+        else:
+            print(f"Failed to retrieve messages: {response.status_code} - {response.text}")
+
+    def __user_matrix_id_to_room_name(self, user_matrix_id: str):
+        return user_matrix_id.replace(":", "_")
     
-    private_room = client.join_room(target_room_id)
-    private_room.send_text(message)
-    print(f"Successfuly sent private message in room {target_room_id}")
+    def __get_private_room_with_user(self, target_user_matrix_id: str) -> Room:
+        rooms = self.client.rooms
+        target_room: Room = None
+        room: Room 
+        for room in rooms.values():
+            members: List[User]  = room.get_joined_members()
+            if members and len(members) == 2 and 'private_room_for_' in room.canonical_alias and target_user_matrix_id in [member.user_id for member in members]:
+                target_room = room
+                break
+        if not target_room:
+            room_name = f"private_room_for_{self.__user_matrix_id_to_room_name(self.matrix_user_id)}_and_{self.__user_matrix_id_to_room_name(target_user_matrix_id)}"
+            new_room = self.client.create_room(alias=room_name)
+            target_room = new_room
+        return target_room
+    
+    def send_private_message_to_user(self, target_user_matrix_id : str , message : str):
+        target_room: Room = self.__get_private_room_with_user(target_user_matrix_id)
+        target_room.send_text(message)
+        print(f"Successfuly sent private message in room {target_room.room_id}")
 
 # Example usage
 if __name__ == "__main__":
     room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
     message = "Hello, Wallet Members!"
-    admin_user = "ron_test"
-    admin_password = "Roniparon32"
-    user_matrix_id = '@ron_test:matrix.org'
+  
     destination_user_matrix_id = '@ronabramovich:matrix.org'
-    send_private_message_to_user(destination_user_matrix_id, "This is a privatenessage")
-    create_user_backup_room(admin_user, admin_password)
-    get_room_history(room_id, admin_user, admin_password)
-    send_message_to_wallet_room(room_id, message, admin_user, admin_password)
+    MatrixService.instance.send_private_message_to_user(destination_user_matrix_id, "This is a privatenessage")
+    MatrixService.instance.create_user_backup_room()
+    MatrixService.instance.get_room_history(room_id, )
+    MatrixService.instance.send_message_to_wallet_room(room_id, message)
