@@ -8,6 +8,11 @@ Data:
     - threshold
     - home service url
     -  UsersList
+
+- Private Rooms:
+    - ID
+    - Participant ID
+
 - Transaction:
     - ID
     - details
