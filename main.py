@@ -21,7 +21,6 @@ async def read_root():
 
 # Include API routes
 app.include_router(transactions.router, prefix="/transactions")
-app.include_router(messages.router, prefix="/messages")
 app.include_router(wallets.router, prefix="/wallets")
 
 @app.on_event("startup")
