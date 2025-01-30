@@ -48,9 +48,7 @@ class MatrixService:
 
     def create_room(self, room_name: str):
         new_room = self.client.create_room(alias=room_name)
-        # TODO : implement saving the new room in the local db.
-        #        make all rooms creation use that method.
-        #        This is mainly required in case of new wallet, consider other cases
+        return new_room
 
     def send_message_to_wallet_room(self, room_id: str, message: str) -> bool:
         """Send a message to the Matrix room for a wallet."""
