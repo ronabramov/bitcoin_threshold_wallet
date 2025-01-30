@@ -9,7 +9,7 @@ import time
 
 HOMESERVER_URL = "https://matrix.org"
 
-# should be in a config file
+# should be in a config file - in  a local db or run time instance
 matrix_user_id = "ron_test"
 matrix_user_password = "Roniparon32"
 
@@ -50,6 +50,16 @@ class MatrixService:
         new_room = self.client.create_room(alias=room_name)
         return new_room
 
+    def add_users_to_room(self, room: Room, users: List[str]):
+        print(f"adding users to room {room.room_id}")
+        for user in users:
+            # add try catch
+            try:
+                print(f"Inviting user {user} to room")
+                room.invite_user(user)
+            except Exception as e:
+                print(f"Error inviting user {user} to room: {e}")
+        
     def send_message_to_wallet_room(self, room_id: str, message: str) -> bool:
         """Send a message to the Matrix room for a wallet."""
         try:
@@ -164,3 +174,6 @@ if __name__ == "__main__":
     MatrixService.instance.create_user_backup_room()
     MatrixService.instance.get_room_history(room_id)
     MatrixService.instance.send_message_to_wallet_room(room_id, message)
+    room = MatrixService.instance.create_room("test_room_new")
+    MatrixService.instance.add_users_to_room(room, [destination_user_matrix_id])
+    
