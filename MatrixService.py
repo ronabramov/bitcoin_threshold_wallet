@@ -50,7 +50,7 @@ class MatrixService:
         new_room = self.client.create_room(alias=room_name)
         return new_room
 
-    def add_users_to_room(self, room: Room, users: List[str]):
+    def invite_users_to_room(self, room: Room, users: List[str]):
         print(f"adding users to room {room.room_id}")
         for user in users:
             # add try catch
@@ -161,6 +161,14 @@ class MatrixService:
         target_room: Room = self.__get_private_room_with_user(target_user_matrix_id)
         target_room.send_text(message)
         print(f"Successfuly sent private message in room {target_room.room_id}")
+    
+    def fetch_pending_invited_rooms(self):
+        rooms = self.client.invited_rooms
+        pending_rooms for room in rooms.values():
+            if room.invite_state == "invite":
+                print(f"Room {room.room_id} is pending invitation")
+                return room
+        return None
 
 
 # Example usage
@@ -175,5 +183,7 @@ if __name__ == "__main__":
     MatrixService.instance.get_room_history(room_id)
     MatrixService.instance.send_message_to_wallet_room(room_id, message)
     room = MatrixService.instance.create_room("test_room_new")
-    MatrixService.instance.add_users_to_room(room, [destination_user_matrix_id])
+    MatrixService.instance.invite_users_to_room(room, [destination_user_matrix_id])
     
+    
+    # TODO create room with invite_only=true - only invited users can join
