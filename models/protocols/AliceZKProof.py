@@ -2,15 +2,8 @@ from phe import paillier
 import random
 import gmpy2
 from AliceZKProofModules import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
+from common_utils import pick_element_from_Multiplicative_group
 
-def pick_element_from_Multiplicative_group(N):
-    if N <= 1:
-        raise ValueError("N must be greater than 1.")
-    
-    while True:
-        a = random.randint(1, N - 1)
-        if gmpy2.gcd(a, N) == 1:
-            return a
 
 def calculate_c(paillier_gamma, a, paillier_N, r):
     return (gmpy2.powmod(paillier_gamma, a, paillier_N**2) * gmpy2.powmod(r, paillier_N, paillier_N**2)) % (paillier_N**2)

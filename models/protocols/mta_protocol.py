@@ -4,7 +4,7 @@ import AliceZKProof
 from AliceZKProofModules import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
 
 q = 13
-N = 99 #Modulus
+N = q ** 8  #Modulus
 m = 11
 h1 = 13
 h2 = 23
