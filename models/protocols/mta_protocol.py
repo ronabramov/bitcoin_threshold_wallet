@@ -99,12 +99,12 @@ class MTAProtocolWithZKP:
             raise ValueError("Bob failed ZK proof!")
 
         decrypted_value = self.decrypt_value(enc_result)
-        alpha = decrypted_value % self.q
+        alpha = decrypted_value % self.Bob_Alg_verifier_Settings.Modulus_N
         return alpha  # Alice holds α only
 
     def bob_finalize(self, beta_prime):
         """Bob computes β = his additive share of ab """
-        beta = (-beta_prime) % self.q  # Mod q assumption
+        beta = (-beta_prime) % self.Bob_Alg_verifier_Settings.Modulus_N  # Mod q assumption
         return beta  # Bob holds β only
 
 
@@ -136,5 +136,5 @@ alpha = mta.alice_finalize(bob_proof_for_alice_challenge, bob_commitment, enc_re
 beta = mta.bob_finalize(beta_prime)
 
 # Verify correctness
-assert (alpha + beta) % 10**6 == (a * b) % 10**6
+assert (alpha + beta) % N == (a * b) % N
 print(f"Alice's share: {alpha}, Bob's share: {beta}")
