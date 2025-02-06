@@ -52,8 +52,8 @@ class MTAProtocolWithZKP:
         return enc_a, self.Alice_Alg_public_key, commitment_of_a
     
 
-    def bob_challenging_a_commitment(self, public_key, commitment_of_a):
-        return AliceZKProof.verifier_send_challenge(self.Alice_Alg_verifier_modulus_N)
+    def bob_challenging_a_commitment(self):
+        return AliceZKProof.verifier_send_challenge(self.q)
     
 
     def alice_sends_proof_answering_challenge(self, commitment_of_a : AliceZKProof_Commitment, a, verifier_challenge) -> AliceZKProof_Proof_For_Challenge:
@@ -82,13 +82,13 @@ class MTAProtocolWithZKP:
         return enc_result, beta_prime, b_and_beta_prime_commitment  # Send commitment to Alice
     
 
-    def alice_challenging_bob_commitment(self, public_key):
-        return BobZKProofMTA.verifier_send_challenge(self.Bob_Alg_verifier_Settings.Modulus_N)
+    def alice_challenging_bob_commitment(self):
+        return BobZKProofMTA.verifier_send_challenge(self.q)
     
     def bob_provide_proof_for_alice_challenge(self, commitment_of_b_and_beta_prime : Bob_ZKProof_RegMta_ProverCommitment,
-                                                settings : Bob_ZKProof_RegMta_Settings, b , beta_prime, challenge):
+                                                settings : Bob_ZKProof_RegMta_Prover_Settings, challenge):
         """Given Alice's challenge, Bob provides a proof"""
-        return BobZKProofMTA.prover_answers_challenge(commitment_of_b_and_beta_prime, b, beta_prime, settings.r, challenge, settings.paillier_public_key.n)
+        return BobZKProofMTA.prover_answers_challenge(commitment_of_b_and_beta_prime, challenge, settings)
 
     def alice_finalize(self, proof_for_challenge : Bob_ZKProof_RegMta_Proof_For_Challenge, commitment : Bob_ZKProof_RegMta_ProverCommitment,
                         enc_result, settings : Bob_ZKProof_RegMta_Settings, challenge):
@@ -110,15 +110,15 @@ class MTAProtocolWithZKP:
 
 
 q = 13
-N = q ** 8  #Modulus
-m = 11
+N = 99  #Modulus
+
 h1 = 13
 h2 = 23
 # Alice's secret
-a = 17
+a = 11
 
 # Bob's secret
-b = 73
+b = 5
 
 # Example run
 mta = MTAProtocolWithZKP(q, N, h1, h2, N, h1, h2, a, b)  #For example both Alice and Bob having the same Paillier Keys and
@@ -126,12 +126,13 @@ mta = MTAProtocolWithZKP(q, N, h1, h2, N, h1, h2, a, b)  #For example both Alice
 
 # Protocol execution
 enc_a, pub_key, commitment_of_a = mta.alice_encrypting_a_and_sending_commitment(a)
-bob_challenges_alice = mta.bob_challenging_a_commitment(pub_key, commitment_of_a)
+bob_challenges_alice = mta.bob_challenging_a_commitment()
 proof_for_challenge = mta.alice_sends_proof_answering_challenge(commitment_of_a, a, bob_challenges_alice)
 enc_result, beta_prime, bob_commitment = mta.bob_verify_a_commiting_encrypting_b(enc_a, pub_key, bob_challenges_alice,proof_for_challenge,
                                                                                  commitment_of_a, mta.bob_alg_prover_settings)
-alice_challenges_bob = mta.alice_challenging_bob_commitment(mta.Bob_Alg_verifier_Settings.paillier_public_key)
-alpha = mta.alice_finalize(enc_result, bob_commitment, pub_key, b, beta_prime)
+alice_challenges_bob = mta.alice_challenging_bob_commitment()
+bob_proof_for_alice_challenge = mta.bob_provide_proof_for_alice_challenge(bob_commitment,mta.bob_alg_prover_settings,alice_challenges_bob)
+alpha = mta.alice_finalize(bob_proof_for_alice_challenge, bob_commitment, enc_result, mta.Bob_Alg_verifier_Settings, alice_challenges_bob)
 beta = mta.bob_finalize(beta_prime)
 
 # Verify correctness

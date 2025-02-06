@@ -58,8 +58,8 @@ def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings ) 
     commitment = Bob_ZKProof_RegMta_ProverCommitment(alpha, rho, rho_prime, sigma, beta, little_gamma, tau, z, z_prime, t, v, w)
     return commitment
 
-def verifier_send_challenge(Modulus_N):
-    e = random.randint(1, Modulus_N - 1)
+def verifier_send_challenge(q):
+    e = random.randint(1, q - 1)
     return e
 
 def prover_answers_challenge(prover_commitment : Bob_ZKProof_RegMta_ProverCommitment, e, settings : Bob_ZKProof_RegMta_Prover_Settings) -> Bob_ZKProof_RegMta_Proof_For_Challenge:

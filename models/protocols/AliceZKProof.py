@@ -31,10 +31,10 @@ def prover_generates_commitment(q, paillier_N, paillier_Gamma, Modulus_N, a, h1,
     """
     q_third = q ** 3
     q_third_Modulus_N = q_third * Modulus_N
-    alpha = random.randint(0,q_third-1)
+    alpha = random.randint(1,q_third-1)
     beta = pick_element_from_Multiplicative_group(paillier_N)
     little_gamma = random.randint(0,q_third_Modulus_N-1)
-    rho = random.randint(0,q * Modulus_N - 1)
+    rho = random.randint(1,q * Modulus_N - 1)
     z = (gmpy2.powmod(h1, a, Modulus_N) * gmpy2.powmod(h2, rho, Modulus_N)) % Modulus_N
     u = (gmpy2.powmod(paillier_Gamma, alpha, paillier_N**2) * gmpy2.powmod(beta, paillier_N, paillier_N**2)) % (paillier_N**2)
     w = (gmpy2.powmod(h1, alpha, Modulus_N) * gmpy2.powmod(h2, little_gamma, Modulus_N)) % Modulus_N
@@ -42,8 +42,8 @@ def prover_generates_commitment(q, paillier_N, paillier_Gamma, Modulus_N, a, h1,
     commitment = AliceZKProof_Commitment(alpha, beta, little_gamma, rho, z, u, w)
     return commitment
 
-def verifier_send_challenge(Modulus_N):
-    e = random.randint(1, Modulus_N - 1)
+def verifier_send_challenge(q):
+    e = random.randint(1, q - 1)
     return e
 
 def prover_answers_challenge(alpha, beta, little_gamma, rho, r, e, a, paillier_N) -> AliceZKProof_Proof_For_Challenge:
