@@ -2,7 +2,7 @@ from phe import paillier, EncryptedNumber
 import random
 import AliceZKProof
 from AliceZKProofModules import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
-from BobZKProofMtAModules import Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Settings
+from BobZKProofMtAModules import Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
 import BobZKProofMTA 
 
 
@@ -25,11 +25,14 @@ class MTAProtocolWithZKP:
         Bob_Alg_verifier_Modulus_N = Bob_verifier_Modulus_N
         Bob_Alg_h1 = Bob_h1
         Bob_Alg_h2 = Bob_h2
+        Bob_Alg_Beta_Prime = random.randint(1, self.q ** 5) # veta_prime in Z_q^5
         Bob_Alg_Public_key = paillier.generate_paillier_keypair()[0] # Should be passed as argument
         Bob_Alg_r = BobZKProofMTA.pick_r(Bob_Alg_Public_key.n)
-        Bob_Alg_c1, Bob_Alg_c2 = BobZKProofMTA.pick_c1_and_c2(Bob_Alg_r, b_value, Bob_Alg_Public_key) # beta prime is needed here. 
-        self.Bob_Alg_Settings = Bob_ZKProof_RegMta_Settings(self.q, public_key=Bob_Alg_Public_key, Modulus_N=Bob_Alg_verifier_Modulus_N,
-                                                             h1 = Bob_Alg_h1, h2=Bob_Alg_h2, r=Bob_Alg_r, c1=Bob_Alg_c1, c2=Bob_Alg_c2)
+        Bob_Alg_c1, Bob_Alg_c2 = BobZKProofMTA.pick_c1_and_c2(r=Bob_Alg_r, x = b_value,y=Bob_Alg_Beta_Prime,public_key= Bob_Alg_Public_key)
+        self.Bob_Alg_verifier_Settings = Bob_ZKProof_RegMta_Settings(self.q, public_key=Bob_Alg_Public_key, Modulus_N=Bob_Alg_verifier_Modulus_N,
+                                                             h1 = Bob_Alg_h1, h2=Bob_Alg_h2, c1=Bob_Alg_c1, c2=Bob_Alg_c2)
+        self.bob_alg_prover_settings = Bob_ZKProof_RegMta_Prover_Settings(self.q, Bob_Alg_Public_key, Modulus_N=Bob_Alg_verifier_Modulus_N, h1=Bob_Alg_h1,
+                                                    h2 = Bob_Alg_h2, r= Bob_Alg_r, c1= Bob_Alg_c1, c2= Bob_Alg_c2, b=b_value, beta_prime=Bob_Alg_Beta_Prime)
 
 
     def encrypt_value(self, value) -> EncryptedNumber:
@@ -44,7 +47,8 @@ class MTAProtocolWithZKP:
         """Alice encrypts a, generates corresponding commitment , and sends both"""
         enc_a = self.encrypt_value(a)
         commitment_of_a : AliceZKProof_Commitment = AliceZKProof.prover_generates_commitment(self.q, self.Alice_Alg_prover_paillier_N, 
-                                                                                             self.Alice_Alg_prover_paillier_Gamma, self.Alice_Alg_verifier_modulus_N, a)
+                                                                                             self.Alice_Alg_prover_paillier_Gamma, self.Alice_Alg_verifier_modulus_N,
+                                                                                               a, self.Alice_Alg_h1, self.Alice_Alg_h2)
         return enc_a, self.Alice_Alg_public_key, commitment_of_a
     
 
@@ -58,7 +62,7 @@ class MTAProtocolWithZKP:
 
 
     def bob_verify_a_commiting_encrypting_b(self, enc_a : EncryptedNumber, public_key, challenge, proof_of_a : AliceZKProof_Proof_For_Challenge,
-                                               commitment_of_a : AliceZKProof_Commitment, b):
+                                               commitment_of_a : AliceZKProof_Commitment, prover_settings : Bob_ZKProof_RegMta_Prover_Settings):
         
         """Bob verifies Alice's proof, then computes E(ab + beta') and proves correctness"""
         verified_a_value = AliceZKProof.verifier_verify_result(commitment_of_a.z, commitment_of_a.u, commitment_of_a.w, proof_of_a.s, proof_of_a.s1, 
@@ -68,17 +72,18 @@ class MTAProtocolWithZKP:
         if not verified_a_value:
             raise ValueError("Alice failed ZK proof!")
 
-        beta_prime = random.randint(1, self.q ** 5)  # β' chosen u.a.r from Z_q^5 
+        b = prover_settings.b
+        beta_prime = prover_settings.beta_prime
         enc_beta_prime = public_key.encrypt(beta_prime)
 
         # Homomorphic computation
         enc_result = enc_a * b + enc_beta_prime  # E(ab + β')
-        b_and_beta_prime_commitment = BobZKProofMTA.prover_generates_commitment(settings=self.Bob_Alg_Settings, x=b, y=beta_prime)
+        b_and_beta_prime_commitment = BobZKProofMTA.prover_generates_commitment(settings=prover_settings)
         return enc_result, beta_prime, b_and_beta_prime_commitment  # Send commitment to Alice
     
 
-    def alice_challenging_a_commitment(self, public_key, commitment_of_b_and_beta_prime):
-        return BobZKProofMTA.verifier_send_challenge(self.Bob_Alg_Settings.Modulus_N)
+    def alice_challenging_bob_commitment(self, public_key):
+        return BobZKProofMTA.verifier_send_challenge(self.Bob_Alg_verifier_Settings.Modulus_N)
     
     def bob_provide_proof_for_alice_challenge(self, commitment_of_b_and_beta_prime : Bob_ZKProof_RegMta_ProverCommitment,
                                                 settings : Bob_ZKProof_RegMta_Settings, b , beta_prime, challenge):
@@ -88,9 +93,7 @@ class MTAProtocolWithZKP:
     def alice_finalize(self, proof_for_challenge : Bob_ZKProof_RegMta_Proof_For_Challenge, commitment : Bob_ZKProof_RegMta_ProverCommitment,
                         enc_result, settings : Bob_ZKProof_RegMta_Settings, challenge):
         """Alice verifies Bob's proof, decrypts and computes her additive share of ab"""
-        alice_approves_bob_proof_result = BobZKProofMTA.verifier_verify_result(commitment, proof_for_challenge, challenge, settings.q,
-                                                                             settings.h1, settings.h2, settings.Modulus_N, settings.paillier_public_key.n,
-                                                                               settings.paillier_public_key.g, settings.c1, settings.c2)
+        alice_approves_bob_proof_result = BobZKProofMTA.verifier_verify_result(commitment, proof_for_challenge, challenge, settings)
         
         if not alice_approves_bob_proof_result:
             raise ValueError("Bob failed ZK proof!")
@@ -112,7 +115,7 @@ m = 11
 h1 = 13
 h2 = 23
 # Alice's secret
-a = 11
+a = 17
 
 # Bob's secret
 b = 73
@@ -125,8 +128,9 @@ mta = MTAProtocolWithZKP(q, N, h1, h2, N, h1, h2, a, b)  #For example both Alice
 enc_a, pub_key, commitment_of_a = mta.alice_encrypting_a_and_sending_commitment(a)
 bob_challenges_alice = mta.bob_challenging_a_commitment(pub_key, commitment_of_a)
 proof_for_challenge = mta.alice_sends_proof_answering_challenge(commitment_of_a, a, bob_challenges_alice)
-enc_result, beta_prime, bob_commitment = mta.bob_verify_a_commiting_encrypting_b(enc_a, pub_key, bob_challenges_alice,proof_for_challenge,commitment_of_a, b)
-alice_challenges_bob = mta.alice_challenging_a_commitment(mta.Bob_Alg_Settings.paillier_public_key, bob_commitment)
+enc_result, beta_prime, bob_commitment = mta.bob_verify_a_commiting_encrypting_b(enc_a, pub_key, bob_challenges_alice,proof_for_challenge,
+                                                                                 commitment_of_a, mta.bob_alg_prover_settings)
+alice_challenges_bob = mta.alice_challenging_bob_commitment(mta.Bob_Alg_verifier_Settings.paillier_public_key)
 alpha = mta.alice_finalize(enc_result, bob_commitment, pub_key, b, beta_prime)
 beta = mta.bob_finalize(beta_prime)
 

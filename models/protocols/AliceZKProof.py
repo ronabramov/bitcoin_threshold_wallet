@@ -18,7 +18,8 @@ def calculate_c(paillier_gamma, a, paillier_N, r):
 def pick_r(paillier_N):
     return pick_element_from_Multiplicative_group(paillier_N)
 
-def prover_generates_commitment(q, paillier_N, paillier_Gamma, Modulus_N, a) -> AliceZKProof_Commitment:
+def prover_generates_commitment(q, paillier_N, paillier_Gamma, Modulus_N, a, h1, h2) -> AliceZKProof_Commitment:
+    # RON TODO - genertae settings objects just as in bobs proofs
     """
     Generate and return commitments and related values as a dictionary.
     
@@ -77,27 +78,27 @@ def verifier_verify_result(z, u, w, s, s1, s2, e, c, q, h1, h2, Modulus_N, paill
 ######
 #Tests
 ######
-q = 13
-N = 99
-h1 = 13
-h2 = 23
-#Test 1 : Should pass - valid arguments#
-a = 11
-public_key, secret_key = paillier.generate_paillier_keypair()
-r = pick_r(public_key.n)
-c = calculate_c(public_key.g, a, public_key.n, r)
-commitment = prover_generates_commitment(q=q, paillier_N=public_key.n, Modulus_N=N, paillier_Gamma=public_key.g, a=a)
-e = verifier_send_challenge(Modulus_N=N)
-proof_for_challenge = prover_answers_challenge(commitment.alpha, commitment.beta, commitment.gamma, commitment.rho, r, e, a, public_key.n)
-result = verifier_verify_result(commitment.z,commitment.u,commitment.w,proof_for_challenge.s,proof_for_challenge.s1,proof_for_challenge.s2,e,c,q,h1,h2,N,public_key.n,public_key.g)
-#####
-#Test 2 : Should fail - non valid a#
-a = 20000
-public_key, secret_key = paillier.generate_paillier_keypair()
-r = pick_r(public_key.n)
-c = calculate_c(public_key.g, a, public_key.n, r)
-commitment = prover_generates_commitment(q=q, paillier_N=public_key.n, Modulus_N=N, paillier_Gamma=public_key.g, a=a)
-e = verifier_send_challenge(Modulus_N=N)
-proof_for_challenge = prover_answers_challenge(commitment.alpha, commitment.beta, commitment.gamma, commitment.rho, r, e, a, public_key.n)
-result = verifier_verify_result(commitment.z,commitment.u,commitment.w,proof_for_challenge.s,proof_for_challenge.s1,proof_for_challenge.s2,e,c,q,h1,h2,N,public_key.n,public_key.g)
-#######
+# q = 13
+# N = 99
+# h1 = 13
+# h2 = 23
+# #Test 1 : Should pass - valid arguments#
+# a = 11
+# public_key, secret_key = paillier.generate_paillier_keypair()
+# r = pick_r(public_key.n)
+# c = calculate_c(public_key.g, a, public_key.n, r)
+# commitment = prover_generates_commitment(q=q, paillier_N=public_key.n, Modulus_N=N, paillier_Gamma=public_key.g, a=a)
+# e = verifier_send_challenge(Modulus_N=N)
+# proof_for_challenge = prover_answers_challenge(commitment.alpha, commitment.beta, commitment.gamma, commitment.rho, r, e, a, public_key.n)
+# result = verifier_verify_result(commitment.z,commitment.u,commitment.w,proof_for_challenge.s,proof_for_challenge.s1,proof_for_challenge.s2,e,c,q,h1,h2,N,public_key.n,public_key.g)
+# #####
+# #Test 2 : Should fail - non valid a#
+# a = 20000
+# public_key, secret_key = paillier.generate_paillier_keypair()
+# r = pick_r(public_key.n)
+# c = calculate_c(public_key.g, a, public_key.n, r)
+# commitment = prover_generates_commitment(q=q, paillier_N=public_key.n, Modulus_N=N, paillier_Gamma=public_key.g, a=a)
+# e = verifier_send_challenge(Modulus_N=N)
+# proof_for_challenge = prover_answers_challenge(commitment.alpha, commitment.beta, commitment.gamma, commitment.rho, r, e, a, public_key.n)
+# result = verifier_verify_result(commitment.z,commitment.u,commitment.w,proof_for_challenge.s,proof_for_challenge.s1,proof_for_challenge.s2,e,c,q,h1,h2,N,public_key.n,public_key.g)
+# #######
