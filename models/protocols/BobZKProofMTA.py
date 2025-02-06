@@ -1,10 +1,7 @@
 from phe import paillier
 import random
 import gmpy2
-from BobZKProofMtAModules import Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Proof_For_Challenge
-
-
-
+from BobZKProofMtAModules import Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
 
 """
     Zero Knowledge Proof used by Bob in the case he wants to prove values x,y are small
@@ -23,7 +20,7 @@ def pick_element_from_Multiplicative_group(N):
         if gmpy2.gcd(a, N) == 1:
             return a
 
-def prover_generates_commitment(q, paillier_N, paillier_Gamma, Modulus_N, x, y ) -> Bob_ZKProof_RegMta_ProverCommitment:
+def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings ) -> Bob_ZKProof_RegMta_ProverCommitment:
     """
     :param q: Security parameter or order of the group
     :param paillier_N: Paillier modulus
@@ -31,6 +28,13 @@ def prover_generates_commitment(q, paillier_N, paillier_Gamma, Modulus_N, x, y )
     :param Modulus_N: Another modulus used for non-Paillier operations
     :return: Bob ZK Proof Commitment composed of alpha, beta, little_gamma, rho, rho',tau,sigma,z,z',t,v, w
     """
+    q = settings.q
+    Modulus_N = settings.Modulus_N
+    paillier_N = settings.paillier_public_key.n
+    h1 = settings.h1
+    h2 = settings.h2
+    c1 = settings.c1
+
     q_third = q ** 3
     q_seventh = q ** 7
     q_third_Modulus_N = q_third * Modulus_N
@@ -44,10 +48,11 @@ def prover_generates_commitment(q, paillier_N, paillier_Gamma, Modulus_N, x, y )
     little_gamma = random.randint(0,q_seventh - 1)
     tau = random.randint(0,q_third_Modulus_N-1)
 
-    z = (gmpy2.powmod(h1, x, Modulus_N) * gmpy2.powmod(h2, rho, Modulus_N)) % Modulus_N
+    z = (gmpy2.powmod(h1, settings.b, Modulus_N) * gmpy2.powmod(h2, rho, Modulus_N)) % Modulus_N
     z_prime = (gmpy2.powmod(h1, alpha, Modulus_N) * gmpy2.powmod(h2, rho_prime, Modulus_N)) % Modulus_N
-    t = (gmpy2.powmod(h1, y, Modulus_N) * gmpy2.powmod(h2, sigma, Modulus_N)) % Modulus_N
-    v = (gmpy2.powmod(c1, alpha, paiilier_N_squared)) * (gmpy2.powmod(paillier_Gamma, little_gamma, paiilier_N_squared)) * (gmpy2.powmod(beta, paillier_N, paiilier_N_squared)) % paiilier_N_squared
+    t = (gmpy2.powmod(h1, settings.beta_prime, Modulus_N) * gmpy2.powmod(h2, sigma, Modulus_N)) % Modulus_N
+    v = (gmpy2.powmod(c1, alpha, paiilier_N_squared) * gmpy2.powmod(settings.paillier_public_key.g, little_gamma, paiilier_N_squared) 
+         * gmpy2.powmod(beta, paillier_N, paiilier_N_squared)) % paiilier_N_squared
     w = (gmpy2.powmod(h1, little_gamma, Modulus_N) * gmpy2.powmod(h2, tau, Modulus_N)) % Modulus_N
 
     commitment = Bob_ZKProof_RegMta_ProverCommitment(alpha, rho, rho_prime, sigma, beta, little_gamma, tau, z, z_prime, t, v, w)
@@ -57,8 +62,14 @@ def verifier_send_challenge(Modulus_N):
     e = random.randint(1, Modulus_N - 1)
     return e
 
-def prover_answers_challenge(prover_commitment : Bob_ZKProof_RegMta_ProverCommitment, x , y, r, e, paillier_N) -> Bob_ZKProof_RegMta_Proof_For_Challenge:
-    s = (gmpy2.powmod(r, e, paillier_N) * prover_commitment.beta) % paillier_N
+def prover_answers_challenge(prover_commitment : Bob_ZKProof_RegMta_ProverCommitment, e, settings : Bob_ZKProof_RegMta_Prover_Settings) -> Bob_ZKProof_RegMta_Proof_For_Challenge:
+    
+    #Align with ZK proof notation
+    x = settings.b
+    y= settings.beta_prime
+    paillier_N = settings.paillier_public_key.n
+
+    s = (gmpy2.powmod(settings.r, e, paillier_N) * prover_commitment.beta) % paillier_N
     s1 = e * x + prover_commitment.alpha
     s2 = e * prover_commitment.rho + prover_commitment.rho_prime
     t1 = e * y + prover_commitment.gamma
@@ -67,7 +78,16 @@ def prover_answers_challenge(prover_commitment : Bob_ZKProof_RegMta_ProverCommit
     proof_for_challenge = Bob_ZKProof_RegMta_Proof_For_Challenge(s=s, s1=s1, s2=s2, t1=t1, t2=t2)
     return proof_for_challenge
 
-def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitment, proof_for_challenge : Bob_ZKProof_RegMta_Proof_For_Challenge, e, q, h1, h2, Modulus_N, paillier_N, paillier_g, c1, c2):
+def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitment, proof_for_challenge : Bob_ZKProof_RegMta_Proof_For_Challenge,
+                            e, settings : Bob_ZKProof_RegMta_Settings):
+    
+    q = settings.q
+    paillier_N = settings.paillier_public_key.n
+    Modulus_N = settings.Modulus_N
+    h1 = settings.h1
+    h2 = settings.h2
+    paillier_g = settings.paillier_public_key.g
+
     q_third = q ** 3
     q_seventh = q** 7
     paillier_N_squared = paillier_N ** 2
@@ -85,8 +105,11 @@ def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitme
     valid_t_power_e_times_w = calculated_t_power_e_times_w == value_from_commitment
 
     # Calculation to verify c2^e * v 
-    calculated_c2_power_e_times_v = (gmpy2.powmod(c1, proof_for_challenge.s1, paillier_N_squared) * gmpy2.powmod(proof_for_challenge.s, paillier_N, paillier_N_squared) * gmpy2.powmod(paillier_g, proof_for_challenge.t1, paillier_N_squared)) % paillier_N_squared
-    value_from_commitment = (gmpy2.powmod(c2, e, paillier_N_squared) * prover_commitment.v) % paillier_N_squared
+    calculated_c2_power_e_times_v = (gmpy2.powmod(settings.c1, proof_for_challenge.s1, paillier_N_squared) 
+                                     * gmpy2.powmod(proof_for_challenge.s, paillier_N, paillier_N_squared) 
+                                     * gmpy2.powmod(paillier_g, proof_for_challenge.t1, paillier_N_squared)) % paillier_N_squared
+    
+    value_from_commitment = (gmpy2.powmod(settings.c2, e, paillier_N_squared) * prover_commitment.v) % paillier_N_squared
     valid_t_power_e_times_v = calculated_c2_power_e_times_v == value_from_commitment
 
     return valid_s1 and valid_t1 and valid_z_power_e_times_z_prime and valid_t_power_e_times_w and valid_t_power_e_times_v
@@ -94,21 +117,28 @@ def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitme
 def pick_r(paillier_N):  #JUST FOR TESTS
     return pick_element_from_Multiplicative_group(paillier_N)
 
+def pick_c1_and_c2(r, x, y, public_key : paillier.PaillierPublicKey):
+    c1 = random.randint(0 , public_key.nsquare)
+    c2 = ( gmpy2.powmod(c1, x, public_key.nsquare) * gmpy2.powmod(public_key.g, y, public_key.nsquare) * 
+          gmpy2.powmod(r, public_key.n, public_key.nsquare)) % public_key.nsquare    
+    
+    return c1,c2
+
+
+
+
 # RON TODO : We should move the selection of h1,h2, public keys etc to the appropriate places
 #            They should be passed as arguments.
-
-q = 13
-N = 99
-h1 = 13
-h2 = 23
-#Test 1 : Should pass - valid arguments#
 x = 11
 y = 13
 public_key, secret_key = paillier.generate_paillier_keypair()
 r = pick_r(public_key.n)
 c1 = random.randint(0 , public_key.nsquare)
 c2 = (gmpy2.powmod(c1, x, public_key.nsquare) * gmpy2.powmod(public_key.g, y, public_key.nsquare) * gmpy2.powmod(r, public_key.n, public_key.nsquare)) % public_key.nsquare
-prover_commitment = prover_generates_commitment(q, public_key.n , public_key.g, N, x, y)
-challenge = verifier_send_challenge(N)
-prover_answer = prover_answers_challenge(prover_commitment, x, y, r, challenge, public_key.n)
-result = verifier_verify_result(prover_commitment, prover_answer, challenge, q, h1, h2, N, public_key.n, public_key.g, c1, c2)
+verifier_settings_for_proof = Bob_ZKProof_RegMta_Settings(q = 13, public_key=public_key, Modulus_N=99, h1 = 13, h2=23, c1=c1, c2=c2 )
+prover_settings_for_proof = Bob_ZKProof_RegMta_Prover_Settings(q =13, public_key=public_key, Modulus_N=99, h1 = 13, h2 = 23, r=r, c1=c1, c2=c2, b=x, beta_prime=y)
+#Test 1 : Should pass - valid arguments#
+prover_commitment = prover_generates_commitment(prover_settings_for_proof)
+challenge = verifier_send_challenge(verifier_settings_for_proof.Modulus_N)
+proof_for_challenge = prover_answers_challenge(prover_commitment, challenge, prover_settings_for_proof)
+result = verifier_verify_result(prover_commitment, proof_for_challenge, challenge, verifier_settings_for_proof)
