@@ -58,3 +58,10 @@ Actions:
         - update transaction approvers
         - if transaction approvers > threshold:
             - init protocol
+
+
+
+
+Overview of usage in eliptic curves and modulus of the algorithm:
+One of the inputs for the algorithm should be the curve name (we might allow use some dictionary of curves).
+Every curve has it's corresponding modulus - 

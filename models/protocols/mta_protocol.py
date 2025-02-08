@@ -5,6 +5,13 @@ from AliceZKProofModules import AliceZKProof_Commitment, AliceZKProof_Proof_For_
 from BobZKProofMtAModules import Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
 import BobZKProofMTA 
 
+"""
+    Mta Protocol : Alice holds value a, Bob holds value b.
+    At the end of the protocol Alice will hold alpha and Bob will hold beta
+    s.t a * b = alpha + beta.
+    Neither one of the participants will learn anything about the other's data.
+    Using ZK proofs both Alice and Bob proving their values are in the valid ranges. 
+"""
 
 
 class MTAProtocolWithZKP:
