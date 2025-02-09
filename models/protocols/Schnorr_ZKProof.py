@@ -1,6 +1,6 @@
 import os
 import hashlib
-from ecdsa import SECP256k1, NIST256p, curves
+from ecdsa import SECP256k1,curves
 
 class Schnorr_ZK_Proof:
     """
@@ -46,7 +46,7 @@ class Schnorr_ZK_Proof:
         return R_prime.x() == R_x
 
 # Example usage
-schnor_zk_protocol = Schnorr_ZK_Proof(SECP256k1)
+schnor_zk_protocol = Schnorr_ZK_Proof(SECP256k1) # example group from ECDSA
 private_key = 123456789  # Some private key as an integer
 public_key = private_key * schnor_zk_protocol.G
 

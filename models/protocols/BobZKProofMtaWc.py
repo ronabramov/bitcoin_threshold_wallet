@@ -2,10 +2,8 @@ from phe import paillier
 import random
 import gmpy2
 from BobZKProofMtAModules import Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
-from sympy.ntheory import isprime
-from sympy.abc import x, y
-from sympy import EllipticCurve, finite_field
 import random
+from ecdsa import NIST256p, curves
 
 """
     Zero Knowledge Proof used by Bob in the case he wants to prove values x,y are small
@@ -13,7 +11,7 @@ import random
     The prover would convinve the verifier x in [-q^3,q^3] and y in [-q^7,q^7].
     The input for the proof is Paillier Public key (N,Gamma) - Prover, two values c1 and c2 in Z_N^2,
     generator g for the Eliptic curve of size q, public key X = g^x 
-    specifically, one of the arguments will be the eliptic curve of size q.
+    specifically, one of the arguments will be the eliptic curve  - and q will be it's order, g a generator.
     The prover knows x in Z_q ,y in Z_q^5  and r in Z_N* such that c2 = c1^x * Gamma^y * r^N modN^2.
 """
 def pick_element_from_Multiplicative_group(N):
@@ -59,8 +57,9 @@ def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings ) 
     v = (gmpy2.powmod(c1, alpha, paiilier_N_squared) * gmpy2.powmod(settings.paillier_public_key.g, little_gamma, paiilier_N_squared) 
          * gmpy2.powmod(beta, paillier_N, paiilier_N_squared)) % paiilier_N_squared
     w = (gmpy2.powmod(h1, little_gamma, Modulus_N) * gmpy2.powmod(h2, tau, Modulus_N)) % Modulus_N
+    u = alpha * settings.g
 
-    commitment = Bob_ZKProof_RegMta_ProverCommitment(alpha, rho, rho_prime, sigma, beta, little_gamma, tau, z, z_prime, t, v, w)
+    commitment = Bob_ZKProof_RegMta_ProverCommitment(alpha, rho, rho_prime, sigma, beta, little_gamma, tau, z, z_prime, t, v, w, u)
     return commitment
 
 def verifier_send_challenge(q):
@@ -117,7 +116,11 @@ def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitme
     value_from_commitment = (gmpy2.powmod(settings.c2, e, paillier_N_squared) * prover_commitment.v) % paillier_N_squared
     valid_t_power_e_times_v = calculated_c2_power_e_times_v == value_from_commitment
 
-    return valid_s1 and valid_t1 and valid_z_power_e_times_z_prime and valid_t_power_e_times_w and valid_t_power_e_times_v
+    # Calculate if g = X^e *u
+    X_power_e_times_u = e * settings.X + prover_commitment.u
+    valid_group_element_equation = X_power_e_times_u == settings.g
+
+    return valid_s1 and valid_t1 and valid_z_power_e_times_z_prime and valid_t_power_e_times_w and valid_t_power_e_times_v and valid_group_element_equation
 
 def pick_r(paillier_N):  #JUST FOR TESTS
     return pick_element_from_Multiplicative_group(paillier_N)
@@ -129,45 +132,24 @@ def pick_c1_and_c2(r, x, y, public_key : paillier.PaillierPublicKey):
     
     return c1,c2
 
-def find_eliptic_curve_with_q_elements(q : int):  # This is just for tests. 
-    p = 11  # Small prime for demonstration
-
-    # Randomly choose curve coefficients
-    while True:
-        a = random.randint(1, p-1)
-        b = random.randint(1, p-1)
-        
-        # Define the curve over F_p
-        curve = EllipticCurve(finite_field.FF(p), [a, b])
-        
-        try:
-            # Compute the number of points
-            num_points = len(curve.points())
-            print(f"Trying a={a}, b={b}, Number of Points: {num_points}")
-            
-            # Check if the number of points equals q
-            if isprime(num_points):
-                print(f"Found a curve with {num_points} points (prime): y^2 = x^3 + {a}x + {b} over GF({p})")
-                break
-        except Exception as e:
-            print(f"Invalid curve with a={a}, b={b}, Error: {str(e)}")
-
-
-
-
 # RON TODO : We should move the selection of h1,h2, public keys etc to the appropriate places
 #            They should be passed as arguments.
-# x = 11
-# y = 13
-# public_key, secret_key = paillier.generate_paillier_keypair()
-# r = pick_r(public_key.n)
-# c1 = random.randint(0 , public_key.nsquare)
-# c2 = (gmpy2.powmod(c1, x, public_key.nsquare) * gmpy2.powmod(public_key.g, y, public_key.nsquare) * gmpy2.powmod(r, public_key.n, public_key.nsquare)) % public_key.nsquare
-# verifier_settings_for_proof = Bob_ZKProof_RegMta_Settings(q = 13, public_key=public_key, Modulus_N=99, h1 = 13, h2=23, c1=c1, c2=c2 )
-# prover_settings_for_proof = Bob_ZKProof_RegMta_Prover_Settings(q =13, public_key=public_key, Modulus_N=99, h1 = 13, h2 = 23, r=r, c1=c1, c2=c2, b=x, beta_prime=y)
-# #Test 1 : Should pass - valid arguments#
-# prover_commitment = prover_generates_commitment(prover_settings_for_proof)
-# challenge = verifier_send_challenge(verifier_settings_for_proof.Modulus_N)
-# proof_for_challenge = prover_answers_challenge(prover_commitment, challenge, prover_settings_for_proof)
-# result = verifier_verify_result(prover_commitment, proof_for_challenge, challenge, verifier_settings_for_proof)
-find_eliptic_curve_with_q_elements(q = 91)
+x = 11
+y = 13
+group = NIST256p
+generator = group.generator
+q = group.order
+X = x* generator
+Modulus_N = q^8 + 1
+public_key, secret_key = paillier.generate_paillier_keypair()
+r = pick_r(public_key.n)
+c1 = random.randint(0 , public_key.nsquare)
+c2 = (gmpy2.powmod(c1, x, public_key.nsquare) * gmpy2.powmod(public_key.g, y, public_key.nsquare) * gmpy2.powmod(r, public_key.n, public_key.nsquare)) % public_key.nsquare
+verifier_settings_for_proof = Bob_ZKProof_RegMta_Settings(public_key=public_key, Modulus_N=99, h1 = 13, h2=23, c1=c1, c2=c2, X=X, curve=group)
+prover_settings_for_proof = Bob_ZKProof_RegMta_Prover_Settings(public_key=public_key, Modulus_N=99, h1 = 13, h2 = 23, r=r,
+                                                                c1=c1, c2=c2, b=x, beta_prime=y, X=X, curve=group)
+#Test 1 : Should pass - valid arguments#
+prover_commitment = prover_generates_commitment(prover_settings_for_proof)
+challenge = verifier_send_challenge(verifier_settings_for_proof.Modulus_N)
+proof_for_challenge = prover_answers_challenge(prover_commitment, challenge, prover_settings_for_proof)
+result = verifier_verify_result(prover_commitment, proof_for_challenge, challenge, verifier_settings_for_proof)
