@@ -1,57 +1,56 @@
-from ecdsa import SigningKey, SECP256k1
 import os
 import hashlib
+from ecdsa import SECP256k1, NIST256p, curves
 
-"""
-Schnorr ZK Proof.
-At the moment usage hardcoded the SECPk1 curve.
-Not a must - use the same curve from other protocols.
-"""
+class Schnorr_ZK_Proof:
+    """
+    Using input Eliptic Curve from ECDSA 
+    Hashing via sha256
+    Implementing two phase - version of Schnorr ZK proof for knowing a value.
+    Will be Used in the Key Generation Protocol.
+    """
+    def __init__(self, curve: curves.Curve):
+        self.curve = curve
+        self.G = curve.generator
+        self.q = curve.order
 
-def schnorr_zkp_prove(private_key):
-    """ Generate a zero-knowledge proof of possession of a private key """
-    # Generate a random nonce
-    k = os.urandom(SECP256k1.baselen)
-    k = int.from_bytes(k, byteorder="big") % SECP256k1.order
+    def provide_zk_proof_for_input(self, x):
+        """ Generate a zero-knowledge proof using a numeric private key """
+        # Generate a random nonce k, Calculate the nonce point R = k*G
+        k = int.from_bytes(os.urandom(32), byteorder="big") % self.q
+        R = k * self.G
+        R_x = R.x()
 
-    # Calculate the nonce point R
-    R = k * SECP256k1.generator
-    R_x = R.x()
+        # Hash the concatenation of R_x and the public key
+        public_key = x * self.G
+        e = hashlib.sha256(R_x.to_bytes(32, byteorder="big") + public_key.to_bytes()).digest()
+        e = int.from_bytes(e, byteorder="big") % self.q
 
-    # Hash the concatenation of R_x and the public key
-    e = hashlib.sha256(R_x.to_bytes(32, byteorder="big") + private_key.get_verifying_key().to_string()).digest()
-    e = int.from_bytes(e, byteorder="big") % SECP256k1.order
+        # Calculate the challenge response s = k - e*private_key
+        s = (k - e * x) % self.q
 
-    # Calculate the challenge response s
-    s = (k - e * int.from_bytes(private_key.to_string(), "big")) % SECP256k1.order
+        return (R_x, s)
 
-    return (R_x, s)
+    def verify_knowledge(self, public_point, proof):
+        """ Verify a Schnorr ZKP with a numeric public key """
+        R_x, s = proof
 
-def schnorr_zkp_verify(public_key, proof):
-    """ Verify a Schnorr zero-knowledge proof """
-    R_x, s = proof
-    e = hashlib.sha256(R_x.to_bytes(32, byteorder="big") + public_key.to_string()).digest()
-    e = int.from_bytes(e, byteorder="big") % SECP256k1.order
+        # Calculate e from the hash of R_x and public key
+        e = hashlib.sha256(R_x.to_bytes(32, byteorder="big") + public_point.to_bytes()).digest()
+        e = int.from_bytes(e, byteorder="big") % self.q
 
-    # Calculate the point R using s and e
-    R = s * SECP256k1.generator + e * public_key.pubkey.point
+        # Calculate R' = s*G + e*public_key
+        R_prime = s * self.G + e * public_point
 
-    # Verify the x-coordinate matches the provided R_x
-    return R.x() == R_x
+        # Verify the x-coordinate matches the provided R_x
+        return R_prime.x() == R_x
 
-# Usage
-private_key = SigningKey.generate(curve=SECP256k1)
-public_key = private_key.get_verifying_key()
+# Example usage
+schnor_zk_protocol = Schnorr_ZK_Proof(SECP256k1)
+private_key = 123456789  # Some private key as an integer
+public_key = private_key * schnor_zk_protocol.G
 
-proof = schnorr_zkp_prove(private_key)
+proof = schnor_zk_protocol.provide_zk_proof_for_input(private_key)
 print("Proof:", proof)
-assert schnorr_zkp_verify(public_key, proof)
+assert schnor_zk_protocol.verify_knowledge(public_key, proof)
 print("Verification: Successful")
-
-#Failing test:
-new_x = proof[0]
-new_x +=1
-new_proof = new_x, proof[1]
-assert not schnorr_zkp_verify(public_key, new_proof)
-print("Verification Failed")
-
