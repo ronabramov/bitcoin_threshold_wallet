@@ -118,7 +118,7 @@ def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitme
 
     # Calculate if g = X^e *u
     X_power_e_times_u = e * settings.X + prover_commitment.u
-    valid_group_element_equation = X_power_e_times_u == settings.g
+    valid_group_element_equation = X_power_e_times_u == proof_for_challenge.s1 * settings.g
 
     return valid_s1 and valid_t1 and valid_z_power_e_times_z_prime and valid_t_power_e_times_w and valid_t_power_e_times_v and valid_group_element_equation
 

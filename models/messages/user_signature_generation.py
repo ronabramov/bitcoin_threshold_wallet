@@ -13,4 +13,15 @@ class user_signature_generation_share:
         self.v0 = v0
         pass
 
-    def generate_global_share_from_users_share(self, all_users_shares : list) -> user_global_share:
+    def generate_global_share_from_users_share(self, index : int, all_users_shares : list) -> user_global_share:
+        """
+        The final signature of the transaction would be the sum of u_i
+        where u_i is the (secret) share of every user.
+        Denoting by p_i(x) the polynomial of user i [e.g u_i = p_i(0)]
+        If we denote P(x): = sum_i pi(x), then P(0) = x - the secret key for generation.
+        Moreover, player j need P(j) as his share, but it's given by summing over p_i(j) 
+        Player j evaluation of  
+        """
+        evaluation = sum(user_share.target_user_evaluation for user_share in all_users_shares )
+        return user_global_share(index, evaluation)
+
