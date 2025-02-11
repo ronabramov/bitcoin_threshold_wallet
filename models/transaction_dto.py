@@ -1,22 +1,27 @@
+from pydantic import BaseModel
 from models.transaction_status import TransactionStatus
+from typing import Optional
 
-class TransactionDTO:
-    def __init__(self, id : int, name : str, details: str, wallet_id : str):
-        self.id = id
-        self.name = name
-        self.details = details
-        self.wallet_id = wallet_id
-        self.approvers_counter = 0
-        self.approvers = None
-        self.stage = TransactionStatus.WAITING
+class TransactionDTO(BaseModel):
+    id: int
+    name: str
+    details: str
+    wallet_id: str
+    approvers_counter: int = 0  # Default value set to 0
+    approvers: Optional[str] = None  # Initially set to None, should store CSV of user_ids
+    stage: TransactionStatus = TransactionStatus.WAITING  # Default enum value
 
-
-    def approve(self, user_id : str):
+    def approve(self, user_id: str):
         if not self.approvers:
             self.approvers = user_id
         else:
-            self.approvers += 'f,{user_id}'
+            self.approvers += f',{user_id}' 
         self.approvers_counter += 1
-    
 
-    
+# Example of usage
+transaction_dto = TransactionDTO(id=1, name="Payment", details="Monthly subscription", wallet_id="abc123")
+print(transaction_dto)
+transaction_dto.approve("user123")
+transaction_dto.approve("user456")
+print(transaction_dto.approvers)  # Output should be "user123,user456"
+print(transaction_dto.approvers_counter)  # Output should be 2

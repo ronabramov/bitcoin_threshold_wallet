@@ -7,7 +7,7 @@ import json
 from typing import List
 import time
 
-HOMESERVER_URL = "https://matrix.org"
+HOMESERVER_URL = "https://matrix.org" # Should be part of the user details. 
 
 # should be in a config file - in  a local db or run time instance
 matrix_user_id = "ron_test"
@@ -157,6 +157,7 @@ class MatrixService:
                 )
                 return room
         return None
+    
     def send_private_message_to_user(self, target_user_matrix_id: str, message: str):
         target_room: Room = self.__get_private_room_with_user(target_user_matrix_id)
         target_room.send_text(message)
@@ -164,10 +165,11 @@ class MatrixService:
     
     def fetch_pending_invited_rooms(self):
         rooms = self.client.invited_rooms
-        pending_rooms for room in rooms.values():
-            if room.invite_state == "invite":
-                print(f"Room {room.room_id} is pending invitation")
-                return room
+        # TODO : Required Fix.
+        # pending_rooms for room in rooms.values():
+        #     if room.invite_state == "invite":
+        #         print(f"Room {room.room_id} is pending invitation")
+        #         return room
         return None
 
 

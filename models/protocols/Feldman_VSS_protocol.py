@@ -9,7 +9,7 @@ Moreover, given shares, enables verification that the shares are valid
 """
 
 class Feldman_VSS_Protocol:
-    def __init__(self, curve : curves.Curve, n : int, t: int):
+    def __init__(self,  n : int, t: int, curve : curves.Curve = NIST256p):
         self.curve = curve
         self.G = curve.generator
         self.n =n
