@@ -4,7 +4,7 @@ from models.message_dto import MessageDTO as MessageWrapper
 from models.transaction_status import TransactionStatus
 from models.transaction_response import TransactionResponse
 import uuid
-from MatrixService import MatrixService
+from Services.MatrixService import MatrixService
 
 
 """

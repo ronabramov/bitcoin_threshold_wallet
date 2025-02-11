@@ -48,7 +48,7 @@ class user_signature_share(BaseModel):
     user_id : str
     user_evaluation : int
     group : curves.Curve
-    paillier_secret_key, paillier_public_key = paillier.generate_paillier_keypair()
+    paillier_secret_key, paillier_public_key = paillier.generate_paillier_keypair()  ## IMPORTANT : Undetsand the relation of Modulus with Paillier ##
     modulus_N : int
 
 class public_user_data(BaseModel):

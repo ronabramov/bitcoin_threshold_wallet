@@ -14,7 +14,7 @@ Methods:
 
 def send_key_share_for_participating_users(Shares : List[user_key_generation_share]) -> bool:
     """
-    Send privat emessage for every participating user with it's share.
+    Send private message for every participating user with it's share.
     """
     users_dont_got_message = [share.target_user_index for share in Shares]
     tries = 0

@@ -1,4 +1,6 @@
 from ecdsa import NIST256p, curves
+from models.models import user_key_generation_share
+from typing import Dict
 import random
 
 """
@@ -9,11 +11,14 @@ Moreover, given shares, enables verification that the shares are valid
 """
 
 class Feldman_VSS_Protocol:
-    def __init__(self,  n : int, t: int, curve : curves.Curve = NIST256p):
+    def __init__(self,  n : int, t: int,  transaction_id : str, index_to_user_matrix_id : Dict, generating_user_Id, curve : curves.Curve = NIST256p, ):
         self.curve = curve
         self.G = curve.generator
         self.n =n
         self.t =t
+        self.user_index_to_matrixId = index_to_user_matrix_id
+        self.transaction_id = transaction_id
+        self.generating_user_id = generating_user_Id
 
     def generate_coefficients(self, secret):
         return [secret] + [random.randint(1, curve.order - 1) for _ in range(t)]
@@ -26,19 +31,26 @@ class Feldman_VSS_Protocol:
     def evaluate_polynomial(self, x, coeffs):
         return sum(coeff * (x ** i) for i, coeff in enumerate(coeffs))
 
-    def generate_shares(self, secret):
+    def generate_shares(self, secret) -> list[user_key_generation_share]:
+
         # Using the notation from the paper, v_i := g^a_i. 
         # In the Feldman VSS, in addition to a share, every player gets {v_i}_i=1 ^t.
         # In addition every player gets v_0 = g^secret = g^a_0 
+        
         coeffs = self.generate_coefficients(secret)
         v_i = self.compute_v_i(coeffs)
         g_secret = v_i[0]
-        shares = [{
-            'index': i,
-            'p(i)': self.evaluate_polynomial(i, coeffs),
-            'v_i': v_i,
-            'g^secret': g_secret
-        } for i in range(1, n+1)]
+        shares = [
+            user_key_generation_share(transaction_id=self.transaction_id, generating_user_id=self.generating_user_id,
+                                       target_user_matrix_id=self.user_index_to_matrixId[i], target_user_index=i,
+                                         target_user_evaluation=self.evaluate_polynomial(i, coeffs), v_0=g_secret, curve=self.curve)
+         for i in range(1, n+1)]
+        # shares = [{
+        #     'index': i,
+        #     'p(i)': self.evaluate_polynomial(i, coeffs),
+        #     'v_i': v_i,
+        #     'g^secret': g_secret
+        # } for i in range(1, n+1)]
         return shares
 
     def verify_share(self, share):
