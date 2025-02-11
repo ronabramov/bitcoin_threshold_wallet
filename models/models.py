@@ -22,13 +22,18 @@ class user_key_generation_share(BaseModel):
     This share can be tested for validness through Feldaman_VSS_Protocl.Verify_Share method.
     curve : The curved used for the generation.
     """
+    transaction_id : str
     generating_user_id : str
+    target_user_matrix_id : str
     target_user_index : int
     target_user_evaluation : int
     v_i = List[PointJacobi]
     v_0 : PointJacobi
     curve : str
 
+    def get_type():
+        return f"user_key_share"
+    
 class user_signature_share(BaseModel):
     """
     Includes user secrets - MUSTN'T BE BROADCASTED OR SHARED
