@@ -17,6 +17,8 @@ def generate_transaction_and_send_to_wallet(user_id, wallet_id, transaction_deta
         "msgtype": "m.text",
         "content": transaction_json 
     }
+
+    des = TransactionDTO.model_validate_json(transaction_json)
     return MatrixService.instance().send_message_to_wallet_room(room_id = wallet_id, message = message)
 
 def check_threshold(transaction : TransactionDTO):
