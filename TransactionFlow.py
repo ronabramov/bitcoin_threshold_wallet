@@ -4,7 +4,7 @@ from models.transaction_status import TransactionStatus
 import uuid
 from MatrixService import MatrixService
 
-def generate_transaction(user_id, wallet_id, transaction_details, name) -> bool:
+def generate_transaction_and_send_to_wallet(user_id, wallet_id, transaction_details, name) -> bool:
     transaction_id = generate_unique_transaction_id()
     transaction = TransactionDTO(id= transaction_id, name=name, details=transaction_details, wallet_id=wallet_id)
     transaction.approve(user_id)
@@ -12,18 +12,12 @@ def generate_transaction(user_id, wallet_id, transaction_details, name) -> bool:
     if not insertion_succeded:
         return False
     
-    transaction_json = {
-        "body": f"New transaction request by {user_id}",
-        "transaction_id": transaction_id,
-        "wallet_id": wallet_id,
-        "details": transaction_details,
-        "approvers": [user_id]
-    }
+    transaction_json = transaction.model_dump_json()
     message = {
         "msgtype": "m.text",
         "content": transaction_json 
     }
-    return MatrixService.send_message_to_wallet_room(room_id = wallet_id, message = message)
+    return MatrixService.instance().send_message_to_wallet_room(room_id = wallet_id, message = message)
 
 def check_threshold(transaction : TransactionDTO):
     wallet = sql_db_dal.get_wallet_by_id(wallet_id= transaction.wallet_id)
@@ -52,7 +46,7 @@ def approve_new_transaction(user_id : str, transaction : TransactionDTO, user_ac
         "msgtype": "m.text",
         "content": approved_transaction_json 
         }
-        return MatrixService.send_message_to_wallet_room(room_id=transaction.wallet_id, message= message)   
+        return MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= message)   
         
 
 def generate_unique_transaction_id():
@@ -64,8 +58,9 @@ if __name__ == "__main__":
     transction_details = "Testing transction generation flow"
     user_matrix_id = '@ron_test:matrix.org'
     transaction_name = transction_details
-    existing_trans = sql_db_dal.get_transactions_by_wallet_id(room_id, should_convert_to_dto=True)
-    for trans in existing_trans:
-        approved = approve_new_transaction(user_id=user_matrix_id, transaction=trans,  user_accepted=True)
-    res = generate_transaction(user_matrix_id, room_id, transction_details, transaction_name)
+    #Why should we ever search for the existing transaction here?
+    # existing_trans = sql_db_dal.get_transactions_by_wallet_id(room_id, should_convert_to_dto=True)
+    # for trans in existing_trans:
+    #     approved = approve_new_transaction(user_id=user_matrix_id, transaction=trans,  user_accepted=True)
+    res = generate_transaction_and_send_to_wallet(user_matrix_id, room_id, transction_details, transaction_name)
 

@@ -27,7 +27,6 @@ class MatrixService:
         self._client = None
 
     @classmethod
-    @property
     def instance(cls):
         if cls._instance is None:
             cls._instance = cls()

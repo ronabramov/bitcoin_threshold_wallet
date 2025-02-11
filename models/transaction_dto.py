@@ -3,7 +3,7 @@ from models.transaction_status import TransactionStatus
 from typing import Optional
 
 class TransactionDTO(BaseModel):
-    id: int
+    id: str
     name: str
     details: str
     wallet_id: str
@@ -19,7 +19,7 @@ class TransactionDTO(BaseModel):
         self.approvers_counter += 1
 
 # Example of usage
-transaction_dto = TransactionDTO(id=1, name="Payment", details="Monthly subscription", wallet_id="abc123")
+transaction_dto = TransactionDTO(id='1', name="Payment", details="Monthly subscription", wallet_id="abc123")
 print(transaction_dto)
 transaction_dto.approve("user123")
 transaction_dto.approve("user456")
