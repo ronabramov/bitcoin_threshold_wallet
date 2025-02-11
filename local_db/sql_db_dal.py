@@ -1,4 +1,4 @@
-import local_db.sql_db as sql_db
+from local_db import sql_db
 from models.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
 from enum import Enum
@@ -68,7 +68,12 @@ def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
         return False
 
 def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO: #The transaction db must contain all properties of DTO. name is irrelevant?
-    transaction_dto = TransactionDTO(transaction.transaction_id, name= "", details=transaction.details, wallet_id=transaction.wallet_id)
+    transaction_dto = transaction_dto = TransactionDTO(
+    id=transaction.transaction_id,  
+    name="", 
+    details=transaction.details, 
+    wallet_id=transaction.wallet_id
+    )
     transaction_dto.approvers = transaction.approvers
     transaction_dto.approvers_counter = transaction.approvals_counter
     transaction_dto.stage = TransactionStatus[transaction.status.upper()]

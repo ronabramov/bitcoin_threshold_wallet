@@ -22,7 +22,7 @@ class Wallet(Base):
     wallet_id = Column(String, primary_key=True, nullable=False) #This will be the room Id.
     threshold = Column(Integer, nullable=False)
     users = Column(Text, nullable=True) #@alice:matrix.org,@bob:matrix.org - we will save comma parsed absolute path for participating users
-    configuration = Column(Text, nullable=True)
+    configuration = Column(Text, nullable=True)#What configurations?
     transactions = relationship("Transaction", back_populates="wallet")
     
 

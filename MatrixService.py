@@ -63,7 +63,7 @@ class MatrixService:
         """Send a message to the Matrix room for a wallet."""
         try:
             room = self.client.join_room(room_id)
-            room.send_text(json.dumps(message["content"]))
+            room.send_text(message)
             print(f"Message sent to room {room_id}: {message}")
             return True
         except Exception as e:
@@ -176,7 +176,7 @@ class MatrixService:
 if __name__ == "__main__":
     room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
     destination_user_matrix_id = "@ronabramovich:matrix.org"
-    message = {"content": {"body": "This is a privatenessage"}}
+    message = {"body": "This is a privatenessage"}
     MatrixService.instance().send_private_message_to_user(
         destination_user_matrix_id, "This is a privatenessage"
     )

@@ -1,6 +1,8 @@
 from local_db import sql_db_dal
 from models.transaction_dto import TransactionDTO as TransactionDTO
+from models.message_dto import MessageDTO as MessageWrapper
 from models.transaction_status import TransactionStatus
+from models.transaction_response import TransactionResponse
 import uuid
 from MatrixService import MatrixService
 
@@ -12,43 +14,34 @@ def generate_transaction_and_send_to_wallet(user_id, wallet_id, transaction_deta
     if not insertion_succeded:
         return False
     
-    transaction_json = transaction.model_dump_json()
-    message = {
-        "msgtype": "m.text",
-        "content": transaction_json 
-    }
-
-    des = TransactionDTO.model_validate_json(transaction_json)
-    return MatrixService.instance().send_message_to_wallet_room(room_id = wallet_id, message = message)
+    # Use the Message DTO
+    transaction_json = MessageWrapper(type='transaction_request', data=transaction).model_dump_json()
+    message = MessageWrapper.model_validate_json(transaction_json)
+    return MatrixService.instance().send_message_to_wallet_room(room_id = wallet_id, message = transaction_json)
 
 def check_threshold(transaction : TransactionDTO):
-    wallet = sql_db_dal.get_wallet_by_id(wallet_id= transaction.wallet_id)
-    return transaction.approvers_counter >= wallet.threshold
+    try :
+        wallet = sql_db_dal.get_wallet_by_id(wallet_id= transaction.wallet_id)
+        return transaction.approvers_counter >= wallet.threshold
+    except :
+        return False
 
-def approve_new_transaction(user_id : str, transaction : TransactionDTO, user_accepted : bool) -> bool:
-    if not user_accepted:
+def approve_new_transaction(user_id : str, transaction : TransactionDTO, user_response : bool) -> bool:
+    if not user_response:
         print (f"user {user_id} rejects transaction {transaction.id}")
         return True
     else:
         transaction.approve(user_id)
         threshold_achieved = check_threshold(transaction)
         if threshold_achieved :
-            transaction.stage = TransactionStatus.THRESHOLD_ACHIEVED
-
+            transaction.stage = TransactionStatus.THRESHOLD_ACHIEVED ######SHOULD HAVE OBJECT AND SEND MESSAGE AS MESSAGE WRAPPER OVER THAT OBJECT
+        transaction_response = TransactionResponse(transaction_id=transaction.id, stage=transaction.stage, response=user_response, approvers_counter=transaction.approvers_counter, approvers=transaction.approvers)
         insertion_succeded = sql_db_dal.insert_new_transaction(transaction)
         if not insertion_succeded:
             return False
-        approved_transaction_json = {
-        "body": f"Transaction accepted by {user_id}",
-        "transaction_id": transaction.id,
-        "approvers": transaction.approvers,
-        "stage" : transaction.stage.value
-        }
-        message = {
-        "msgtype": "m.text",
-        "content": approved_transaction_json 
-        }
-        return MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= message)   
+        approved_transaction_json = MessageWrapper(type = TransactionResponse.get_type(), data=transaction_response).model_dump_json()
+        message = MessageWrapper.model_validate_json(approved_transaction_json)
+        return MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= approved_transaction_json)   
         
 
 def generate_unique_transaction_id():
@@ -61,8 +54,8 @@ if __name__ == "__main__":
     user_matrix_id = '@ron_test:matrix.org'
     transaction_name = transction_details
     #Why should we ever search for the existing transaction here?
-    # existing_trans = sql_db_dal.get_transactions_by_wallet_id(room_id, should_convert_to_dto=True)
-    # for trans in existing_trans:
-    #     approved = approve_new_transaction(user_id=user_matrix_id, transaction=trans,  user_accepted=True)
+    existing_trans = sql_db_dal.get_transactions_by_wallet_id(room_id, should_convert_to_dto=True)
+    for trans in existing_trans:
+        approved = approve_new_transaction(user_id=user_matrix_id, transaction=trans,  user_response=True)
     res = generate_transaction_and_send_to_wallet(user_matrix_id, room_id, transction_details, transaction_name)
 

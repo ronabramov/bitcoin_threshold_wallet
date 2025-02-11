@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from transaction_dto import TransactionDTO
+from models.transaction_dto import TransactionDTO
+from models.transaction_response import TransactionResponse
 from typing import Union
 
 class MessageDTO(BaseModel):
@@ -8,4 +9,4 @@ class MessageDTO(BaseModel):
     The Wallet Listener would parse every message w.r.t it's type.
     """
     type: str
-    data: Union[TransactionDTO]
+    data: Union[TransactionDTO, TransactionResponse]
