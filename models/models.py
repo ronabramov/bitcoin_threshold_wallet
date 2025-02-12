@@ -23,7 +23,7 @@ class user_key_generation_share(BaseModel):
     curve : The curved used for the generation.
     """
     transaction_id : str
-    generating_user_id : str
+    generating_user_index : str
     target_user_matrix_id : str
     target_user_index : int
     target_user_evaluation : int
@@ -50,6 +50,7 @@ class user_signature_share(BaseModel):
     group : curves.Curve
     paillier_secret_key, paillier_public_key = paillier.generate_paillier_keypair()  ## IMPORTANT : Undetsand the relation of Modulus with Paillier ##
     modulus_N : int
+    shrinked_secret_share : int | None
 
 class public_user_data(BaseModel):
     user_index : int

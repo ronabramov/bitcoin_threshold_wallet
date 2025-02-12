@@ -1,8 +1,8 @@
 from phe import paillier, EncryptedNumber
 import random
 import AliceZKProof
-from AliceZKProofModules import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
-from BobZKProofMtAModules import Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
+from protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
+from protocols.BobZKProofMtAModels import Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
 import BobZKProofMta 
 
 """
@@ -71,6 +71,8 @@ class MTAProtocolWithZKP:
     def bob_verify_a_commiting_encrypting_b(self, enc_a : EncryptedNumber, public_key, challenge, proof_of_a : AliceZKProof_Proof_For_Challenge,
                                                commitment_of_a : AliceZKProof_Commitment, prover_settings : Bob_ZKProof_RegMta_Prover_Settings):
         
+        #TODO : Alice Commitment class contains values which shouldn't be shared with Bob! Create sub class with the details should be shared.
+
         """Bob verifies Alice's proof, then computes E(ab + beta') and proves correctness"""
         verified_a_value = AliceZKProof.verifier_verify_result(commitment_of_a.z, commitment_of_a.u, commitment_of_a.w, proof_of_a.s, proof_of_a.s1, 
                                                                proof_of_a.s2, challenge, self.Alice_Alg_c, self.q, self.Alice_Alg_h1, self.Alice_Alg_h2, 

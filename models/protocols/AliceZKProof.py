@@ -1,7 +1,7 @@
 from phe import paillier
 import random
 import gmpy2
-from AliceZKProofModules import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
+from protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
 
 def pick_element_from_Multiplicative_group(N):
     if N <= 1:

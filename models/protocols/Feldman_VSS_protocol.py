@@ -11,14 +11,14 @@ Moreover, given shares, enables verification that the shares are valid
 """
 
 class Feldman_VSS_Protocol:
-    def __init__(self,  n : int, t: int,  transaction_id : str, index_to_user_matrix_id : Dict, generating_user_Id, curve : curves.Curve = NIST256p, ):
+    def __init__(self,  n : int, t: int,  transaction_id : str, index_to_user_matrix_id : Dict, generating_user_Index, curve : curves.Curve = NIST256p, ):
         self.curve = curve
         self.G = curve.generator
         self.n =n
         self.t =t
         self.user_index_to_matrixId = index_to_user_matrix_id
         self.transaction_id = transaction_id
-        self.generating_user_id = generating_user_Id
+        self.generating_user_index = generating_user_Index
 
     def generate_coefficients(self, secret):
         return [secret] + [random.randint(1, curve.order - 1) for _ in range(t)]
@@ -36,12 +36,12 @@ class Feldman_VSS_Protocol:
         # Using the notation from the paper, v_i := g^a_i. 
         # In the Feldman VSS, in addition to a share, every player gets {v_i}_i=1 ^t.
         # In addition every player gets v_0 = g^secret = g^a_0 
-        
+
         coeffs = self.generate_coefficients(secret)
         v_i = self.compute_v_i(coeffs)
         g_secret = v_i[0]
         shares = [
-            user_key_generation_share(transaction_id=self.transaction_id, generating_user_id=self.generating_user_id,
+            user_key_generation_share(transaction_id=self.transaction_id, generating_user_index=self.generating_user_index,
                                        target_user_matrix_id=self.user_index_to_matrixId[i], target_user_index=i,
                                          target_user_evaluation=self.evaluate_polynomial(i, coeffs), v_0=g_secret, curve=self.curve)
          for i in range(1, n+1)]
