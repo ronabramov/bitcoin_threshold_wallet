@@ -1,7 +1,18 @@
 from local_db import sql_db
-from models.transaction_dto import TransactionDTO as TransactionDTO
+from DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
+from models.models import public_user_data
 from enum import Enum
+
+def get_participatin_users_data_by_trans_id(transaction_id : str) -> dict[int, public_user_data]:
+    try:
+        transaction_room_data = sql_db.session.query(sql_db.Transaction_Room).filter(sql_db.Transaction_Room.transaction_id == transaction_id).first()
+        if not transaction_room_data:
+            print(f"Couldn't find room_transaction_data for transaction {transaction_id}")
+            raise FileNotFoundError(f"Couldn't find room_transaction_data for transaction {transaction_id}")
+        return transaction_room_data.list_participants()
+    except Exception as e:
+        print(f"There was and error while trying to retrieve users data for transaction {transaction_id}", e)
 
 def get_user_by_email(user_email : str) -> sql_db.User :
     try:
