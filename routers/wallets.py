@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from db import wallets_collection, users_collection
+from Depracted.db_DEPRECATED import wallets_collection, users_collection
 import logging
 
 logger = logging.getLogger("uvicorn")

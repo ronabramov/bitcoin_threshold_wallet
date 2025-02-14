@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from db import wallets_collection, transactions_collection, users_collection
+from Depracted.db_DEPRECATED import wallets_collection, transactions_collection, users_collection
 from datetime import datetime, timezone
 from bson import ObjectId
 
