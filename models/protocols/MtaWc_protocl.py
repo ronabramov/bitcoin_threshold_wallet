@@ -1,8 +1,8 @@
 from phe import paillier, EncryptedNumber
 import random
 import AliceZKProof
-from AliceZKProofModules import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
-from BobZKProofMtAModules import Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
+from protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
+from protocols.BobZKProofMtAModels import Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
 import BobZKProofMtaWc 
 from ecdsa import NIST256p, curves
 

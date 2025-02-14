@@ -1,7 +1,31 @@
 from local_db import sql_db
-from models.transaction_dto import TransactionDTO as TransactionDTO
+from typing import Dict, Optional
+from DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
+from models.models import public_user_data
 from enum import Enum
+
+def get_transaction_room_data_by_trans_id(transaction_id : str):
+    try:
+        transaction_room_data = sql_db.session.query(sql_db.Transaction_Room).filter(
+                                                     sql_db.Transaction_Room.transaction_id == transaction_id).first()
+        if not transaction_room_data:
+            print(f"Couldn't find room_transaction_data for transaction {transaction_id}")
+            raise FileNotFoundError(f"Couldn't find room_transaction_data for transaction {transaction_id}")
+        return transaction_room_data.transaction_id, transaction_room_data.room_id, transaction_room_data.curve_name
+    except Exception as e:
+        print(f"There was and error while trying to retrieve transaction-room data for transaction {transaction_id}", e)
+
+def get_transaction_participating_users_data_by_trans_id(transaction_id : str) -> dict[int, public_user_data]:
+    try:
+        transaction_room_data = sql_db.session.query(sql_db.Transaction_Room).filter(
+                                                     sql_db.Transaction_Room.transaction_id == transaction_id).first()
+        if not transaction_room_data:
+            print(f"Couldn't find room_transaction_data for transaction {transaction_id}")
+            raise FileNotFoundError(f"Couldn't find room_transaction_data for transaction {transaction_id}")
+        return transaction_room_data.list_participants()
+    except Exception as e:
+        print(f"There was and error while trying to retrieve users data for transaction {transaction_id}", e)
 
 def get_user_by_email(user_email : str) -> sql_db.User :
     try:
@@ -56,6 +80,31 @@ def insert_new_transaction(transaction : TransactionDTO) -> bool:
     except Exception as e:
         print(f'failed to insert transaction {transaction.id} to db.', e)
         return False
+    
+def insert_transaction_room(
+        self, transaction_id: str, room_id: str, curve_name: str, participants_dict: dict[int, public_user_data]
+    ) -> sql_db.Transaction_Room:
+        """
+        Inserts a new transaction room entry into the database.
+
+        :param transaction_id: Unique transaction identifier.
+        :param room_id: Matrix room ID.
+        :param curve_name: Cryptographic curve used.
+        :param participants_dict: Dictionary of index -> public_user_data objects.
+        :return: The created Transaction_Room object.
+        """
+        participants_data = {str(index): user.to_dict() for index, user in participants_dict.items()}
+
+        new_transaction_room_data = sql_db.Transaction_Room(
+            transaction_id=transaction_id,
+            room_id=room_id,
+            curve_name=curve_name,
+            participants_data=participants_data
+        )
+
+        self.session.add(new_transaction_room_data)
+        self.session.commit()
+        return new_transaction_room_data
 
 def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
     try:
