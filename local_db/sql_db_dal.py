@@ -1,8 +1,8 @@
 from local_db import sql_db
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
-from models.models import public_user_data
+from models.models import room_public_user_data
 from enum import Enum
 
 def get_transaction_room_data_by_trans_id(transaction_id : str):
@@ -16,7 +16,7 @@ def get_transaction_room_data_by_trans_id(transaction_id : str):
     except Exception as e:
         print(f"There was and error while trying to retrieve transaction-room data for transaction {transaction_id}", e)
 
-def get_transaction_participating_users_data_by_trans_id(transaction_id : str) -> dict[int, public_user_data]:
+def get_transaction_participating_users_data_by_trans_id(transaction_id : str) -> dict[int, room_public_user_data]:
     try:
         transaction_room_data = sql_db.session.query(sql_db.Transaction_Room).filter(
                                                      sql_db.Transaction_Room.transaction_id == transaction_id).first()
@@ -36,6 +36,21 @@ def get_user_by_email(user_email : str) -> sql_db.User :
         return user
     except Exception as e:
         print(f"There was and error while trying to retrieve user {user_email}", e)
+
+def get_friend_by_email(email : str) -> sql_db.Friend:
+    try:
+        friend = sql_db.session.query(sql_db.Friend).filter(sql_db.Friend.email == email).first()
+        if not friend :
+            print (f"Couldn't find friend with email {email}")
+            raise FileNotFoundError(f"Friend with email {email} couldn't be found")
+        return friend
+    except Exception as e:
+        print(f"There was and error while trying to retrieve friend with email :  {email}", e)
+
+
+def get_all_user_friends() -> List[sql_db.User]:
+    users = sql_db.session.query(sql_db.Friend).all()
+    return users
 
 def get_wallet_by_id(wallet_id : str) -> sql_db.Wallet:
     try:
@@ -82,7 +97,7 @@ def insert_new_transaction(transaction : TransactionDTO) -> bool:
         return False
     
 def insert_transaction_room(
-        self, transaction_id: str, room_id: str, curve_name: str, participants_dict: dict[int, public_user_data]
+        self, transaction_id: str, room_id: str, curve_name: str, participants_dict: dict[int, room_public_user_data]
     ) -> sql_db.Transaction_Room:
         """
         Inserts a new transaction room entry into the database.

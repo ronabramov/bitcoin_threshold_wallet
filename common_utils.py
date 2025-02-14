@@ -2,7 +2,8 @@ import bcrypt
 import random
 import gmpy2
 import sympy
-from models.models import user_modulus
+from phe import generate_paillier_keypair
+from models.models import user_modulus, room_public_user_data, room_secret_user_data
 
 
 def hash_password(password: str) -> str:
@@ -26,6 +27,15 @@ def pick_element_from_Multiplicative_group(N):
         a = random.randint(1, N - 1)
         if gmpy2.gcd(a, N) == 1:
             return a
+
+def generate_user_room_keys(user_index : int, user_matrix_id : str):
+    user_modulus = generate_user_modulus_parameters()
+    paillier_public_key, paillier_private_key = generate_paillier_keypair()
+    room_public_user_data = room_public_user_data(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key, user_modulus=user_modulus)
+    room_secret_user_data = room_secret_user_data(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key,
+                                                   user_modulus=user_modulus, paillier_private_key = paillier_private_key)
+    return room_secret_user_data, room_public_user_data
+    
 
 def generate_user_modulus_parameters():
     N = generate_rsa_modulus()[0]

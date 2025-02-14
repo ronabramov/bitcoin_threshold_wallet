@@ -132,10 +132,15 @@ class user_secret_signature_share():
     num_of_updates : int  #Once equlas threshold, we should generate a shrinked secret share
     shrinked_secret_share : int | None
 
+class user_index_to_user_id_message(BaseModel):
+    index_to_user_id : dict[int,str]
 
-class public_user_data(BaseModel):
+    def get_type():
+        "user_index_to_user_id"
+
+class room_public_user_data(BaseModel):
     user_index : int
-    user_id : int
+    user_id : str
     paillier_public_key : paillier.PaillierPublicKey
     user_modulus : user_modulus
 
@@ -169,4 +174,9 @@ class public_user_data(BaseModel):
             paillier_public_key=paillier_pub,
             user_modulus=user_modulus
         )
+    def get_type():
+        return "room_public_user_data"
 
+class room_secret_user_data(room_public_user_data):
+        paillier_secret_key : paillier.PaillierPrivateKey
+    
