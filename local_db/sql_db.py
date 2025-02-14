@@ -60,6 +60,7 @@ class Transaction_Room(Base):
     room_id = Column(String, primary_key=False, nullable=False)
     curve_name = Column(String, primary_key=False, nullable=False)
     participants_data = Column(JSON, nullable=False, default={}) #user_index to user_data : matrix_id, Paillier Public key and Modulus data
+    
 
     def add_participant(self, user_data: public_user_data):
         """ Adds a new participant using a `public_user_data` object """
