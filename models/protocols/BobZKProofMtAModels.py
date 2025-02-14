@@ -1,6 +1,6 @@
 from phe import paillier
 from ecdsa import NIST256p, curves
-
+from pydantic import BaseModel
 
 class Bob_ZKProof_RegMta_ProverCommitment:
     def __init__(self, alpha, rho, rho_prime, sigma, beta, gamma, tau, z, z_prime, t, v, w, u = None):

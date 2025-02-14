@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import List, Optional
-from ecdsa.ellipticcurve import PointJacobi
+from pydantic import BaseModel, ConfigDict
+from typing import List
+from ecdsa.ellipticcurve import PointJacobi, CurveFp
+from ecdsa.curves import Curve, SECP256k1
 from ecdsa import curves
 from phe import paillier
 
@@ -12,6 +13,11 @@ class TransactionInfo(BaseModel):
 class Message(BaseModel):
     recipient_id: str
     content: str
+
+class user_modulus(BaseModel):
+    N : int
+    h1 : int
+    h2: int 
 
 class user_key_generation_share(BaseModel):
     """
@@ -27,14 +33,84 @@ class user_key_generation_share(BaseModel):
     target_user_matrix_id : str
     target_user_index : int
     target_user_evaluation : int
-    v_i = List[PointJacobi]
+    v_i : List[PointJacobi]
     v_0 : PointJacobi
     curve : str
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)  # Allows custom types - For Point Jacobi property
+
+    def to_dict(self):
+        """Serialize the object, preserving elliptic curve structure."""
+        curve_instance = self.v_0.curve()
+        curve_data = {
+            "p": curve_instance.p(),
+            "a": curve_instance.a(),
+            "b": curve_instance.b(),
+            "order": curve_instance.order(),
+            "name": self.curve
+        }
+
+        return {
+            "transaction_id": self.transaction_id,
+            "generating_user_index": self.generating_user_index,
+            "target_user_matrix_id": self.target_user_matrix_id,
+            "target_user_index": self.target_user_index,
+            "target_user_evaluation": self.target_user_evaluation,
+            "v_i": [{"x": p.x(), "y": p.y(), "z": p.z()} for p in self.v_i],  # List of points
+            "v_0": {"x": self.v_0.x(), "y": self.v_0.y(), "z": self.v_0.z()},  # Single point
+            "curve": curve_data
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        """Deserialize and reconstruct elliptic curve points inside the object."""
+        curve_data = data["curve"]
+        # Reconstruct the curve
+        curve_instance = CurveFp(
+            curve_data["p"],
+            curve_data["a"],
+            curve_data["b"],
+            curve_data["order"],
+            name=curve_data["name"]
+        )
+
+        # Reconstruct v_0
+        v_0_data = data["v_0"]
+        v_0 = PointJacobi(curve_instance, v_0_data["x"], v_0_data["y"], v_0_data["z"])
+
+        # Reconstruct v_i (list of points)
+        v_i = [
+            PointJacobi(curve_instance, p["x"], p["y"], p["z"])
+            for p in data["v_i"]
+        ]
+
+        return cls(
+            transaction_id=data["transaction_id"],
+            generating_user_index=data["generating_user_index"],
+            target_user_matrix_id=data["target_user_matrix_id"],
+            target_user_index=data["target_user_index"],
+            target_user_evaluation=data["target_user_evaluation"],
+            v_i=v_i,
+            v_0=v_0,
+            curve=curve_data["name"]
+        )
+
+
     def get_type():
         return f"user_key_share"
-    
-class user_signature_share(BaseModel):
+
+class user_public_share(BaseModel):
+    user_index : int
+    user_id : str
+    paillier_n : int
+    paillier_g : int
+    user_modulus : user_modulus
+    user_id_to_user_index : dict | None #Will be filled only by the user opening room
+
+    def get_type():
+        return f"user_public_data"
+
+class user_secret_signature_share():
     """
     Includes user secrets - MUSTN'T BE BROADCASTED OR SHARED
     Denote by P = sum_j p_j , where p_j are the generated polynomial by the jth player.
@@ -44,19 +120,53 @@ class user_signature_share(BaseModel):
     Composed from shares of all other users participated in the transaction
     user_evaluation - the user secret key. 
     """
+    threshold : int
     user_index : int
     user_id : str
     user_evaluation : int
     group : curves.Curve
-    paillier_secret_key, paillier_public_key = paillier.generate_paillier_keypair()  ## IMPORTANT : Undetsand the relation of Modulus with Paillier ##
-    modulus_N : int
+    paillier_public_key : paillier.PaillierPublicKey   ## IMPORTANT : Undetsand the relation of Modulus with Paillier ##
+    paillier_secret_key : paillier.PaillierPrivateKey
+    user_modulus : user_modulus
+    original_secret_share : int
+    num_of_updates : int  #Once equlas threshold, we should generate a shrinked secret share
     shrinked_secret_share : int | None
+
 
 class public_user_data(BaseModel):
     user_index : int
     user_id : int
     paillier_public_key : paillier.PaillierPublicKey
-    modulus_N : int 
+    user_modulus : user_modulus
 
+    model_config = ConfigDict(arbitrary_types_allowed=True) 
     
+    def to_dict(self):
+        return {
+            "user_index": self.user_index,
+            "user_id": self.user_id,
+            "paillier_public_key": {
+                "n": self.paillier_public_key.n
+            },
+            "user_modulus": {
+                "N": self.user_modulus.N,
+                "h1": self.user_modulus.h1,
+                "h2": self.user_modulus.h2
+            }
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        paillier_pub = paillier.PaillierPublicKey(n=data["paillier_public_key"]["n"])
+        user_modulus = user_modulus(
+            N=data["user_modulus"]["N"],
+            h1=data["user_modulus"]["h1"],
+            h2=data["user_modulus"]["h2"]
+        )
+        return cls(
+            user_index=data["user_index"],
+            user_id=data["user_id"],
+            paillier_public_key=paillier_pub,
+            user_modulus=user_modulus
+        )
 

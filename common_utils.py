@@ -1,6 +1,9 @@
 import bcrypt
 import random
 import gmpy2
+import sympy
+from models.models import user_modulus
+
 
 def hash_password(password: str) -> str:
     """Hash the password using bcrypt."""
@@ -24,3 +27,25 @@ def pick_element_from_Multiplicative_group(N):
         if gmpy2.gcd(a, N) == 1:
             return a
 
+def generate_user_modulus_parameters():
+    N = generate_rsa_modulus()[0]
+    h1 = random.randint(2, N-1)
+    h2 = random.randint(2,N-1)
+    return user_modulus(N=N, h1=h1, h2=h2)
+
+def generate_safe_prime(bits=1024):
+    """Generates a safe prime p where p = 2p' + 1 and p' is prime."""
+    while True:
+        p_prime = sympy.randprime(2**(bits-1), 2**bits)
+        p = 2 * p_prime + 1
+        if sympy.isprime(p):
+            return p
+
+def generate_rsa_modulus():
+    """Generates the RSA modulus N_i = P * Q where P and Q are safe primes."""
+    p = generate_safe_prime()
+    q = generate_safe_prime()
+    N = p * q
+    return N, p, q
+
+    

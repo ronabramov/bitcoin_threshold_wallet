@@ -1,7 +1,7 @@
 from phe import paillier
 import random
 import gmpy2
-from BobZKProofMtAModules import Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
+from protocols.BobZKProofMtAModels import Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
 import random
 from ecdsa import NIST256p, curves
 

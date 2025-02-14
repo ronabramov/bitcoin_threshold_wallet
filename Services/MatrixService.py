@@ -45,6 +45,14 @@ class MatrixService:
         self._client = client
         return client
 
+    def create_new_room_and_invite_users(self, room_name : str, users_Ids : List[str]):
+        """
+        Create new room and invite users
+        """
+        new_room : Room = self.create_room(room_name) 
+        self.invite_users_to_room(new_room, users=users_Ids)
+        return new_room.room_id
+
     def create_room(self, room_name: str):
         new_room = self.client.create_room(alias=room_name)
         return new_room
