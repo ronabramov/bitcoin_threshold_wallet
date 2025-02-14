@@ -11,6 +11,26 @@ GENERATING_USER_INDEX = 1
 def get_all_friends():
     return db_dal.get_all_user_friends()
 
+def get_all_new_invitations():
+    return MatrixService.instance().fetch_pending_invited_rooms()
+
+def respond_to_room_invitation(room_id : str, user_accepted_invitation : bool):
+    if not user_accepted_invitation:
+        MatrixService.instance().reject_room_invitation_by_id(room_id=room_id)
+    
+    room_name = MatrixService.instance().join_room_invitation(room_id=room_id)
+    if is_wallet_room(room_name):
+        result = handle_joining_new_wallet(room_name=room_name, room_id=room_id)
+        return result
+
+def handle_joining_new_wallet(room_name : str, room_id : str):
+    user_index_in_wallet = MatrixService.instance().get_next_available_index()
+    # TODO : 
+    # 1. Get indecis of existing users and their public keys.
+    # 2. Share your index and public key in room.
+    # r. Save wallet in local_db with it's secret key- see create_new_wallet for example.
+    return False
+
 def create_new_wallet(user_id : str, invited_users_emails : List[str], wallet_name : str, wallet_threshold : int):
     """
     Creating matrix room and sending invitaiton for the specified users. 
@@ -34,4 +54,6 @@ def create_new_wallet(user_id : str, invited_users_emails : List[str], wallet_na
     message_sent = MatrixService.instance().send_message_to_wallet_room(room_id=room_id, message=public_keys_message)
     return insertion_succeded and message_sent, wallet
     
-    
+def is_wallet_room(room_name : str):
+    #TODO:implement.
+    return

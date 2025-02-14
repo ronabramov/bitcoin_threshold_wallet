@@ -77,6 +77,13 @@ class MatrixService:
         except Exception as e:
             print(f"Error sending message to room: {e}")
             return False
+    
+    def join_room_invitation(self, room_id):
+        """
+        Return room's name
+        """
+        room : Room = self.client.join_room(room_id_or_alias=room_id)
+        return room.name
 
     def create_user_backup_room(self):
         try:
@@ -170,7 +177,7 @@ class MatrixService:
         target_room.send_text(message)
         print(f"Successfuly sent private message in room {target_room.room_id}")
     
-    def fetch_pending_invited_rooms(self):
+    def fetch_pending_invited_rooms(self) -> List[Room]:
         rooms = self.client.invited_rooms
         # TODO : Required Fix.
         # pending_rooms for room in rooms.values():
@@ -178,7 +185,19 @@ class MatrixService:
         #         print(f"Room {room.room_id} is pending invitation")
         #         return room
         return None
+    
+    def reject_room_invitation_by_id(self, room_id : str):
+        rooms = self.client.invited_rooms
+        for room  in rooms.values():
+            self.reject_room_invitation(room=room) # Should be fixed
 
+    
+    def reject_room_invitation(self, room : Room) -> bool:
+        return room.leave()
+    
+    def get_next_available_index(self, room_id: str) -> bool:
+        room = self.client.join_room(room_id)
+        return len(room._members)
 
 # Example usage
 if __name__ == "__main__":
