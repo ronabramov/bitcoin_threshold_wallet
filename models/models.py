@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import List
+from typing import List, Optional, Dict
 from ecdsa.ellipticcurve import PointJacobi, CurveFp
 from ecdsa.curves import Curve, SECP256k1
 from ecdsa import curves
@@ -40,7 +40,6 @@ class user_key_generation_share(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)  # Allows custom types - For Point Jacobi property
 
     def to_dict(self):
-        """Serialize the object, preserving elliptic curve structure."""
         curve_instance = self.v_0.curve()
         curve_data = {
             "p": curve_instance.p(),
@@ -100,17 +99,48 @@ class user_key_generation_share(BaseModel):
         return f"user_key_share"
 
 class user_public_share(BaseModel):
-    user_index : int
-    user_id : str
-    paillier_n : int
-    paillier_g : int
-    user_modulus : user_modulus
-    user_id_to_user_index : dict | None #Will be filled only by the user opening room
+    user_index: int
+    user_id: str
+    paillier_public_key: paillier.PaillierPublicKey
+    user_modulus: user_modulus
+    user_id_to_user_index: Optional[Dict[int, str]] = None  # Optional field
+
+    model_config = ConfigDict(arbitrary_types_allowed=True) 
+
+    def to_dict(self):
+        return {
+            "user_index": self.user_index,
+            "user_id": self.user_id,
+            "paillier_public_key": {"n": self.paillier_public_key.n},  # Store only `n`
+            "user_modulus": {
+                "N": self.user_modulus.N,
+                "h1": self.user_modulus.h1,
+                "h2": self.user_modulus.h2
+            },
+            "user_id_to_user_index": self.user_id_to_user_index
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        paillier_pub = paillier.PaillierPublicKey(n=data["paillier_public_key"]["n"])
+        user_mod = user_modulus(
+            N=data["user_modulus"]["N"],
+            h1=data["user_modulus"]["h1"],
+            h2=data["user_modulus"]["h2"]
+        )
+        return cls(
+            user_index=data["user_index"],
+            user_id=data["user_id"],
+            paillier_public_key=paillier_pub,
+            user_modulus=user_mod,
+            user_id_to_user_index=data.get("user_id_to_user_index")
+        )
 
     def get_type():
-        return f"user_public_data"
+        return "user_public_data"
+    
 
-class user_secret_signature_share():
+class user_secret_signature_share(BaseModel):
     """
     Includes user secrets - MUSTN'T BE BROADCASTED OR SHARED
     Denote by P = sum_j p_j , where p_j are the generated polynomial by the jth player.
@@ -120,63 +150,127 @@ class user_secret_signature_share():
     Composed from shares of all other users participated in the transaction
     user_evaluation - the user secret key. 
     """
-    threshold : int
-    user_index : int
-    user_id : str
-    user_evaluation : int
-    group : curves.Curve
-    paillier_public_key : paillier.PaillierPublicKey   ## IMPORTANT : Undetsand the relation of Modulus with Paillier ##
-    paillier_secret_key : paillier.PaillierPrivateKey
-    user_modulus : user_modulus
-    original_secret_share : int
-    num_of_updates : int  #Once equlas threshold, we should generate a shrinked secret share
-    shrinked_secret_share : int | None
-
-class user_index_to_user_id_message(BaseModel):
-    index_to_user_id : dict[int,str]
-
-    def get_type():
-        "user_index_to_user_id"
-
-class room_public_user_data(BaseModel):
-    user_index : int
-    user_id : str
-    paillier_public_key : paillier.PaillierPublicKey
-    user_modulus : user_modulus
-
+    threshold: int
+    user_index: int
+    user_id: str
+    user_evaluation: int
+    group: curves.Curve
+    paillier_public_key: paillier.PaillierPublicKey
+    paillier_secret_key: paillier.PaillierPrivateKey
+    user_modulus: user_modulus
+    original_secret_share: int
+    num_of_updates: int
+    shrinked_secret_share: Optional[int] = None
     model_config = ConfigDict(arbitrary_types_allowed=True) 
-    
+
     def to_dict(self):
         return {
+            "threshold": self.threshold,
             "user_index": self.user_index,
             "user_id": self.user_id,
-            "paillier_public_key": {
-                "n": self.paillier_public_key.n
-            },
+            "user_evaluation": self.user_evaluation,
+            "group": str(self.group),  # Assuming group has a __str__ method
+            "paillier_public_key": {"n": self.paillier_public_key.n},
+            "paillier_secret_key": {"p": self.paillier_secret_key.p, "q": self.paillier_secret_key.q},
             "user_modulus": {
                 "N": self.user_modulus.N,
                 "h1": self.user_modulus.h1,
                 "h2": self.user_modulus.h2
-            }
+            },
+            "original_secret_share": self.original_secret_share,
+            "num_of_updates": self.num_of_updates,
+            "shrinked_secret_share": self.shrinked_secret_share
         }
 
     @classmethod
     def from_dict(cls, data):
         paillier_pub = paillier.PaillierPublicKey(n=data["paillier_public_key"]["n"])
-        user_modulus = user_modulus(
+        paillier_priv = paillier.PaillierPrivateKey(paillier_pub, data["paillier_secret_key"]["p"], data["paillier_secret_key"]["q"])
+        user_mod = user_modulus(
             N=data["user_modulus"]["N"],
             h1=data["user_modulus"]["h1"],
             h2=data["user_modulus"]["h2"]
         )
         return cls(
+            threshold=data["threshold"],
             user_index=data["user_index"],
             user_id=data["user_id"],
+            user_evaluation=data["user_evaluation"],
+            group=data["group"],  # Ensure proper deserialization if needed
             paillier_public_key=paillier_pub,
-            user_modulus=user_modulus
+            paillier_secret_key=paillier_priv,
+            user_modulus=user_mod,
+            original_secret_share=data["original_secret_share"],
+            num_of_updates=data["num_of_updates"],
+            shrinked_secret_share=data.get("shrinked_secret_share")
         )
+
+class user_index_to_user_id_message(BaseModel):
+    index_to_user_id: Dict[int, str]
+
+    def to_dict(self):
+        return {
+            "index_to_user_id": self.index_to_user_id
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(index_to_user_id=data["index_to_user_id"])
+
+    def get_type():
+        return "user_index_to_user_id"
+
+class room_public_user_data(BaseModel):
+    user_index: int
+    user_id: str
+    paillier_public_key: paillier.PaillierPublicKey
+    model_config = ConfigDict(arbitrary_types_allowed=True) 
+
+    def to_dict(self):
+        return {
+            "user_index": self.user_index,
+            "user_id": self.user_id,
+            "paillier_public_key": {
+                "n": self.paillier_public_key.n  # Store only `n`, enough to reconstruct the key
+            }
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        """Deserialize from a dictionary and reconstruct PaillierPublicKey."""
+        paillier_pub = paillier.PaillierPublicKey(n=data["paillier_public_key"]["n"])
+        return cls(
+            user_index=data["user_index"],
+            user_id=data["user_id"],
+            paillier_public_key=paillier_pub  # Fully functional Paillier key
+        )
+
     def get_type():
         return "room_public_user_data"
 
 class room_secret_user_data(room_public_user_data):
-        paillier_secret_key : paillier.PaillierPrivateKey
-    
+    paillier_secret_key: paillier.PaillierPrivateKey
+
+    def to_dict(self):
+        base_data = super().to_dict()
+        base_data["paillier_secret_key"] = {
+            "p": self.paillier_secret_key.p,
+            "q": self.paillier_secret_key.q
+        }
+        return base_data
+
+    @classmethod
+    def from_dict(cls, data):
+        public_data = room_public_user_data.from_dict(data)
+        paillier_priv = paillier.PaillierPrivateKey(
+            public_data.paillier_public_key, 
+            data["paillier_secret_key"]["p"], 
+            data["paillier_secret_key"]["q"]
+        )
+        return cls(
+            user_index=public_data.user_index,
+            user_id=public_data.user_id,
+            paillier_public_key=public_data.paillier_public_key,
+            user_modulus=public_data.user_modulus,
+            paillier_secret_key=paillier_priv
+        )

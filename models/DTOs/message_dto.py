@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from DTOs.transaction_dto import TransactionDTO
+from models.DTOs.transaction_dto import TransactionDTO
 from models.transaction_response import TransactionResponse
 from models.models import user_key_generation_share, user_public_share, room_public_user_data
 from models.value_knowledge_zk_proof import value_knowledge_zk_proof

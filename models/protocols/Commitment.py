@@ -1,4 +1,3 @@
-from ecdsa.ellipticcurve import PointJacobi
 from phe import paillier, PaillierPrivateKey, PaillierPublicKey
 
 def commit_x(public_key : PaillierPublicKey , x):

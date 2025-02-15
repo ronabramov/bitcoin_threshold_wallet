@@ -1,6 +1,6 @@
 from models.models import user_key_generation_share
 from typing import List
-from models.DTOs.message_dto import MessageDTO
+from DTOs.message_dto import MessageDTO
 from Services.MatrixService import MatrixService
 
 MAX_RETRIES = 3

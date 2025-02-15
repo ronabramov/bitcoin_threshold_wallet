@@ -1,12 +1,30 @@
 from matrix_client.client import MatrixClient
 from matrix_client.room import Room
 from matrix_client.user import User
+#Should put commoun_utils and models dto import in comment for direct debug.
 import common_utils
+from models.DTOs.message_dto import MessageDTO
 import requests
-import json
+import random   
 from typing import List
 import time
+from pydantic import ValidationError
+import sys
+import os
 
+## FOR DEBUGGING MATRIX SERVICE DIRECTLY:
+# # Get the absolute path of the project root
+# PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+# # Add the project root to Python's sys.path
+# sys.path.insert(0, PROJECT_ROOT)
+
+# # Now import your modules
+# from models.DTOs.message_dto import MessageDTO
+
+
+MATRIX_MESSAGES_MAIN_NODE = "chunk"
+MATRIX_PROPERTY_FOR_MESSAGES_TRACKING = "end" # If exists, this is token for next messages. Otherwise, no further messages exists.
 HOMESERVER_URL = "https://matrix.org" # Should be part of the user details. 
 
 # should be in a config file - in  a local db or run time instance
@@ -54,7 +72,7 @@ class MatrixService:
         return new_room.room_id
 
     def create_room(self, room_name: str):
-        new_room = self.client.create_room(alias=room_name)
+        new_room = self.client.create_room(alias=f"{room_name}_{random.randint(1,100000)}")
         return new_room
 
     def invite_users_to_room(self, room: Room, users: List[str]):
@@ -112,8 +130,8 @@ class MatrixService:
         token = self.client.token
         url = f"{HOMESERVER_URL}/_matrix/client/v3/rooms/{room_id}/messages"
         params = {
-            "dir": "b",  # Retrieve messages in reverse (backward)
-            "limit": num_of_messages_to_retrieve,  # Number of messages to fetch
+            "dir": "b",
+            "limit": num_of_messages_to_retrieve,
         }
         headers = {"Authorization": f"Bearer {token}"}
 
@@ -196,17 +214,46 @@ class MatrixService:
         return room.leave()
     
     def get_next_available_index(self, room_id: str) -> bool:
-        room = self.client.join_room(room_id)
+        room : Room = self.client.join_room(room_id)
         return len(room._members)
+    
+    def get_valid_json_messages(self, room_id, limit=100):
+        valid_messages = []
+        room = self.client.join_room(room_id_or_alias=room_id)
+        prev_batch = room.prev_batch
+
+        while True:
+            res = self.client.api.get_room_messages(room.room_id, prev_batch, direction="b", limit=limit)
+
+            # Extract only message events
+            chunk = res.get(MATRIX_MESSAGES_MAIN_NODE, [])
+
+            for event in chunk:
+                if event.get("type") == "m.room.message":
+                    try:
+                        message_obj = MessageDTO.model_validate_json(event["content"]["body"])
+                        valid_messages.append(message_obj)
+                    except (ValueError, KeyError, ValidationError):
+                        pass 
+
+            prev_batch = res.get(MATRIX_PROPERTY_FOR_MESSAGES_TRACKING) if MATRIX_PROPERTY_FOR_MESSAGES_TRACKING in res else None
+            if not chunk or not prev_batch:
+                break
+        
+        return valid_messages
+
 
 # Example usage
 if __name__ == "__main__":
     room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
     destination_user_matrix_id = "@ronabramovich:matrix.org"
     message = {"body": "This is a privatenessage"}
-    MatrixService.instance().send_private_message_to_user(
-        destination_user_matrix_id, "This is a privatenessage"
-    )
+    # MatrixService.instance().send_private_message_to_user(
+    #     destination_user_matrix_id, "This is a privatenessage"
+    # )
+    messages = MatrixService.instance().get_valid_json_messages(room_id=room_id)
+    print(f' My messages are : {[m for m in messages]} . \n And Thats all ')
+    print('\n \n \n CHECK CHECK \n \n \n')
     MatrixService.instance().create_user_backup_room()
     MatrixService.instance().get_room_history(room_id)
     MatrixService.instance().send_message_to_wallet_room(room_id, message)
