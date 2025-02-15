@@ -1,6 +1,6 @@
-from protocols.Feldman_VSS_protocol import Feldman_VSS_Protocol
+from models.protocols.Feldman_VSS_protocol import Feldman_VSS_Protocol
 from ecdsa import NIST256p, curves
-from protocols.ShareShrinker import ShareShrinker
+from models.protocols.ShareShrinker import ShareShrinker
 import random
 from models.models import user_secret_signature_share, user_key_generation_share, user_modulus
 import APIs.UserToUserAPI 

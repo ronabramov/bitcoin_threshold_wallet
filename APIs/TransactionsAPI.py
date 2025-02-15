@@ -1,7 +1,7 @@
 from local_db import sql_db_dal
-from DTOs.transaction_dto import TransactionDTO
-from DTOs.message_dto import MessageDTO as MessageWrapper
-from DTOs.wallet_dto import WalletDto
+from models.DTOs.transaction_dto import TransactionDTO
+from models.DTOs.message_dto import MessageDTO as MessageWrapper
+from models.DTOs.wallet_dto import WalletDto
 from models.transaction_status import TransactionStatus
 from models.transaction_response import TransactionResponse
 from models.models import user_public_share

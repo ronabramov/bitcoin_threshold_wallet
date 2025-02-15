@@ -104,3 +104,4 @@ wcwidth==0.2.13
 yarl==1.18.3
 sqlalchemy==2.0.36
 bcrypt==4.2.1
+phe==1.5.0
