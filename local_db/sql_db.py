@@ -2,8 +2,9 @@ import os
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from models.models import public_user_data
+from models.models import room_public_user_data, room_secret_user_data
 from DTOs.transaction_dto import TransactionDTO as TransactionDTO
+import json
 
 
 Base = declarative_base()
@@ -17,6 +18,10 @@ class User(Base):
     homeserver_login = Column(String, nullable=True)
     homeserver_password = Column(String, nullable=True)
 
+class Friend(Base):
+    __tablename__ = "friends"
+    email = Column(String, primary_key=True, nullable=False)
+    matrix_id = Column(String, primary_key=False, nullable=False)
 
 class Wallet(Base):
     __tablename__ = "wallets"
@@ -25,6 +30,15 @@ class Wallet(Base):
     users = Column(Text, nullable=True) #@alice:matrix.org,@bob:matrix.org - we will save comma parsed absolute path for participating users
     configuration = Column(Text, nullable=True)#What configurations?
     transactions = relationship("Transaction", back_populates="wallet")
+
+    def set_room_secret_user_data(self, data : room_secret_user_data):
+        self.configuration = data.model_dump_json()
+
+    def get_room_secret_user_data(self):
+        if self.configuration:
+            data = json.loads(self.configuration)
+            return room_secret_user_data.model_validate_json(data)
+        return None
     
 
 
@@ -62,7 +76,7 @@ class Transaction_Room(Base):
     participants_data = Column(JSON, nullable=False, default={}) #user_index to user_data : matrix_id, Paillier Public key and Modulus data
     
 
-    def add_participant(self, user_data: public_user_data):
+    def add_participant(self, user_data: room_public_user_data):
         """ Adds a new participant using a `public_user_data` object """
         index = str(user_data.user_index)
         if index in self.participants_data:
@@ -70,12 +84,12 @@ class Transaction_Room(Base):
 
         self.participants_data[index] = user_data.to_dict()  # Use `to_dict()`
 
-    def get_participant(self, index: int) -> public_user_data:
+    def get_participant(self, index: int) -> room_public_user_data:
         """ Retrieves participant data as a `public_user_data` object """
         data = self.participants_data.get(str(index))
-        return public_user_data.from_dict(data) if data else None  # Use `from_dict()`
+        return room_public_user_data.from_dict(data) if data else None  # Use `from_dict()`
 
-    def update_participant(self, user_data: public_user_data):
+    def update_participant(self, user_data: room_public_user_data):
         """ Updates participant data while preserving existing fields """
         index = str(user_data.user_index)
         if index not in self.participants_data:
@@ -92,7 +106,7 @@ class Transaction_Room(Base):
 
     def list_participants(self):
         """ Returns all participants as `public_user_data` objects """
-        return {int(k): public_user_data.from_dict(v) for k, v in self.participants_data.items()}
+        return {int(k): room_public_user_data.from_dict(v) for k, v in self.participants_data.items()}
 
 # check if the database exists
 if not os.path.exists(DB_FILE):
