@@ -63,13 +63,18 @@ class MatrixService:
         self._client = client
         return client
 
-    def create_new_room_and_invite_users(self, room_name : str, users_Ids : List[str]):
+    def create_new_room_and_invite_users(self, room_name : str, users_Ids : List[str], first_message : str = None):
         """
         Create new room and invite users
         """
         new_room : Room = self.create_room(room_name) 
+        room_id = new_room.room_id
         self.invite_users_to_room(new_room, users=users_Ids)
-        return new_room.room_id
+        
+        if first_message is not None:
+            self.send_message_to_wallet_room(room_id=room_id, message=first_message)
+
+        return room_id
 
     def create_room(self, room_name: str):
         new_room = self.client.create_room(alias=f"{room_name}_{random.randint(1,100000)}")

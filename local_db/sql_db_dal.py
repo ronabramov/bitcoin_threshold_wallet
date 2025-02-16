@@ -2,7 +2,7 @@ from local_db import sql_db
 from typing import Dict, Optional, List
 from DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
-from models.models import room_public_user_data
+from models.models import room_public_user_data, user_public_share
 from enum import Enum
 
 def get_transaction_room_data_by_trans_id(transaction_id : str):
@@ -129,6 +129,18 @@ def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
         return True
     except Exception as e:
         print(f"Failed to insert wallet {wallet.wallet_id}", e)
+        return False
+
+def inser_new_room_user(wallet_id : str, user_index : int, user_matrix_id : str, user_public_keys : user_public_share):
+    try:
+        rooom_user_data = sql_db.Room_User_Data(user_index = user_index, user_matrix_id=user_matrix_id,
+                                                 user_public_keys_data = user_public_keys.to_dict(), wallet_id=wallet_id)
+        sql_db.session.add(rooom_user_data)
+        sql_db.session.commit()
+        print(f"Successffuly inserted room's user data for user {user_matrix_id} in wallet {wallet_id} to db")
+        return True
+    except Exception as e:
+        print(f"Failed to insert user {user_matrix_id} into wallet {wallet_id}", e)
         return False
 
 def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO: #The transaction db must contain all properties of DTO. name is irrelevant?

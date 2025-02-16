@@ -14,6 +14,13 @@ class Message(BaseModel):
     recipient_id: str
     content: str
 
+class WalletGenerationMessage(BaseModel):
+    threshold : int
+    curve_name : str
+
+    def get_type():
+        return "wallet_generation_message"
+
 class user_modulus(BaseModel):
     N : int
     h1 : int
