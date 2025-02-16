@@ -2,30 +2,18 @@ from local_db import sql_db
 from typing import Dict, Optional, List
 from DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
-from models.models import room_public_user_data, user_public_share
-from enum import Enum
+from models.models import  user_public_share
 
-def get_transaction_room_data_by_trans_id(transaction_id : str):
+def get_transaction_participating_users_data_by_trans_id(wallet_id : str) -> dict[int, sql_db.Room_User_Data]:
     try:
-        transaction_room_data = sql_db.session.query(sql_db.Room_User_Data).filter(
-                                                     sql_db.Room_User_Data.transaction_id == transaction_id).first()
-        if not transaction_room_data:
-            print(f"Couldn't find room_transaction_data for transaction {transaction_id}")
-            raise FileNotFoundError(f"Couldn't find room_transaction_data for transaction {transaction_id}")
-        return transaction_room_data.transaction_id, transaction_room_data.room_id, transaction_room_data.curve_name
+        room_users_data = sql_db.session.query(sql_db.Room_User_Data).filter(
+                                                     sql_db.Room_User_Data.wallet_id == wallet_id).all()
+        if not room_users_data:
+            print(f"Couldn't find room_transaction_data for transaction {wallet_id}")
+            raise FileNotFoundError(f"Couldn't find room_transaction_data for transaction {wallet_id}")
+        return {user.user_index: user for user in room_users_data}
     except Exception as e:
-        print(f"There was and error while trying to retrieve transaction-room data for transaction {transaction_id}", e)
-
-def get_transaction_participating_users_data_by_trans_id(transaction_id : str) -> dict[int, room_public_user_data]:
-    try:
-        transaction_room_data = sql_db.session.query(sql_db.Room_User_Data).filter(
-                                                     sql_db.Room_User_Data.transaction_id == transaction_id).first()
-        if not transaction_room_data:
-            print(f"Couldn't find room_transaction_data for transaction {transaction_id}")
-            raise FileNotFoundError(f"Couldn't find room_transaction_data for transaction {transaction_id}")
-        return transaction_room_data.list_participants()
-    except Exception as e:
-        print(f"There was and error while trying to retrieve users data for transaction {transaction_id}", e)
+        print(f"There was and error while trying to retrieve users data for transaction {wallet_id}", e)
 
 def get_user_by_email(user_email : str) -> sql_db.User :
     try:
@@ -96,31 +84,6 @@ def insert_new_transaction(transaction : TransactionDTO) -> bool:
         print(f'failed to insert transaction {transaction.id} to db.', e)
         return False
     
-def insert_transaction_room(
-        self, transaction_id: str, room_id: str, curve_name: str, participants_dict: dict[int, room_public_user_data]
-    ) -> sql_db.Room_User_Data:
-        """
-        Inserts a new transaction room entry into the database.
-
-        :param transaction_id: Unique transaction identifier.
-        :param room_id: Matrix room ID.
-        :param curve_name: Cryptographic curve used.
-        :param participants_dict: Dictionary of index -> public_user_data objects.
-        :return: The created Transaction_Room object.
-        """
-        participants_data = {str(index): user.to_dict() for index, user in participants_dict.items()}
-
-        new_transaction_room_data = sql_db.Room_User_Data(
-            transaction_id=transaction_id,
-            room_id=room_id,
-            curve_name=curve_name,
-            participants_data=participants_data
-        )
-
-        self.session.add(new_transaction_room_data)
-        self.session.commit()
-        return new_transaction_room_data
-
 def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
     try:
         sql_db.session.add(wallet)
@@ -143,7 +106,7 @@ def inser_new_room_user(wallet_id : str, user_index : int, user_matrix_id : str,
         print(f"Failed to insert user {user_matrix_id} into wallet {wallet_id}", e)
         return False
 
-def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO: #The transaction db must contain all properties of DTO. name is irrelevant?
+def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO:
     transaction_dto = transaction_dto = TransactionDTO(
     id=transaction.transaction_id,  
     name="", 

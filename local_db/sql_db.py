@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from models.models import room_public_user_data, room_secret_user_data
+from models.models import user_public_share, room_secret_user_data
 from models.DTOs.transaction_dto import TransactionDTO
 import json
 
@@ -27,6 +27,7 @@ class Wallet(Base):
     __tablename__ = "wallets"
     wallet_id = Column(String, primary_key=True, nullable=False) #This will be the room Id.
     threshold = Column(Integer, nullable=False)
+    max_num_of_users = Column(Integer, nullable=False)
     users = Column(Text, nullable=True) #@alice:matrix.org,@bob:matrix.org - we will save comma parsed absolute path for participating users
     configuration = Column(Text, nullable=True) # User secret
     curve_name = Column(Text, nullable=True)
@@ -73,78 +74,97 @@ class Transaction(Base):
 
 class Room_User_Data(Base):
     """
-    One per transaction- include all necessary particpants' keys.
+    One per room - include all necessary participants' keys.
     """
     __tablename__ = "room_user_data"
+    
     user_index = Column(Integer, primary_key=True, nullable=False)
     user_matrix_id = Column(String, primary_key=True, nullable=False)
-    user_public_keys_data = Column(JSON, nullable=False, default={}) #Paillier Public key and Modulus data
-    signature_shared_data = Column(JSON, nullable=False, default={}) # Include the signature share the user sent in channel
-    mta_data = Column(JSON, nullable=False, default={}) #will store relevant data for mta process with the user
+    user_public_keys_data = Column(JSON, nullable=False, default={})  #Paillier Public key and Modulus data
+    signature_shared_data = Column(JSON, nullable=False, default={})  # Includes the signature share the user sent in channel
+    mta_data = Column(JSON, nullable=False, default={})  # Stores relevant data for MTA process with the user
+
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="room_user_data")
+
+    ### PARTICIPANT DATA MANAGEMENT ###
     
-    def add_participant(self, user_data: room_public_user_data):
-        """ Adds a new participant using a `room_public_user_data` object. """
-        index = str(user_data.user_index)
-        if index in self.user_public_keys_data:
-            raise ValueError(f"Participant with index {user_data.user_index} already exists.")
+    def set_user_public_keys(self, user_data: user_public_share):
+        """ 
+        Stores the `user_public_share` object in `user_public_keys_data`. 
+        This replaces the previous data.
+        """
+        self.user_public_keys_data = user_data.to_dict()
 
-        self.user_public_keys_data[index] = user_data.to_dict()
+    def get_user_public_keys(self) -> user_public_share:
+        """ 
+        Retrieves the user's `user_public_share` data as an object. 
+        Returns a `user_public_share` instance.
+        """
+        return user_public_share.from_dict(self.user_public_keys_data) if self.user_public_keys_data else None
 
-    def get_participant(self, index: int) -> room_public_user_data:
-        """ Retrieves participant data as a `room_public_user_data` object. """
-        data = self.user_public_keys_data.get(str(index))
-        return room_public_user_data.from_dict(data) if data else None
+    def update_user_public_keys(self, user_data: user_public_share):
+        """ 
+        Updates the stored `user_public_share` object while preserving existing fields.
+        Raises an error if no data exists.
+        """
+        if not self.user_public_keys_data:
+            raise ValueError(f"No user public key data found for user {self.user_matrix_id}")
 
-    def update_participant(self, user_data: room_public_user_data):
-        """ Updates participant data while preserving existing fields. """
-        index = str(user_data.user_index)
-        if index not in self.user_public_keys_data:
-            raise ValueError(f"Participant with index {user_data.user_index} not found.")
+        self.user_public_keys_data = user_data.to_dict()
 
-        self.user_public_keys_data[index] = user_data.to_dict()
+    def remove_user_public_keys(self):
+        """ 
+        Clears the stored `user_public_share` object.
+        This action effectively removes all stored public keys for the user.
+        """
+        self.user_public_keys_data = {}
 
-    def remove_participant(self, index: int):
-        """ Removes a participant from the transaction room. """
-        if str(index) in self.user_public_keys_data:
-            del self.user_public_keys_data[str(index)]
-        else:
-            raise ValueError(f"Participant with index {index} not found.")
-
-    def list_participants(self):
-        """ Returns all participants as `room_public_user_data` objects. """
-        return {int(k): room_public_user_data.from_dict(v) for k, v in self.user_public_keys_data.items()}
+    ### SIGNATURE SHARE MANAGEMENT ###
     
-        ### SIGNATURE SHARE MANAGEMENT ###
+    def add_signature_share(self, signature_share: dict):
+        """ 
+        Stores the user's signature share data.
+        This is used in the signing protocol.
+        """
+        self.signature_shared_data = signature_share
+
+    def get_signature_share(self) -> dict:
+        """ 
+        Retrieves the signature share of the user. 
+        Returns an empty dictionary if no share is found.
+        """
+        return self.signature_shared_data
+
+    def remove_signature_share(self):
+        """ 
+        Removes the stored signature share data for the user.
+        This will clear all signature share information.
+        """
+        self.signature_shared_data = {}
+
+    ### MTA DATA MANAGEMENT ###
     
-    def add_signature_share(self, user_index: int, signature_share: dict):
-        """ Stores the user's signature share data. """
-        self.signature_shared_data[str(user_index)] = signature_share
+    def add_mta_data(self, mta_info: dict):
+        """ 
+        Adds or updates MTA-related data for this user. 
+        This information is used during the multi-party computation process.
+        """
+        self.mta_data = mta_info
 
-    def get_signature_share(self, user_index: int) -> dict:
-        """ Retrieves the signature share of a specific user. """
-        return self.signature_shared_data.get(str(user_index), {})
+    def get_mta_data(self) -> dict:
+        """ 
+        Retrieves the MTA-related data of the user. 
+        Returns an empty dictionary if no data exists.
+        """
+        return self.mta_data
 
-    def remove_signature_share(self, user_index: int):
-        """ Removes signature share data for a participant. """
-        if str(user_index) in self.signature_shared_data:
-            del self.signature_shared_data[str(user_index)]
-
-        ### MTA DATA MANAGEMENT ###
-
-    def add_mta_data(self, participant_index: int, mta_info: dict):
-        """ Adds or updates MTA-related data for a specific participant. """
-        self.mta_data[str(participant_index)] = mta_info
-
-    def get_mta_data(self, participant_index: int) -> dict:
-        """ Retrieves MTA-related data for a participant. """
-        return self.mta_data.get(str(participant_index), {})
-
-    def remove_mta_data(self, participant_index: int):
-        """ Removes MTA-related data for a participant. """
-        if str(participant_index) in self.mta_data:
-            del self.mta_data[str(participant_index)]
+    def remove_mta_data(self):
+        """ 
+        Removes the stored MTA-related data for this user. 
+        This clears all multi-party computation information.
+        """
+        self.mta_data = {}
 
 
 
