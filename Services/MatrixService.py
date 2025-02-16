@@ -217,7 +217,7 @@ class MatrixService:
         room : Room = self.client.join_room(room_id)
         return len(room._members)
     
-    def get_valid_json_messages(self, room_id, limit=100):
+    def get_valid_json_messages(self, room_id, limit=100) -> List[MessageDTO]:
         valid_messages = []
         room = self.client.join_room(room_id_or_alias=room_id)
         prev_batch = room.prev_batch

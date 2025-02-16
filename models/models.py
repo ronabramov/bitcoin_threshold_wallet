@@ -103,7 +103,6 @@ class user_public_share(BaseModel):
     user_id: str
     paillier_public_key: paillier.PaillierPublicKey
     user_modulus: user_modulus
-    user_id_to_user_index: Optional[Dict[int, str]] = None  # Optional field
 
     model_config = ConfigDict(arbitrary_types_allowed=True) 
 
@@ -116,8 +115,7 @@ class user_public_share(BaseModel):
                 "N": self.user_modulus.N,
                 "h1": self.user_modulus.h1,
                 "h2": self.user_modulus.h2
-            },
-            "user_id_to_user_index": self.user_id_to_user_index
+            }
         }
 
     @classmethod
@@ -133,12 +131,33 @@ class user_public_share(BaseModel):
             user_id=data["user_id"],
             paillier_public_key=paillier_pub,
             user_modulus=user_mod,
-            user_id_to_user_index=data.get("user_id_to_user_index")
         )
 
     def get_type():
-        return "user_public_data"
+        return "user_public_share"
     
+class generating_user_public_share(user_public_share):
+    curve_name : str
+    def to_dict(self):
+        base_data = super().to_dict()
+        base_data["curve_name"] = self.curve_name
+        return base_data
+
+    @classmethod
+    def from_dict(cls, data):
+        public_data = user_public_share.from_dict(data)
+        curve_name = data["curve_name"]
+        
+        return cls(
+            user_index=public_data.user_index,
+            user_id=public_data.user_id,
+            paillier_public_key=public_data.paillier_public_key,
+            user_modulus=public_data.user_modulus,
+            curve_name=curve_name
+        )
+    def get_type():
+        return "generating_user_public_share"
+   
 
 class user_secret_signature_share(BaseModel):
     """
@@ -220,35 +239,7 @@ class user_index_to_user_id_message(BaseModel):
     def get_type():
         return "user_index_to_user_id"
 
-class room_public_user_data(BaseModel):
-    user_index: int
-    user_id: str
-    paillier_public_key: paillier.PaillierPublicKey
-    model_config = ConfigDict(arbitrary_types_allowed=True) 
-
-    def to_dict(self):
-        return {
-            "user_index": self.user_index,
-            "user_id": self.user_id,
-            "paillier_public_key": {
-                "n": self.paillier_public_key.n  # Store only `n`, enough to reconstruct the key
-            }
-        }
-
-    @classmethod
-    def from_dict(cls, data):
-        """Deserialize from a dictionary and reconstruct PaillierPublicKey."""
-        paillier_pub = paillier.PaillierPublicKey(n=data["paillier_public_key"]["n"])
-        return cls(
-            user_index=data["user_index"],
-            user_id=data["user_id"],
-            paillier_public_key=paillier_pub  # Fully functional Paillier key
-        )
-
-    def get_type():
-        return "room_public_user_data"
-
-class room_secret_user_data(room_public_user_data):
+class room_secret_user_data(user_public_share):
     paillier_secret_key: paillier.PaillierPrivateKey
 
     def to_dict(self):
@@ -261,7 +252,7 @@ class room_secret_user_data(room_public_user_data):
 
     @classmethod
     def from_dict(cls, data):
-        public_data = room_public_user_data.from_dict(data)
+        public_data = user_public_share.from_dict(data)
         paillier_priv = paillier.PaillierPrivateKey(
             public_data.paillier_public_key, 
             data["paillier_secret_key"]["p"], 

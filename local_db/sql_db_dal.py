@@ -7,8 +7,8 @@ from enum import Enum
 
 def get_transaction_room_data_by_trans_id(transaction_id : str):
     try:
-        transaction_room_data = sql_db.session.query(sql_db.Transaction_Room).filter(
-                                                     sql_db.Transaction_Room.transaction_id == transaction_id).first()
+        transaction_room_data = sql_db.session.query(sql_db.Room_User_Data).filter(
+                                                     sql_db.Room_User_Data.transaction_id == transaction_id).first()
         if not transaction_room_data:
             print(f"Couldn't find room_transaction_data for transaction {transaction_id}")
             raise FileNotFoundError(f"Couldn't find room_transaction_data for transaction {transaction_id}")
@@ -18,8 +18,8 @@ def get_transaction_room_data_by_trans_id(transaction_id : str):
 
 def get_transaction_participating_users_data_by_trans_id(transaction_id : str) -> dict[int, room_public_user_data]:
     try:
-        transaction_room_data = sql_db.session.query(sql_db.Transaction_Room).filter(
-                                                     sql_db.Transaction_Room.transaction_id == transaction_id).first()
+        transaction_room_data = sql_db.session.query(sql_db.Room_User_Data).filter(
+                                                     sql_db.Room_User_Data.transaction_id == transaction_id).first()
         if not transaction_room_data:
             print(f"Couldn't find room_transaction_data for transaction {transaction_id}")
             raise FileNotFoundError(f"Couldn't find room_transaction_data for transaction {transaction_id}")
@@ -98,7 +98,7 @@ def insert_new_transaction(transaction : TransactionDTO) -> bool:
     
 def insert_transaction_room(
         self, transaction_id: str, room_id: str, curve_name: str, participants_dict: dict[int, room_public_user_data]
-    ) -> sql_db.Transaction_Room:
+    ) -> sql_db.Room_User_Data:
         """
         Inserts a new transaction room entry into the database.
 
@@ -110,7 +110,7 @@ def insert_transaction_room(
         """
         participants_data = {str(index): user.to_dict() for index, user in participants_dict.items()}
 
-        new_transaction_room_data = sql_db.Transaction_Room(
+        new_transaction_room_data = sql_db.Room_User_Data(
             transaction_id=transaction_id,
             room_id=room_id,
             curve_name=curve_name,

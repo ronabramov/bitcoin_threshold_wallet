@@ -3,7 +3,7 @@ import random
 import gmpy2
 import sympy
 from phe import generate_paillier_keypair
-from models.models import user_modulus, room_public_user_data, room_secret_user_data
+from models.models import user_modulus, user_public_share, generating_user_public_share
 
 
 def hash_password(password: str) -> str:
@@ -28,12 +28,17 @@ def pick_element_from_Multiplicative_group(N):
         if gmpy2.gcd(a, N) == 1:
             return a
 
-def generate_user_room_keys(user_index : int, user_matrix_id : str):
+def generate_user_room_keys(user_index : int, user_matrix_id : str, curve_name: str = None):
+    #TODO : Add the key generation shares to that object?
     user_modulus = generate_user_modulus_parameters()
     paillier_public_key, paillier_private_key = generate_paillier_keypair()
-    room_public_user_data = room_public_user_data(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key, user_modulus=user_modulus)
+    room_public_user_data = user_public_share(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key, user_modulus=user_modulus)
     room_secret_user_data = room_secret_user_data(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key,
                                                    user_modulus=user_modulus, paillier_private_key = paillier_private_key)
+    if curve_name is not None:
+        # Relevant only for wallet generator
+        room_public_user_data = generating_user_public_share(user_index=user_index, user_id=user_matrix_id, 
+                                                             paillier_public_key=paillier_public_key, user_modulus=user_modulus, curve_name=curve_name)
     return room_secret_user_data, room_public_user_data
     
 
