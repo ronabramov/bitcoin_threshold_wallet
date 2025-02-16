@@ -3,7 +3,7 @@ from DTOs.wallet_dto import WalletDto
 from Services.MatrixService import MatrixService
 import common_utils as Utils
 from ecdsa import NIST256p, curves
-from models.models import user_modulus, user, user_secret_signature_share, user_public_share
+from models.models import user_public_share
 from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
 
 class UserTransactionConfigurationHandler:
@@ -27,7 +27,7 @@ class UserTransactionConfigurationHandler:
         user_signature_generator = UserSignatureGenerator(modulus=user_modulus, curve=curve, n=wallet.n, t=wallet.threshold, user_index=user_index
                                                           ,user_index_to_user_matrixId=index_to_user_matrix_Id, participating_users_indecis=[i for i in range(num_of_participants)])
         
-        user_share, sended_shares_to_other_participants = user_signature_generator.generate_and_distribute_shares()
+        user_share, sended_shares_to_other_participants = user_signature_generator.generate_and_save_shares()
         if not sended_shares_to_other_participants:
             print(f"There was an error while trying to share VSS shares for other users.")
         #TODO : save the user_share and the transaction room Id. 

@@ -58,7 +58,8 @@ def handle_joining_new_wallet(user_id : str, room_name : str, room_id : str) -> 
     return True
 
 def get_wallet_from_generating_wallet_message(wallet_id : str, wallet_participants : str, generation_message : WalletGenerationMessage) -> Wallet:
-    return Wallet(wallet_id=wallet_id, threshold = generation_message.threshold, users=wallet_participants,curve_name = generation_message.curve_name)
+    return Wallet(wallet_id=wallet_id, threshold = generation_message.threshold, users=wallet_participants,
+                  curve_name = generation_message.curve_name, max_num_of_users = generation_message.max_number_of_participants)
 
 def save_room_users_data_to_db(wallet_id: str, rest_users_messages: list[user_public_share]) -> bool:
 
@@ -76,7 +77,8 @@ def save_room_users_data_to_db(wallet_id: str, rest_users_messages: list[user_pu
     return success
 
 
-def create_new_wallet(user_id : str, invited_users_emails : List[str], wallet_name : str, wallet_threshold : int, curve_name : str = NIST256p.name ):
+def create_new_wallet(user_id : str, invited_users_emails : List[str], wallet_name : str, wallet_threshold : int,
+                       max_participants : int, curve_name : str = NIST256p.name ):
     """
     Creating matrix room and sending invitaiton for the specified users. 
     In addition, sharing Public keys of the generating user.

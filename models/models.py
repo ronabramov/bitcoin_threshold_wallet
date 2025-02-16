@@ -16,6 +16,7 @@ class Message(BaseModel):
 
 class WalletGenerationMessage(BaseModel):
     threshold : int
+    max_number_of_participants : int
     curve_name : str
 
     def get_type():
@@ -37,7 +38,7 @@ class user_key_generation_share(BaseModel):
     """
     transaction_id : str
     generating_user_index : str
-    target_user_matrix_id : str
+    target_user_matrix_id : str # Will be filled right before sending message. 
     target_user_index : int
     target_user_evaluation : int
     v_i : List[PointJacobi]
@@ -103,7 +104,7 @@ class user_key_generation_share(BaseModel):
 
 
     def get_type():
-        return f"user_key_share"
+        return f"user_key_generation_share"
 
 class user_public_share(BaseModel):
     user_index: int

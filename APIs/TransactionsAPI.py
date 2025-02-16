@@ -59,7 +59,7 @@ def respond_to_new_transaction(user_id : str, transaction : TransactionDTO, user
 
         return MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= approved_transaction_json)   
 
-def handle_reached_threshold_transaction(transaction : TransactionDTO, wallet: WalletDto) -> bool:
+def handle_reached_threshold_transaction(transaction : TransactionDTO, wallet: WalletDto) -> bool: #####RE VISIT
     config_handler = ConfigHandler()
     _, transaction_room_id, public_key = config_handler.define_transaction_user_config_and_send_shares(transaction=transaction, wallet=wallet) #Consider passing Curve.
     public_keys_message = MessageWrapper(type = user_public_share, data=public_key).model_dump_json()

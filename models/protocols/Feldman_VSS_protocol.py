@@ -41,16 +41,9 @@ class Feldman_VSS_Protocol:
         v_i = self.compute_v_i(coeffs)
         g_secret = v_i[0]
         shares = [
-            user_key_generation_share(transaction_id=self.transaction_id, generating_user_index=self.generating_user_index,
-                                       target_user_matrix_id=self.user_index_to_matrixId[i], target_user_index=i,
+            user_key_generation_share(transaction_id=self.transaction_id, generating_user_index=self.generating_user_index, target_user_index=i,
                                          target_user_evaluation=self.evaluate_polynomial(i, coeffs), v_0=g_secret, curve=self.curve)
          for i in range(1, n+1)]
-        # shares = [{
-        #     'index': i,
-        #     'p(i)': self.evaluate_polynomial(i, coeffs),
-        #     'v_i': v_i,
-        #     'g^secret': g_secret
-        # } for i in range(1, n+1)]
         return shares
 
     def verify_share(self, share):

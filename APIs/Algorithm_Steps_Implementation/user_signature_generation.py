@@ -2,42 +2,33 @@ from models.protocols.Feldman_VSS_protocol import Feldman_VSS_Protocol
 from ecdsa import NIST256p, curves
 from models.protocols.ShareShrinker import ShareShrinker
 import random
-from models.models import user_secret_signature_share, user_key_generation_share, user_modulus
+from local_db.sql_db import Wallet
+import local_db.sql_db_dal as DB_DAL
+from models.models import user_secret_signature_share, user_key_generation_share, user_modulus, user_public_share
 import APIs.UserToUserAPI 
-from phe import generate_paillier_keypair
 
-#Verify that it's ok to generate everything for the transaction. If so , n is no longer relevant. 
 class UserSignatureGenerator:
-    def __init__(self, modulus : user_modulus, curve : curves.Curve, n :int , t : int, user_index : int,
-                  user_index_to_user_matrixId : dict, participating_users_indecis : list):
-        self.key_gen_protocol = Feldman_VSS_Protocol(n=n, t=t, curve=curve)
-        self.user_index = user_index
+    def __init__(self, wallet : Wallet, user_public_keys : user_public_share):
+        curve = curves.curve_by_name(wallet.curve_name)
+        self.wallet_id = wallet.wallet_id
+        self.key_gen_protocol = Feldman_VSS_Protocol(n=wallet.max_num_of_users, t=wallet.threshold, curve=curve)
         self.q = curve.order
-        self.user_index_to_user_matrixId = user_index_to_user_matrixId
-        self.user_id = user_index_to_user_matrixId[user_index]
         self.curve = curve
-        self.modulus = modulus
-        self.n =n
-        self.t =t   
-        self.participating_users_indecis = participating_users_indecis
+        self.n =wallet.max_num_of_users
+        self.t = wallet.threshold   
+        self.user_public_keys = user_public_keys
 
-    def generate_and_distribute_shares(self):
-        user_share, other_participants_shares = self.generate_secret_and_shares_for_other_users()
-        sending_succeded = self.send_share_for_every_participating_user(other_participants_shares)
-        return user_share, sending_succeded
+    def generate_and_save_shares(self):
+        user_key_generation_participants_shares = self.generate_secret_and_shares_for_other_users()
+        insertion_success = DB_DAL.insert_multiple_signature_shares(wallet_id=self.wallet_id, shares= list(user_key_generation_participants_shares.values()))
+        return insertion_success
 
 
     def generate_secret_and_shares_for_other_users(self):
         secret = random.randint(1, self.q - 1)
         shares = self.key_gen_protocol.generate_shares(secret=secret)
         shares_dict = {share['index']: share for share in shares}
-        user_share = shares_dict[self.user_index]
-        paillier_public_key, paiilier_private_key = generate_paillier_keypair()
-        my_share = user_secret_signature_share(threshold=self.t, user_index=self.user_index, user_id=self.user_id, 
-                                        user_evaluation=user_share.target_user_evaluation, group=self.curve, user_modulus=self.modulus,
-                                        original_secret_share=secret, paiilier_secret_key = paiilier_private_key, paillier_public_key = paillier_public_key)
-        shares_dict.__delitem__(self.user_index)
-        return my_share, shares_dict
+        return shares_dict
     
     def send_share_for_every_participating_user(self, shares_dict : dict) -> bool:
         success = APIs.UserToUserAPI.send_key_share_for_participating_users(list(shares_dict.values()))

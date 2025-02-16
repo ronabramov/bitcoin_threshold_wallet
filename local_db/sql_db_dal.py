@@ -2,7 +2,7 @@ from local_db import sql_db
 from typing import Dict, Optional, List
 from DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
-from models.models import  user_public_share
+from models.models import  user_public_share, user_key_generation_share
 
 def get_transaction_participating_users_data_by_trans_id(wallet_id : str) -> dict[int, sql_db.Room_User_Data]:
     try:
@@ -72,6 +72,46 @@ def get_transactions_by_wallet_id(wallet_id : str, should_convert_to_dto = False
         return transactions
     except Exception as e:
         print(f"There was and error while trying to retrieve transaction for wallet {wallet_id}", e)
+
+def get_signature_shares_by_wallet(wallet_id: str) -> list[user_key_generation_share]:
+    """
+    Retrieves all signature shares for a given wallet.
+
+    :param session: SQLAlchemy session.
+    :param wallet_id: Wallet ID to fetch signature shares for.
+    :return: List of `user_key_generation_share` objects.
+    """
+    shares = sql_db.session.query(sql_db.Room_Signature_Shares_Data).filter_by(wallet_id=wallet_id).all()
+    return [user_key_generation_share.from_dict(share.share_data) for share in shares]
+
+
+def insert_signature_share(wallet_id: str, share_data: user_key_generation_share) -> bool:
+    share_index = share_data.target_user_index
+    try:
+        share_entry = sql_db.Room_Signature_Shares_Data(
+            share_index=sql_db,
+            share_data=share_data.to_dict(),
+            wallet_id=wallet_id
+        )
+        sql_db.session.add(share_entry)
+        sql_db.session.commit()
+        print(f"Successfully inserted signature share {share_index} for wallet {wallet_id}.")
+        return True
+    
+    except Exception as e:
+        sql_db.session.rollback()
+        print(f"Failed to insert signature share {share_index} for wallet {wallet_id}: {e}")
+        return False
+
+
+def insert_multiple_signature_shares(wallet_id: str, shares: list[user_key_generation_share]) -> bool:
+    success = True
+    for share in enumerate(shares):
+        result = insert_signature_share(wallet_id, share_data=share)
+        if not result:
+            success = False
+    return success
+
 
 def insert_new_transaction(transaction : TransactionDTO) -> bool:
     try:
