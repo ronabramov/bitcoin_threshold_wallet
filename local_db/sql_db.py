@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from models.models import user_public_share, room_secret_user_data, user_key_generation_share
+from models.models import user_public_share, user_secret_signature_share, user_key_generation_share
 from models.DTOs.transaction_dto import TransactionDTO
 import json
 
@@ -39,13 +39,13 @@ class Wallet(Base):
     # This should happen in way s.t every other user will have row in another table with the room_id and the user as ids and the json of his data.
     #When inserting wallet we insert these rows afterwards, and when pulling a wallet we pull also that data.
 
-    def set_room_secret_user_data(self, data : room_secret_user_data):
+    def set_room_secret_user_data(self, data : user_secret_signature_share):
         self.configuration = data.model_dump_json()
 
     def get_room_secret_user_data(self):
         if self.configuration:
             data = json.loads(self.configuration)
-            return room_secret_user_data.model_validate_json(data)
+            return user_secret_signature_share.model_validate_json(data)
         return None
     
 

@@ -3,7 +3,9 @@ import random
 import gmpy2
 import sympy
 from phe import generate_paillier_keypair
-from models.models import user_modulus, user_public_share, generating_user_public_share
+from models.models import user_modulus, user_public_share, generating_user_public_share, user_secret_signature_share
+from local_db.sql_db import Wallet
+from ecdsa import curves
 
 
 def hash_password(password: str) -> str:
@@ -28,15 +30,16 @@ def pick_element_from_Multiplicative_group(N):
         if gmpy2.gcd(a, N) == 1:
             return a
 
-def generate_user_room_keys(user_index : int, user_matrix_id : str):
+def generate_user_room_keys(user_index : int, user_matrix_id : str, wallet :  Wallet):
     #TODO : Add the key generation shares to that object?
     user_modulus = generate_user_modulus_parameters()
     paillier_public_key, paillier_private_key = generate_paillier_keypair()
     room_public_user_data = user_public_share(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key, user_modulus=user_modulus)
-    room_secret_user_data = room_secret_user_data(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key,
-                                                   user_modulus=user_modulus, paillier_private_key = paillier_private_key)
+    room_secret_user_share = user_secret_signature_share(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key,
+                                                   user_modulus=user_modulus, paillier_private_key = paillier_private_key,
+                                                     group=curves.curve_by_name(wallet.curve_name), threshold=wallet.threshold)
     
-    return room_secret_user_data, room_public_user_data
+    return room_secret_user_share, room_public_user_data
     
 
 def generate_user_modulus_parameters():

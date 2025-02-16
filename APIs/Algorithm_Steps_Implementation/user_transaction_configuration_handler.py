@@ -27,7 +27,7 @@ class UserTransactionConfigurationHandler:
         user_signature_generator = UserSignatureGenerator(modulus=user_modulus, curve=curve, n=wallet.n, t=wallet.threshold, user_index=user_index
                                                           ,user_index_to_user_matrixId=index_to_user_matrix_Id, participating_users_indecis=[i for i in range(num_of_participants)])
         
-        user_share, sended_shares_to_other_participants = user_signature_generator.generate_and_save_shares()
+        user_share, sended_shares_to_other_participants = user_signature_generator.handle_key_generation_for_user()
         if not sended_shares_to_other_participants:
             print(f"There was an error while trying to share VSS shares for other users.")
         #TODO : save the user_share and the transaction room Id. 

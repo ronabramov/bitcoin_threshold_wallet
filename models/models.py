@@ -185,8 +185,8 @@ class user_secret_signature_share(BaseModel):
     paillier_public_key: paillier.PaillierPublicKey
     paillier_secret_key: paillier.PaillierPrivateKey
     user_modulus: user_modulus
-    original_secret_share: int
-    num_of_updates: int
+    num_of_updates: int = 0
+    original_secret_share: Optional[int] = None
     shrinked_secret_share: Optional[int] = None
     model_config = ConfigDict(arbitrary_types_allowed=True) 
 
@@ -246,30 +246,3 @@ class user_index_to_user_id_message(BaseModel):
 
     def get_type():
         return "user_index_to_user_id"
-
-class room_secret_user_data(user_public_share):
-    paillier_secret_key: paillier.PaillierPrivateKey
-
-    def to_dict(self):
-        base_data = super().to_dict()
-        base_data["paillier_secret_key"] = {
-            "p": self.paillier_secret_key.p,
-            "q": self.paillier_secret_key.q
-        }
-        return base_data
-
-    @classmethod
-    def from_dict(cls, data):
-        public_data = user_public_share.from_dict(data)
-        paillier_priv = paillier.PaillierPrivateKey(
-            public_data.paillier_public_key, 
-            data["paillier_secret_key"]["p"], 
-            data["paillier_secret_key"]["q"]
-        )
-        return cls(
-            user_index=public_data.user_index,
-            user_id=public_data.user_id,
-            paillier_public_key=public_data.paillier_public_key,
-            user_modulus=public_data.user_modulus,
-            paillier_secret_key=paillier_priv
-        )

@@ -4,7 +4,7 @@ from models.protocols.ShareShrinker import ShareShrinker
 import random
 from local_db.sql_db import Wallet
 import local_db.sql_db_dal as DB_DAL
-from models.models import user_secret_signature_share, user_key_generation_share, user_modulus, user_public_share
+from models.models import user_secret_signature_share, user_key_generation_share, user_modulus, user_public_share, room_secret_user_data
 import APIs.UserToUserAPI 
 
 class UserSignatureGenerator:
@@ -17,18 +17,43 @@ class UserSignatureGenerator:
         self.n =wallet.max_num_of_users
         self.t = wallet.threshold   
         self.user_public_keys = user_public_keys
+        self.wallet = wallet
+        self.user_index = user_public_share.user_index
 
-    def generate_and_save_shares(self):
-        user_key_generation_participants_shares = self.generate_secret_and_shares_for_other_users()
+    def handle_key_generation_for_user(self):
+        """
+        1. Generates signature for user. Update Wallet secret with signature data
+        2. Records signature shares in DB
+        """
+        user_key_generation_participants_shares, user_secret = self.generate_secret_and_shares_for_other_users()
+        self.enrich_user_secret_data_with_signature_details(secret=user_secret, share = user_key_generation_participants_shares[self.user_public_keys.user_index])
         insertion_success = DB_DAL.insert_multiple_signature_shares(wallet_id=self.wallet_id, shares= list(user_key_generation_participants_shares.values()))
         return insertion_success
 
+    def enrich_user_secret_data_with_signature_details(self, secret : int, share : user_key_generation_share):
+        wallet_secret = self.wallet.get_room_secret_user_data()
+        wallet_secret.original_secret_share = secret
+        wallet_secret.original_secret_share = share.target_user_evaluation
+        wallet_secret.num_of_updates = 0
+        self.wallet.set_room_secret_user_data(wallet_secret)
 
     def generate_secret_and_shares_for_other_users(self):
         secret = random.randint(1, self.q - 1)
         shares = self.key_gen_protocol.generate_shares(secret=secret)
         shares_dict = {share['index']: share for share in shares}
-        return shares_dict
+        return shares_dict, secret
+    
+    def handle_existing_users_signatures(self, existing_users_keys : list[user_public_share]):
+        shares_dict = {}
+        users_signature_shares = DB_DAL.get_signature_shares_by_wallet(self.wallet_id)
+        for user in existing_users_keys:
+            if user.user_index == self.user_index:
+                continue # Send Messages only for other users
+            user_share = [share for share in users_signature_shares if share.target_user_index == user.user_index][0]
+            shares_dict[user.user_index] = user_share
+
+        return self.send_share_for_every_participating_user(shares_dict=shares_dict)
+
     
     def send_share_for_every_participating_user(self, shares_dict : dict) -> bool:
         success = APIs.UserToUserAPI.send_key_share_for_participating_users(list(shares_dict.values()))
