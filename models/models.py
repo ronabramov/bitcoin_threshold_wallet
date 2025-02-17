@@ -121,31 +121,17 @@ class user_public_share(BaseModel):
     user_modulus: user_modulus
 
     model_config = ConfigDict(arbitrary_types_allowed=True) 
-
+    
     @field_serializer("paillier_public_key")
-    def serialize_public_key(self, pub_key):
-        return {"n": str(pub_key.n)}
-
-    @field_serializer("paillier_secret_key")
-    def serialize_private_key(self, priv_key):
-        return {
-            "p": str(priv_key.p),
-            "q": str(priv_key.q)
-        }
-
+    def serialize_public_key(self, pub_key) -> Dict[str, str]:
+        return {"n": str(pub_key.n)} 
+    
     @field_validator("paillier_public_key", mode="before")
+    @classmethod
     def deserialize_public_key(cls, value):
-        if isinstance(value, dict):  # If already deserialized
+        if isinstance(value, dict):
             return paillier.PaillierPublicKey(n=int(value["n"]))
-        return value  # Already an object
-
-    @field_validator("paillier_secret_key", mode="before")
-    def deserialize_private_key(cls, value):
-        if isinstance(value, dict):  # If already deserialized
-            pub_key = paillier.PaillierPublicKey(n=int(value["p"]) * int(value["q"]))  # Reconstruct public key
-            return paillier.PaillierPrivateKey(pub_key, int(value["p"]), int(value["q"]))
-        return value  # Already an object
-
+        return value  
 
     # def to_dict(self):
     #     return {

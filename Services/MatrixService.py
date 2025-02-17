@@ -68,6 +68,7 @@ class MatrixService:
         Create new room and invite users
         """
         new_room : Room = self.create_room(room_name) 
+        self.client.join_room(new_room.room_id)
         room_id = new_room.room_id
         self.invite_users_to_room(new_room, users=users_Ids)
         
