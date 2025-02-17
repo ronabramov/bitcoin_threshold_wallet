@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from models.models import user_public_share, user_secret_signature_share, user_key_generation_share
+from models.models import user_public_share, user_secret_signature_share, key_generation_share
 from models.DTOs.transaction_dto import TransactionDTO
 import json
 
@@ -45,7 +45,7 @@ class Wallet(Base):
     def get_room_secret_user_data(self):
         if self.configuration:
             data = json.loads(self.configuration)
-            return user_secret_signature_share.model_validate_json(data)
+            return user_secret_signature_share.model_validate(data)
         return None
     
 
@@ -86,7 +86,7 @@ class Room_User_Data(Base):
     mta_data = Column(JSON, nullable=False, default={})  # Stores relevant data for MTA process with the user
 
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
-    wallet = relationship("Wallet", back_populates="room_user_data")
+    wallet = relationship("Wallet", back_populates="users_data")
 
     ### PARTICIPANT DATA MANAGEMENT ###
     
@@ -128,18 +128,23 @@ class Room_User_Data(Base):
         self.mta_data = {}
 
 class Room_Signature_Shares_Data(Base):
-    share_index = Column(Integer, primary_key=True, nullable=False)
-    share_data = Column(JSON, nullable=False, default={}) # data of to dict/from_dict of user_key_generation_share.
-    wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
-    wallet = relationship("Wallet", back_populates="transactions")
+    __tablename__ = "room_signature_shares_data"
 
-    def get_signature_share(self, user_index : int) -> user_key_generation_share:
-        return user_key_generation_share.from_dict(self.share_data)
+    share_index = Column(Integer, primary_key=True, nullable=False)
+    share_data = Column(JSON, nullable=False, default={}) # data of to dict/from_dict of key_generation_share.
+    wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
+    wallet = relationship("Wallet", back_populates="signature_shares")
+
+    def get_signature_share(self, user_index : int) -> key_generation_share:
+        return key_generation_share.from_dict(self.share_data)
 
 
 # check if the database exists
 if not os.path.exists(DB_FILE):
-    # Create SQLite engine
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get the directory of the script
+    DB_FILE = os.path.join(BASE_DIR, "local_db.sqlite")  # Construct the full path
+
     engine = create_engine(f"sqlite:///{DB_FILE}")
     Base.metadata.create_all(engine)
 else:

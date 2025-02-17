@@ -1,5 +1,5 @@
 from ecdsa import NIST256p, curves
-from models.models import user_key_generation_share
+from models.models import key_generation_share
 from typing import Dict
 import random
 
@@ -11,13 +11,11 @@ Moreover, given shares, enables verification that the shares are valid
 """
 
 class Feldman_VSS_Protocol:
-    def __init__(self,  n : int, t: int,  transaction_id : str, index_to_user_matrix_id : Dict, generating_user_Index, curve : curves.Curve = NIST256p, ):
+    def __init__(self,  n : int, t: int,  generating_user_Index, curve : curves.Curve = NIST256p, ):
         self.curve = curve
         self.G = curve.generator
         self.n =n
         self.t =t
-        self.user_index_to_matrixId = index_to_user_matrix_id
-        self.transaction_id = transaction_id
         self.generating_user_index = generating_user_Index
 
     def generate_coefficients(self, secret):
@@ -31,7 +29,7 @@ class Feldman_VSS_Protocol:
     def evaluate_polynomial(self, x, coeffs):
         return sum(coeff * (x ** i) for i, coeff in enumerate(coeffs))
 
-    def generate_shares(self, secret) -> list[user_key_generation_share]:
+    def generate_shares(self, secret) -> list[key_generation_share]:
 
         # Using the notation from the paper, v_i := g^a_i. 
         # In the Feldman VSS, in addition to a share, every player gets {v_i}_i=1 ^t.
@@ -41,17 +39,17 @@ class Feldman_VSS_Protocol:
         v_i = self.compute_v_i(coeffs)
         g_secret = v_i[0]
         shares = [
-            user_key_generation_share(transaction_id=self.transaction_id, generating_user_index=self.generating_user_index, target_user_index=i,
-                                         target_user_evaluation=self.evaluate_polynomial(i, coeffs), v_0=g_secret, curve=self.curve)
-         for i in range(1, n+1)]
+            key_generation_share(generating_user_index=self.generating_user_index, target_user_index=i, v_i = v_i,
+                                         target_user_evaluation=self.evaluate_polynomial(i, coeffs), v_0=g_secret, curve=self.curve.name)
+         for i in range(1, self.n)]
         return shares
 
-    def verify_share(self, share):
+    def verify_share(self, share : key_generation_share):
         G = self.G
-        g_p_i = share['p(i)'] * G # g^p(i) should be = product (e.g sum) og the shares g^a_j ^ (i^j)
+        g_p_i = share.target_user_evaluation * G # g^p(i) should be = product (e.g sum) og the shares g^a_j ^ (i^j)
         product = 0 * G  # Identity element
-        for j, v in enumerate(share['v_i']):
-            product += (share['index'] ** j) * v
+        for j, v in enumerate(share.v_i):
+            product += (share.target_user_index ** j) * v
         return g_p_i == product
 
 
@@ -60,7 +58,7 @@ class Feldman_VSS_Protocol:
 curve = NIST256p
 n = 5  # Number of participants
 t = 3  # Threshold
-protocol = Feldman_VSS_Protocol(curve=curve, n=n, t=t)
+protocol = Feldman_VSS_Protocol(curve=curve, n=n, t=t, generating_user_Index=1)
 secret = random.randint(1, curve.order - 1)
 
 # Generate shares

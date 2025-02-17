@@ -1,8 +1,8 @@
 from local_db import sql_db
 from typing import Dict, Optional, List
-from DTOs.transaction_dto import TransactionDTO as TransactionDTO
+from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
-from models.models import  user_public_share, user_key_generation_share
+from models.models import  user_public_share, key_generation_share
 
 def get_transaction_participating_users_data_by_trans_id(wallet_id : str) -> dict[int, sql_db.Room_User_Data]:
     try:
@@ -73,7 +73,7 @@ def get_transactions_by_wallet_id(wallet_id : str, should_convert_to_dto = False
     except Exception as e:
         print(f"There was and error while trying to retrieve transaction for wallet {wallet_id}", e)
 
-def get_signature_shares_by_wallet(wallet_id: str) -> list[user_key_generation_share]:
+def get_signature_shares_by_wallet(wallet_id: str) -> list[key_generation_share]:
     """
     Retrieves all signature shares for a given wallet.
 
@@ -82,14 +82,15 @@ def get_signature_shares_by_wallet(wallet_id: str) -> list[user_key_generation_s
     :return: List of `user_key_generation_share` objects.
     """
     shares = sql_db.session.query(sql_db.Room_Signature_Shares_Data).filter_by(wallet_id=wallet_id).all()
-    return [user_key_generation_share.from_dict(share.share_data) for share in shares]
+    return [key_generation_share.from_dict(share.share_data) for share in shares]
 
 
-def insert_signature_share(wallet_id: str, share_data: user_key_generation_share) -> bool:
+def insert_signature_share(wallet_id: str, share_data: key_generation_share) -> bool:
+    share_data = share_data[1]
     share_index = share_data.target_user_index
     try:
         share_entry = sql_db.Room_Signature_Shares_Data(
-            share_index=sql_db,
+            share_index=share_index,
             share_data=share_data.to_dict(),
             wallet_id=wallet_id
         )
@@ -104,7 +105,7 @@ def insert_signature_share(wallet_id: str, share_data: user_key_generation_share
         return False
 
 
-def insert_multiple_signature_shares(wallet_id: str, shares: list[user_key_generation_share]) -> bool:
+def insert_multiple_signature_shares(wallet_id: str, shares: list[key_generation_share]) -> bool:
     success = True
     for share in enumerate(shares):
         result = insert_signature_share(wallet_id, share_data=share)
@@ -144,6 +145,16 @@ def inser_new_room_user(wallet_id : str, user_index : int, user_matrix_id : str,
         return True
     except Exception as e:
         print(f"Failed to insert user {user_matrix_id} into wallet {wallet_id}", e)
+        return False
+
+def insert_new_friend(user_email : str, user_matrix_id : str) -> bool:
+    friend_db_object = sql_db.Friend(email=user_email, matrix_id = user_matrix_id)
+    try:
+        sql_db.session.add(friend_db_object)
+        sql_db.session.commit()
+        return True
+    except Exception as e:
+        print(f"Failed to inserting user {user_matrix_id} into Friends table", e)
         return False
 
 def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO:

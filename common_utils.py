@@ -2,10 +2,13 @@ import bcrypt
 import random
 import gmpy2
 import sympy
+import subprocess
+from concurrent.futures import ThreadPoolExecutor
+from Crypto.Util import number
 from phe import generate_paillier_keypair
-from models.models import user_modulus, user_public_share, generating_user_public_share, user_secret_signature_share
+from models.models import user_public_share, user_secret_signature_share
 from local_db.sql_db import Wallet
-from ecdsa import curves
+from concurrent.futures import ThreadPoolExecutor
 
 
 def hash_password(password: str) -> str:
@@ -35,32 +38,43 @@ def generate_user_room_keys(user_index : int, user_matrix_id : str, wallet :  Wa
     user_modulus = generate_user_modulus_parameters()
     paillier_public_key, paillier_private_key = generate_paillier_keypair()
     room_public_user_data = user_public_share(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key, user_modulus=user_modulus)
-    room_secret_user_share = user_secret_signature_share(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key,
-                                                   user_modulus=user_modulus, paillier_private_key = paillier_private_key,
-                                                     group=curves.curve_by_name(wallet.curve_name), threshold=wallet.threshold)
+    room_secret_user_share = user_secret_signature_share(threshold=wallet.threshold, user_index=user_index, user_id=user_matrix_id,
+                                                   user_modulus=user_modulus, paillier_secret_key = paillier_private_key, paillier_public_key=paillier_public_key,
+                                                     group=wallet.curve_name)
     
     return room_secret_user_share, room_public_user_data
     
+def generate_safe_prime_openssl(bits=1024):
+    """Generates a new safe prime using OpenSSL, much faster than Python."""
+    cmd = f"openssl prime -generate -safe -bits {bits}"
+    prime = subprocess.check_output(cmd, shell=True).strip()
+    return int(prime)
 
-def generate_user_modulus_parameters():
-    N = generate_rsa_modulus()[0]
-    h1 = random.randint(2, N-1)
-    h2 = random.randint(2,N-1)
-    return user_modulus(N=N, h1=h1, h2=h2)
+def generate_safe_prime_pycryptodome(bits=1024):
+    """Generates a new safe prime using PyCryptodome's getStrongPrime()."""
+    return number.getStrongPrime(bits)
 
 def generate_safe_prime(bits=1024):
-    """Generates a safe prime p where p = 2p' + 1 and p' is prime."""
-    while True:
-        p_prime = sympy.randprime(2**(bits-1), 2**bits)
-        p = 2 * p_prime + 1
-        if sympy.isprime(p):
-            return p
+    """Selects the fastest available safe prime generation method."""
+    try:
+        return generate_safe_prime_openssl(bits)  # OpenSSL (fastest)
+    except Exception:
+        return generate_safe_prime_pycryptodome(bits)  # Fallback to PyCryptodome
 
-def generate_rsa_modulus():
-    """Generates the RSA modulus N_i = P * Q where P and Q are safe primes."""
-    p = generate_safe_prime()
-    q = generate_safe_prime()
-    N = p * q
-    return N, p, q
-
+def generate_rsa_modulus(bits=1024):
+    """Generates an RSA modulus N = P * Q in parallel using the fastest method."""
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        p_future = executor.submit(generate_safe_prime, bits)
+        q_future = executor.submit(generate_safe_prime, bits)
+        
+        p = p_future.result()
+        q = q_future.result()
     
+    return p * q, p, q
+
+def generate_user_modulus_parameters(bits=1024):
+    """Generates modulus N and auxiliary values h1, h2."""
+    N = generate_rsa_modulus(bits)[0]
+    h1 = random.randint(2, N - 1)
+    h2 = random.randint(2, N - 1)
+    return {"N": N, "h1": h1, "h2": h2}
