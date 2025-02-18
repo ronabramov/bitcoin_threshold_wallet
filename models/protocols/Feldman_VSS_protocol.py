@@ -41,7 +41,7 @@ class Feldman_VSS_Protocol:
         shares = [
             key_generation_share(generating_user_index=self.generating_user_index, target_user_index=i, v_i = v_i,
                                          target_user_evaluation=self.evaluate_polynomial(i, coeffs), v_0=g_secret, curve=self.curve.name)
-         for i in range(1, self.n)]
+         for i in range(1, self.n+1)]
         return shares
 
     def verify_share(self, share : key_generation_share):

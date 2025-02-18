@@ -33,20 +33,21 @@ def respond_to_room_invitation(room_id : str, user_accepted_invitation : bool):
         result = handle_joining_new_wallet(room_name=room_name, room_id=room_id)
         return result
 
-def handle_joining_new_wallet(user_id : str, room_name : str, room_id : str) -> bool:
+def handle_joining_new_wallet(user_id : str, room_id : str) -> bool:
     """
     Should create Transaction_Room (db) object including mapping of other users public shares. 
     """
-    user_index_in_wallet = MatrixService.instance().get_next_available_index()
+    user_index_in_wallet = MatrixService.instance().get_next_available_index(room_id=room_id)
     room_messages = MatrixService.instance().get_valid_json_messages(room_id=room_id)
 
-    user_room_secret_data, user_public_data = Utils.generate_user_room_keys(user_index=user_index_in_wallet, user_matrix_id=user_id)
 
-    generation_wallet_msg  = [msg for msg in room_messages if msg.type == WalletGenerationMessage.get_type()][0]
+    generation_wallet_msg  = [msg for msg in room_messages if msg.type == WalletGenerationMessage.get_type()][0].data
     existing_users_shares_messages : list[user_public_share] = [user_msg.data for user_msg in room_messages if user_msg.type == user_public_share.get_type()]
     participating_users = ",".join([msg.user_id for msg in existing_users_shares_messages])
     wallet = get_wallet_from_generating_wallet_message(wallet_id=room_id, wallet_participants=participating_users, generation_message=generation_wallet_msg)
-    signature_created = handle_wallet_signature(wallet=wallet, user_secret_data=user_room_secret_data, user_public_share=user_public_data,
+    
+    user_room_secret_data, user_public_data = Utils.generate_user_room_keys(user_index=user_index_in_wallet, user_matrix_id=user_id, wallet=wallet)
+    signature_created = handle_wallet_signature(wallet=wallet, user_secret_data=user_room_secret_data, user_keys=user_public_data,
                                                  existing_users_in_wallet=existing_users_shares_messages)
     if not signature_created:
         print (f"Failed generating wallet's signature")
@@ -145,6 +146,8 @@ if __name__ == "__main__":
     room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
     transction_details = "Testing transction generation flow"
     user_matrix_id = '@ron_test:matrix.org'
+    invitation_room_id = '!linNyiyZMvcVSSXEvQ:matrix.org'
+    tryjoin = handle_joining_new_wallet(user_id=user_matrix_id, room_id=invitation_room_id)
     # gilad_matirx_user_id = '@gilad.i:matrix.org'
     # gilad_email = 'gilad.ilani@gmail.com'
     # db_dal.insert_new_friend(user_email=gilad_email, user_matrix_id=gilad_matirx_user_id)
