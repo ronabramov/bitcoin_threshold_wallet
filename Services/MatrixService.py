@@ -56,8 +56,8 @@ class MatrixService:
             return self._client
         client = MatrixClient(HOMESERVER_URL)
         # Log in as the admin
-        token = client.login_with_password(
-            username=self.matrix_user_id, password=self.matrix_user_password
+        token = client.login(
+            username=self.matrix_user_id, password=self.matrix_user_password, sync=True
         )
         print(f"Admin logged in successfully. Token: {token}")
         self._client = client

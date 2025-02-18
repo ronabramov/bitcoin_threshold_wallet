@@ -129,8 +129,8 @@ class Room_User_Data(Base):
 
 class Room_Signature_Shares_Data(Base):
     __tablename__ = "room_signature_shares_data"
-
-    share_index = Column(Integer, primary_key=True, nullable=False)
+    share_id = Column(String, primary_key=True, nullable=False)
+    share_index = Column(Integer, primary_key=False, nullable=False)
     share_data = Column(JSON, nullable=False, default={}) # data of to dict/from_dict of key_generation_share.
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="signature_shares")

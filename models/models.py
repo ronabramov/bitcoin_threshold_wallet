@@ -3,6 +3,7 @@ from typing import List, Optional, Dict
 from ecdsa.ellipticcurve import PointJacobi, CurveFp
 from ecdsa.curves import Curve, SECP256k1
 from ecdsa import curves
+import json
 from phe import paillier
 
 
@@ -45,6 +46,20 @@ class key_generation_share(BaseModel):
     curve : str
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @field_serializer("v_i", "v_0", when_used="json")
+    def serialize_point(self, value):
+        """ Convert PointJacobi to a serializable format """
+        def point_to_dict(p):
+            if isinstance(p, PointJacobi):
+                affine_p = p.to_affine()
+                return {"x": int(affine_p.x()), "y": int(affine_p.y())}
+            return None
+        
+        if isinstance(value, list):
+            return [point_to_dict(p) for p in value if p is not None]
+        return point_to_dict(value)
+
 
     def to_dict(self):
 
@@ -94,8 +109,6 @@ class key_generation_share(BaseModel):
             int(curve_data["p"]),
             int(curve_data["a"]),
             int(curve_data["b"]),
-            int(curve_data["order"]),
-            name=curve_data["name"]
         )
         v_0 = deserialize_point(data["v_0"])
         v_i = [deserialize_point(p) for p in data["v_i"] if p is not None]
@@ -113,6 +126,14 @@ class key_generation_share(BaseModel):
 
     def get_type():
         return f"user_key_generation_share"
+    
+    def model_dump(self, *args, **kwargs):
+        """ Override Pydantic serialization but keep existing logic intact. """
+        return self.to_dict()
+
+    def model_dump_json(self, *args, **kwargs):
+        """ Override JSON serialization without modifying existing methods. """
+        return json.dumps(self.to_dict())
 
 class user_public_share(BaseModel):
     user_index: int

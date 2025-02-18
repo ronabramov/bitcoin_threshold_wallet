@@ -50,6 +50,8 @@ class UserSignatureGenerator:
             if user.user_index == self.user_index:
                 continue # Send Messages only for other users
             user_share = [share for share in users_signature_shares if share.target_user_index == user.user_index][0]
+            user_share.target_user_matrix_id = user.user_id
+            #Better update that entity in DB.
             shares_dict[user.user_index] = user_share
 
         return self.send_share_for_every_participating_user(shares_dict=shares_dict)

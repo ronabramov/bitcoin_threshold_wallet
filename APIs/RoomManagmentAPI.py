@@ -58,7 +58,7 @@ def handle_joining_new_wallet(user_id : str, room_id : str) -> bool:
         print (f"Failed saving wallet to local db")
         return False
     
-    insertion_succeded = save_room_users_data_to_db(room_id=room_id, generating_wallet_message=generation_wallet_msg, rest_users_messages=existing_users_shares_messages)
+    insertion_succeded = save_room_users_data_to_db(wallet_id=room_id, generating_wallet_message=generation_wallet_msg, rest_users_messages=existing_users_shares_messages)
     if not insertion_succeded:
         print (f"Failed saving room_users_data to local db")
         return False
