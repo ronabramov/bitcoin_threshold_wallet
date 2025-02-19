@@ -4,7 +4,7 @@ from models.transaction_response import TransactionResponse
 from models.models import key_generation_share, user_public_share, WalletGenerationMessage
 from models.value_knowledge_zk_proof import value_knowledge_zk_proof
 from models.commitment import Commitment
-from models.protocols.MtaAndMtaWcMessages import MtaChallenge, MtaCommitmentAlice, MtaCommitmentBob, MtaProoveForChallengeAlice, MtaProoveForChallengeBob, MtaWcCommitmentBob
+from models.protocols.MtaAndMtaWcMessages import MtaChallenge, MtaCommitmentAlice, MtaCommitmentBob, MtaProofForChallengeAlice, MtaProofForChallengeBob, MtaWcCommitmentBob
 from typing import Union
 
 class MessageDTO(BaseModel):
@@ -15,4 +15,4 @@ class MessageDTO(BaseModel):
     type: str
     data: Union[TransactionDTO, TransactionResponse, key_generation_share, user_public_share,
                 Commitment, value_knowledge_zk_proof, MtaChallenge, MtaCommitmentAlice,
-                  MtaCommitmentBob, MtaProoveForChallengeAlice, MtaProoveForChallengeBob, MtaWcCommitmentBob, WalletGenerationMessage]
+                  MtaCommitmentBob, MtaProofForChallengeAlice, MtaProofForChallengeBob, MtaWcCommitmentBob, WalletGenerationMessage]
