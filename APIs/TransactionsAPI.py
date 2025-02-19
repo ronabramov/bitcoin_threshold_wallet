@@ -1,6 +1,7 @@
 from local_db import sql_db_dal
 from models.DTOs.transaction_dto import TransactionDTO
 from models.DTOs.message_dto import MessageDTO as MessageWrapper
+from models.DTOs.message_dto import MessageType
 from models.DTOs.wallet_dto import WalletDto
 from models.transaction_status import TransactionStatus
 from models.transaction_response import TransactionResponse
@@ -31,10 +32,9 @@ def generate_transaction_and_send_to_wallet(user_id, wallet_id, transaction_deta
     insertion_succeded = sql_db_dal.insert_new_transaction(transaction)
     if not insertion_succeded:
         return False
-    
-    transaction_json = MessageWrapper(type='transaction_request', data=transaction).model_dump_json()
+    # transaction request message is handled as a transaction message
+    transaction_json = MessageWrapper(type=MessageType.TransactionRequest, data=transaction).model_dump_json()
     return MatrixService.instance().send_message_to_wallet_room(room_id = wallet_id, message = transaction_json)
-
 
 def respond_to_new_transaction(user_id : str, transaction : TransactionDTO, user_response : bool) -> bool:
     """
@@ -49,11 +49,11 @@ def respond_to_new_transaction(user_id : str, transaction : TransactionDTO, user
         transaction.approve(user_id)
         threshold_achieved, wallet = check_threshold(transaction)
         transaction_response = TransactionResponse(transaction_id=transaction.id, stage=TransactionStatus.threshold_achieved if threshold_achieved  else transaction.stage, response=user_response, approvers_counter=transaction.approvers_counter, approvers=transaction.approvers)
-        insertion_succeded = sql_db_dal.insert_new_transaction(transaction)
-        if not insertion_succeded:
+        insertion_succeeded = sql_db_dal.insert_new_transaction(transaction)
+        if not insertion_succeeded:
             return False
         
-        approved_transaction_json = MessageWrapper(type = TransactionResponse.get_type(), data=transaction_response).model_dump_json()
+        approved_transaction_json = MessageWrapper(type = MessageType.TransactionResponse, data=transaction_response).model_dump_json()
         if threshold_achieved:
             handle_reached_threshold_transaction(transaction=transaction, wallet=wallet)
 
@@ -70,7 +70,7 @@ def check_threshold(transaction : TransactionDTO):
         wallet = sql_db_dal.get_wallet_by_id(wallet_id= transaction.wallet_id)
         return transaction.approvers_counter >= wallet.threshold, wallet
     except :
-        raise FileNotFoundError(f"Failed finidng wallet {transaction.wallet_id} in local_db")
+        raise FileNotFoundError(f"Failed finding wallet {transaction.wallet_id} in local_db")
 
 def generate_unique_transaction_id():
     return "tx_" + str(uuid.uuid4())

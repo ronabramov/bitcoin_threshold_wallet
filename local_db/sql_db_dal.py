@@ -119,7 +119,7 @@ def insert_new_transaction(transaction : TransactionDTO) -> bool:
         transaction_to_insert = sql_db.Transaction.from_dto(transaction_dto=transaction)
         sql_db.session.add(transaction_to_insert)
         sql_db.session.commit()
-        print(f"Succesffully inserted transaction {transaction.id}")
+        print(f"Successfully inserted transaction {transaction.id}")
         return True
     except Exception as e:
         print(f'failed to insert transaction {transaction.id} to db.', e)
@@ -129,7 +129,7 @@ def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
     try:
         sql_db.session.add(wallet)
         sql_db.session.commit()
-        print(f"Successffuly inserted wallet {wallet.wallet_id} to db")
+        print(f"Successfully inserted wallet {wallet.wallet_id} to db")
         return True
     except Exception as e:
         print(f"Failed to insert wallet {wallet.wallet_id}", e)
@@ -141,7 +141,7 @@ def inser_new_room_user(wallet_id : str, user_index : int, user_matrix_id : str,
                                                  user_public_keys_data = user_public_keys.to_dict(), wallet_id=wallet_id)
         sql_db.session.add(rooom_user_data)
         sql_db.session.commit()
-        print(f"Successffuly inserted room's user data for user {user_matrix_id} in wallet {wallet_id} to db")
+        print(f"Successfully inserted room's user data for user {user_matrix_id} in wallet {wallet_id} to db")
         return True
     except Exception as e:
         print(f"Failed to insert user {user_matrix_id} into wallet {wallet_id}", e)

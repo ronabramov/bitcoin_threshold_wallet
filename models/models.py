@@ -4,7 +4,7 @@ from ecdsa.ellipticcurve import PointJacobi, CurveFp
 from ecdsa.curves import Curve, SECP256k1
 from ecdsa import curves
 from phe import paillier
-
+from models.DTOs.message_dto import MessageType
 
 class TransactionInfo(BaseModel):
     wallet_id: str
@@ -19,8 +19,6 @@ class WalletGenerationMessage(BaseModel):
     max_number_of_participants : int
     curve_name : str
 
-    def get_type():
-        return "wallet_generation_message"
 
 class user_modulus(BaseModel):
     N : int
@@ -111,8 +109,7 @@ class key_generation_share(BaseModel):
         )
 
 
-    def get_type():
-        return f"user_key_generation_share"
+
 
 class user_public_share(BaseModel):
     user_index: int
@@ -277,6 +274,3 @@ class user_index_to_user_id_message(BaseModel):
     @classmethod
     def from_dict(cls, data):
         return cls(index_to_user_id=data["index_to_user_id"])
-
-    def get_type():
-        return "user_index_to_user_id"

@@ -44,7 +44,7 @@ class MtaCommitmentAlice(BaseModel):
             w=data["w"]
         )
 
-class MtaProoveForChallengeAlice(BaseModel):
+class MtaProofForChallengeAlice(BaseModel):
     """Third message in Mta Protocol, sent from Alice."""
     s: int
     s_1: int
@@ -95,7 +95,7 @@ class MtaCommitmentBob(BaseModel):
             w=data["w"]
         )
 
-class MtaProoveForChallengeBob(BaseModel):
+class MtaProofForChallengeBob(BaseModel):
     """Third message in Bob response of Mta Protocol."""
     s: int
     s_1: int

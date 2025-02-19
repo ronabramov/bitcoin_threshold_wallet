@@ -2,8 +2,6 @@ from pydantic import BaseModel
 from models.transaction_status import TransactionStatus
 from typing import Optional
 
-TYPE = "transaction_response"
-
 class TransactionResponse(BaseModel):
     transaction_id : str
     stage : TransactionStatus
@@ -11,8 +9,6 @@ class TransactionResponse(BaseModel):
     approvers_counter: int
     approvers: Optional[str]
 
-    def get_type() -> str:
-        return TYPE
 
 
 # approved_transaction_json = {
