@@ -22,6 +22,10 @@ class TransactionDTO(BaseModel):
         else:
             self.approvers += f',{user_id}' 
         self.approvers_counter += 1
+    
+    def is_approved_by_user(self, user_id: str) -> bool:
+        return user_id in self.approvers
+    
 
 # Example of usage
 transaction_dto = TransactionDTO(id='1', name="Payment", details="Monthly subscription", wallet_id="abc123")
