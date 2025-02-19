@@ -20,6 +20,10 @@ class WalletGenerationMessage(BaseModel):
     max_number_of_participants : int
     curve_name : str
 
+    @property
+    def type(self):
+        return MessageType.WalletGenerationMessage
+
 
 class user_modulus(BaseModel):
     N : int
@@ -42,6 +46,10 @@ class key_generation_share(BaseModel):
     v_i: Optional[List[PointJacobi]] = None
     v_0 : Optional[PointJacobi]
     curve : str
+
+    @property
+    def type(self):
+        return MessageType.KeyGenerationShare
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -134,8 +142,11 @@ class user_public_share(BaseModel):
     user_id: str
     paillier_public_key: paillier.PaillierPublicKey
     user_modulus: user_modulus
-
     model_config = ConfigDict(arbitrary_types_allowed=True) 
+    
+    @property
+    def type(self):
+        return MessageType.UserPublicShare
     
     @field_serializer("paillier_public_key")
     def serialize_public_key(self, pub_key) -> Dict[str, str]:

@@ -9,7 +9,6 @@ from typing import Union
 from enum import Enum
 
 class MessageType(Enum):
-    Transaction = "transaction"
     TransactionRequest = "transaction_request"
     TransactionResponse = "transaction_response"
     KeyGenerationShare = "key_generation_share"

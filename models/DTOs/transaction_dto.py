@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from models.transaction_status import TransactionStatus
 from typing import Optional
+from models.DTOs.message_dto import MessageType
 
 class TransactionDTO(BaseModel):
     id: str
@@ -10,6 +11,10 @@ class TransactionDTO(BaseModel):
     approvers_counter: int = 0  # Default value set to 0
     approvers: Optional[str] = None  # Initially set to None, should store CSV of user_ids
     stage: TransactionStatus = TransactionStatus.WAITING  # Default enum value
+    
+    @property
+    def type(self) -> MessageType:
+        return MessageType.TransactionRequest
 
     def approve(self, user_id: str):
         if not self.approvers:

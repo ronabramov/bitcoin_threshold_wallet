@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from models.transaction_status import TransactionStatus
+from models.DTOs.message_dto import MessageType
 from typing import Optional
 
 class TransactionResponse(BaseModel):
@@ -8,7 +9,10 @@ class TransactionResponse(BaseModel):
     response: bool
     approvers_counter: int
     approvers: Optional[str]
-
+    
+    @property
+    def type(self):
+        return MessageType.TransactionResponse
 
 
 # approved_transaction_json = {

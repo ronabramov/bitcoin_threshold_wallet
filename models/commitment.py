@@ -1,7 +1,7 @@
 from models.algorithm_step import Algorithm_Step
 from phe import paillier
 from pydantic import BaseModel, ConfigDict
-
+from models.DTOs.message_dto import MessageType
 
 class Commitment(BaseModel):
     algorithm_step: Algorithm_Step
@@ -9,6 +9,10 @@ class Commitment(BaseModel):
     committed_values: list[int]
     paillier_public_key: paillier.PaillierPublicKey
     model_config = ConfigDict(arbitrary_types_allowed=True) 
+    
+    @property
+    def type(self):
+        return MessageType.Commitment
 
     def to_dict(self):
         """Serialize to a dictionary that can be converted to JSON."""

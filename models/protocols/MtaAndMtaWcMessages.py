@@ -1,10 +1,15 @@
 from pydantic import BaseModel, ConfigDict
 from phe import paillier, EncryptedNumber
 from ecdsa.ellipticcurve import PointJacobi
+from models.DTOs.message_dto import MessageType
 
 class MtaChallenge(BaseModel):
     """Used both by Alice and Bob."""
     challenge: int
+    
+    @property
+    def type(self):
+        return MessageType.MtaChallenge
 
     def to_dict(self):
         return {"challenge": self.challenge}
@@ -22,6 +27,10 @@ class MtaCommitmentAlice(BaseModel):
     v: int
     w: int
     model_config = ConfigDict(arbitrary_types_allowed=True) 
+    
+    @property
+    def type(self):
+        return MessageType.MtaCommitmentAlice
 
     def to_dict(self):
         return {
@@ -52,6 +61,11 @@ class MtaProofForChallengeAlice(BaseModel):
     t_1: int
     t_2: int
     model_config = ConfigDict(arbitrary_types_allowed=True) 
+    
+    @property
+    def type(self):
+        return MessageType.MtaProofForChallengeAlice
+
     def to_dict(self):
         return {
             "s": self.s,
@@ -74,6 +88,11 @@ class MtaCommitmentBob(BaseModel):
     v: int
     w: int
     model_config = ConfigDict(arbitrary_types_allowed=True) 
+    
+    @property
+    def type(self):
+        return MessageType.MtaCommitmentBob
+
     def to_dict(self):
         return {
             "c_B": (self.c_B.ciphertext, self.c_B.exponent),  # Serialize EncryptedNumber
@@ -103,6 +122,11 @@ class MtaProofForChallengeBob(BaseModel):
     t_1: int
     t_2: int
     model_config = ConfigDict(arbitrary_types_allowed=True) 
+    
+    @property
+    def type(self):
+        return MessageType.MtaProofForChallengeBob
+
     def to_dict(self):
         return {
             "s": self.s,
@@ -119,6 +143,10 @@ class MtaProofForChallengeBob(BaseModel):
 class MtaWcCommitmentBob(MtaCommitmentBob):
     """Extended Commitment from Bob in Mta Protocol including an Elliptic Curve Point."""
     u: PointJacobi
+    
+    @property
+    def type(self):
+        return MessageType.MtaWcCommitmentBob
     
     def to_dict(self):
         base_data = super().to_dict()
