@@ -65,7 +65,7 @@ def handle_joining_new_wallet(user_id : str, room_id : str) -> bool:
         print (f"Failed saving room_users_data to local db")
         return False
     
-    public_keys_message = MessageDTO(type=user_public_share.get_type(), data=user_public_data).model_dump_json()
+    public_keys_message = MessageDTO(type=MessageType.UserPublicShare, data=user_public_data).model_dump_json()
     message_sent = MatrixService.instance().send_message_to_wallet_room(room_id=room_id, message=public_keys_message)
     if not message_sent:
         print(f' Failed sending joining message to wallet room.')
@@ -123,7 +123,7 @@ def create_new_wallet(user_id : str, invited_users_emails : List[str], wallet_na
         print (f"Failed saving wallet to local db")
         return False, None
     
-    public_keys_message = MessageDTO(type=user_public_share.get_type(), data=user_room_public_data).model_dump_json()
+    public_keys_message = MessageDTO(type=MessageType.UserPublicShare, data=user_room_public_data).model_dump_json()
     message_sent = MatrixService.instance().send_message_to_wallet_room(room_id=room_id, message=public_keys_message)
     return insertion_succeded and message_sent, wallet
 

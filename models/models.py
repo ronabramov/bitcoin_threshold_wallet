@@ -175,8 +175,7 @@ class user_public_share(BaseModel):
     #         user_modulus=user_mod,
     #     )
 
-    def get_type():
-        return "user_public_share"   
+
 
 class user_secret_signature_share(BaseModel):
     """
