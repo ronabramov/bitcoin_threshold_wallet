@@ -1,10 +1,10 @@
 from enum import Enum
 
-class TransactionStatus(str, Enum):
-    WAITING = "waiting"
-    THRESHOLD_ACHIEVED = "threshold_achieved"
-    DECLINED = "declined"
-    STAGE_ONE = "stage_one"
-    STAGE_TWO = "stage_two"
-    STAGE_THREE = "stage_three"
-    STAGE_FOUR = "stage_four"
+class TransactionStatus(int, Enum):
+    DECLINED = -1
+    WAITING = 1
+    THRESHOLD_ACHIEVED = 2
+    STAGE_ONE = 3
+    STAGE_TWO = 4
+    STAGE_THREE = 5
+    STAGE_FOUR = 6

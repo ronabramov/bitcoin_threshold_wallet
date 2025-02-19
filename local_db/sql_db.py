@@ -56,7 +56,7 @@ class Transaction(Base):
     details = Column(Text, nullable=True)
     approvers = Column(Text, nullable=True)
     approvals_counter = Column(Integer, nullable=True)
-    status = Column(String, nullable=True)
+    status = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
 

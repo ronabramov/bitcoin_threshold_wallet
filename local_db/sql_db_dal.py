@@ -178,5 +178,5 @@ def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO:
     )
     transaction_dto.approvers = transaction.approvers
     transaction_dto.approvers_counter = transaction.approvals_counter
-    transaction_dto.stage = TransactionStatus[transaction.status.upper()]
+    transaction_dto.stage = TransactionStatus[transaction.status]
     return transaction_dto
