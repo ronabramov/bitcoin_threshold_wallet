@@ -55,13 +55,13 @@ def handle_joining_new_wallet(user_id : str, room_id : str) -> bool:
         print (f"Failed generating wallet's signature")
         return False
     
-    insertion_succeded = db_dal.insert_new_wallet(wallet=wallet)
-    if not insertion_succeded:
+    insertion_succeeded = db_dal.insert_new_wallet(wallet=wallet)
+    if not insertion_succeeded:
         print (f"Failed saving wallet to local db")
         return False
     
-    insertion_succeded = save_room_users_data_to_db(wallet_id=room_id, generating_wallet_message=generation_wallet_msg, rest_users_messages=existing_users_shares_messages)
-    if not insertion_succeded:
+    insertion_succeeded = save_room_users_data_to_db(wallet_id=room_id, generating_wallet_message=generation_wallet_msg, rest_users_messages=existing_users_shares_messages)
+    if not insertion_succeeded:
         print (f"Failed saving room_users_data to local db")
         return False
     
