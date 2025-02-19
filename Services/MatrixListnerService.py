@@ -4,7 +4,7 @@ import time
 from models.DTOs.message_dto import MessageDTO
 from pydantic import ValidationError
 from models.DTOs.transaction_dto import TransactionDTO
-from models.models import TransactionDTO, WalletGenerationMessage, user_public_share, key_generation_share
+from models.models import WalletGenerationMessage, user_public_share, key_generation_share
 from models.transaction_response import TransactionResponse
 from models.DTOs.message_dto import MessageType
 from models.commitment import Commitment
@@ -84,64 +84,65 @@ class MatrixRoomListener:
     def _handle_message_DTO(self, message_dto: MessageDTO):
         """ Handles a message DTO. """
         print(f"Message received: {message_dto}")
-        if message_dto.type == MessageType.Transaction:
-            # TODO: has no model_validate_json method
-            transaction_obj = TransactionDTO(message_dto.data)
-            print(f"Transaction received: {transaction_obj}")
-        
-        elif message_dto.type == MessageType.TransactionRequest:
-            # TODO: has no model_validate_json method
-            transaction_request_obj = TransactionDTO(message_dto.data)
-            print(f"Transaction request received: {transaction_request_obj}")
-        
-        elif message_dto.type == MessageType.TransactionResponse:
-            # TODO: has no model_validate_json method
-            transaction_response_obj = TransactionResponse(message_dto.data)
-            print(f"Transaction response received: {transaction_response_obj}")
-        
-        elif message_dto.type == MessageType.UserPublicShare:
-            user_public_share_obj = user_public_share.model_validate_json(message_dto.data)
-            print(f"User public share received: {user_public_share_obj}")
-        
-        elif message_dto.type == MessageType.KeyGenerationShare:
-            key_generation_share_obj = key_generation_share.model_validate_json(message_dto.data)
-            print(f"Key generation share received: {key_generation_share_obj}")
-        
-        elif message_dto.type == MessageType.WalletGenerationMessage:
-            wallet_generation_message_obj = WalletGenerationMessage.model_validate_json(message_dto.data)
-            print(f"Wallet generation message received: {wallet_generation_message_obj}")
-        
-        elif message_dto.type == MessageType.Commitment:
-            commitment_obj = Commitment.model_validate_json(message_dto.data)
-            print(f"Commitment received: {commitment_obj}")
-        
-        elif message_dto.type == MessageType.ValueKnowledgeZkProof:
-            value_knowledge_zk_proof_obj = value_knowledge_zk_proof.model_validate_json(message_dto.data)
-            print(f"Value knowledge ZK proof received: {value_knowledge_zk_proof_obj}")
-        
-        elif message_dto.type == MessageType.MtaChallenge:
-            mta_challenge_obj = MtaChallenge.model_validate_json(message_dto.data)
-            print(f"MTA challenge received: {mta_challenge_obj}")
-        
-        elif message_dto.type == MessageType.MtaCommitmentAlice:
-            mta_commitment_alice_obj = MtaCommitmentAlice.model_validate_json(message_dto.data)
-            print(f"MTA commitment Alice received: {mta_commitment_alice_obj}")
-        
-        elif message_dto.type == MessageType.MtaCommitmentBob:
-            mta_commitment_bob_obj = MtaCommitmentBob.model_validate_json(message_dto.data)
-            print(f"MTA commitment Bob received: {mta_commitment_bob_obj}")
-        
-        elif message_dto.type == MessageType.MtaProofForChallengeAlice:
-            mta_proof_for_challenge_alice_obj = MtaProofForChallengeAlice.model_validate_json(message_dto.data)
-            print(f"MTA proof for challenge Alice received: {mta_proof_for_challenge_alice_obj}")
-        
-        elif message_dto.type == MessageType.MtaProofForChallengeBob:
-            mta_proof_for_challenge_bob_obj = MtaProofForChallengeBob.model_validate_json(message_dto.data)
-            print(f"MTA proof for challenge Bob received: {mta_proof_for_challenge_bob_obj}")
-        elif message_dto.type == MessageType.MtaWcCommitmentBob:
-            mta_wc_commitment_bob_obj = MtaWcCommitmentBob.model_validate_json(message_dto.data)
-            print(f"MTA WC commitment Bob received: {mta_wc_commitment_bob_obj}")
-        else:
-            print(f"Unknown message type: {message_dto.type}")
+        try:
+            if message_dto.type == MessageType.TransactionRequest:
+                # TODO: has no model_validate_json method
+                transaction_request_obj = TransactionDTO.model_validate_json(message_dto.data)
+                print(f"Transaction request received: {transaction_request_obj}")
+            
+            elif message_dto.type == MessageType.TransactionResponse:
+                # TODO: has no model_validate_json method
+                transaction_response_obj = TransactionResponse.model_validate_json(message_dto.data)
+                
+                print(f"Transaction response received: {transaction_response_obj}")
+            
+            elif message_dto.type == MessageType.UserPublicShare:
+                user_public_share_obj = user_public_share.model_validate_json(message_dto.data)
+                print(f"User public share received: {user_public_share_obj}")
+            
+            elif message_dto.type == MessageType.KeyGenerationShare:
+                key_generation_share_obj = key_generation_share.model_validate_json(message_dto.data)
+                print(f"Key generation share received: {key_generation_share_obj}")
+            
+            elif message_dto.type == MessageType.WalletGenerationMessage:
+                wallet_generation_message_obj = WalletGenerationMessage.model_validate_json(message_dto.data)
+                print(f"Wallet generation message received: {wallet_generation_message_obj}")
+            
+            elif message_dto.type == MessageType.Commitment:
+                commitment_obj = Commitment.model_validate_json(message_dto.data)
+                print(f"Commitment received: {commitment_obj}")
+            
+            elif message_dto.type == MessageType.ValueKnowledgeZkProof:
+                value_knowledge_zk_proof_obj = value_knowledge_zk_proof.model_validate_json(message_dto.data)
+                print(f"Value knowledge ZK proof received: {value_knowledge_zk_proof_obj}")
+            
+            elif message_dto.type == MessageType.MtaChallenge:
+                mta_challenge_obj = MtaChallenge.model_validate_json(message_dto.data)
+                print(f"MTA challenge received: {mta_challenge_obj}")
+            
+            elif message_dto.type == MessageType.MtaCommitmentAlice:
+                mta_commitment_alice_obj = MtaCommitmentAlice.model_validate_json(message_dto.data)
+                print(f"MTA commitment Alice received: {mta_commitment_alice_obj}")
+            
+            elif message_dto.type == MessageType.MtaCommitmentBob:
+                mta_commitment_bob_obj = MtaCommitmentBob.model_validate_json(message_dto.data)
+                print(f"MTA commitment Bob received: {mta_commitment_bob_obj}")
+            
+            elif message_dto.type == MessageType.MtaProofForChallengeAlice:
+                mta_proof_for_challenge_alice_obj = MtaProofForChallengeAlice.model_validate_json(message_dto.data)
+                print(f"MTA proof for challenge Alice received: {mta_proof_for_challenge_alice_obj}")
+            
+            elif message_dto.type == MessageType.MtaProofForChallengeBob:
+                mta_proof_for_challenge_bob_obj = MtaProofForChallengeBob.model_validate_json(message_dto.data)
+                print(f"MTA proof for challenge Bob received: {mta_proof_for_challenge_bob_obj}")
+            elif message_dto.type == MessageType.MtaWcCommitmentBob:
+                mta_wc_commitment_bob_obj = MtaWcCommitmentBob.model_validate_json(message_dto.data)
+                print(f"MTA WC commitment Bob received: {mta_wc_commitment_bob_obj}")
+            else:
+                print(f"Unknown message type: {message_dto.type}")
+                return
+            
+        except ValidationError as e:
+            print(f"Validation error: {e}")
             return
             
