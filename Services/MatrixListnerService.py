@@ -88,13 +88,14 @@ class MatrixRoomListener:
         print(f"Message received: {message_dto}")
         try:
             if message_dto.type == MessageType.TransactionRequest:
+                print(f"Transaction request received: {message_dto.data}")
                 transaction_request_obj = TransactionDTO.model_validate_json(message_dto.data)
-                sql_db_dal.insert_new_transaction(transaction_request_obj)
-                # user need to fetch the transaction from local db and display it in the UI
+                TransactionService.handler_new_transaction(transaction_request_obj)
+                # User need to fetch the transaction from local db and display it in the UI
                 return
-                print(f"Transaction request received: {transaction_request_obj}")
             
             elif message_dto.type == MessageType.TransactionResponse:
+                print(f"Transaction response received: {message_dto.data}")
                 transaction_response_obj = TransactionResponse.model_validate_json(message_dto.data)
                 return TransactionService.handle_incoming_transaction(transaction_response_obj)
         

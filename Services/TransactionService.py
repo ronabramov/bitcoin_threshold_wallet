@@ -53,3 +53,11 @@ class TransactionService:
         incoming_transaction.approvers = ",".join(merged_approvers)
         incoming_transaction.stage = max(local_transaction.stage, incoming_transaction.stage)
         return incoming_transaction
+
+    def handler_new_transaction(self, transaction: TransactionDTO):
+        local_transaction = sql_db_dal.get_transaction_by_id(transaction.id)
+        if local_transaction is None:
+            sql_db_dal.insert_new_transaction(transaction)
+        else:
+            print(f"Transaction {transaction.id} already exists in the local db")
+        return
