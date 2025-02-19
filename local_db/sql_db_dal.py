@@ -55,7 +55,7 @@ def get_transaction_by_id(transaction_id : str) -> sql_db.Transaction:
         transaction = sql_db.session.query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction_id).first()
         if not transaction :
             print (f"Couldn't find transaction with id : {transaction_id}")
-            raise FileNotFoundError(f"Transaction with id {transaction_id} couldn't be found")
+            return None
         return transaction
     except Exception as e:
         print(f"There was and error while trying to retrieve transaction {transaction_id}", e)
@@ -125,7 +125,18 @@ def insert_new_transaction(transaction : TransactionDTO) -> bool:
     except Exception as e:
         print(f'failed to insert transaction {transaction.id} to db.', e)
         return False
-    
+
+def update_transaction(transaction : TransactionDTO) -> bool:
+    try:
+        transaction_to_update = sql_db.Transaction.from_dto(transaction_dto=transaction)
+        sql_db.session.query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction.id).update(transaction_to_update)
+        sql_db.session.commit()
+        print(f"Successfully updated transaction {transaction.id}")
+        return True
+    except Exception as e:
+        print(f'failed to update transaction {transaction.id} to db.', e)
+        return False
+
 def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
     try:
         sql_db.session.add(wallet)
