@@ -10,6 +10,8 @@ from models.DTOs.message_dto import MessageType
 from models.commitment import Commitment
 from models.value_knowledge_zk_proof import value_knowledge_zk_proof
 from models.protocols.MtaAndMtaWcMessages import MtaChallenge, MtaCommitmentAlice, MtaCommitmentBob, MtaProofForChallengeAlice, MtaProofForChallengeBob, MtaWcCommitmentBob
+from local_db import sql_db_dal
+from Services.TransactionService import TransactionService
 
 
 class MatrixRoomListener:
@@ -86,16 +88,16 @@ class MatrixRoomListener:
         print(f"Message received: {message_dto}")
         try:
             if message_dto.type == MessageType.TransactionRequest:
-                # TODO: has no model_validate_json method
                 transaction_request_obj = TransactionDTO.model_validate_json(message_dto.data)
+                sql_db_dal.insert_new_transaction(transaction_request_obj)
+                # user need to fetch the transaction from local db and display it in the UI
+                return
                 print(f"Transaction request received: {transaction_request_obj}")
             
             elif message_dto.type == MessageType.TransactionResponse:
-                # TODO: has no model_validate_json method
                 transaction_response_obj = TransactionResponse.model_validate_json(message_dto.data)
-                
-                print(f"Transaction response received: {transaction_response_obj}")
-            
+                return TransactionService.handle_incoming_transaction(transaction_response_obj)
+        
             elif message_dto.type == MessageType.UserPublicShare:
                 user_public_share_obj = user_public_share.model_validate_json(message_dto.data)
                 print(f"User public share received: {user_public_share_obj}")

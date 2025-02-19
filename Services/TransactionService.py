@@ -2,6 +2,7 @@ from models.DTOs.transaction_dto import TransactionDTO
 from models.transaction_status import TransactionStatus
 from local_db import sql_db_dal
 
+# TODO: change to the user's matrix id
 ME = "@my_user_id:matrix.org"
 
 
