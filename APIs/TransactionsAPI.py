@@ -9,8 +9,7 @@ from models.models import user_public_share
 from APIs.Algorithm_Steps_Implementation.user_transaction_configuration_handler import UserTransactionConfigurationHandler as ConfigHandler
 import uuid
 from Services.MatrixService import MatrixService
-import common_utils as Utils
-
+from Services.TransactionService import TransactionService
 
 """
 This is the APIs the controller should reach for any transaction service
@@ -47,8 +46,8 @@ def respond_to_new_transaction(user_id : str, transaction : TransactionDTO, user
         return True
     else:
         transaction.approve(user_id)
-        threshold_achieved, wallet = check_threshold(transaction)
-        transaction_response = TransactionResponse(transaction_id=transaction.id, stage=TransactionStatus.threshold_achieved if threshold_achieved  else transaction.stage, response=user_response, approvers_counter=transaction.approvers_counter, approvers=transaction.approvers)
+        threshold_achieved, wallet = TransactionService.check_threshold(transaction)
+        transaction_response = TransactionResponse(transaction_id=transaction.id, stage=TransactionStatus.THRESHOLD_ACHIEVED if threshold_achieved  else transaction.stage, response=user_response, approvers_counter=transaction.approvers_counter, approvers=transaction.approvers)
         insertion_succeeded = sql_db_dal.insert_new_transaction(transaction)
         if not insertion_succeeded:
             return False
@@ -65,12 +64,6 @@ def handle_reached_threshold_transaction(transaction : TransactionDTO, wallet: W
     public_keys_message = MessageWrapper(type = user_public_share, data=public_key).model_dump_json()
     return MatrixService.instance().send_message_to_wallet_room(room_id=transaction_room_id, message=public_keys_message)
     
-def check_threshold(transaction : TransactionDTO):
-    try :
-        wallet = sql_db_dal.get_wallet_by_id(wallet_id= transaction.wallet_id)
-        return transaction.approvers_counter >= wallet.threshold, wallet
-    except :
-        raise FileNotFoundError(f"Failed finding wallet {transaction.wallet_id} in local_db")
 
 def generate_unique_transaction_id():
     return "tx_" + str(uuid.uuid4())
