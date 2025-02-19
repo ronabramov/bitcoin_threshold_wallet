@@ -7,6 +7,7 @@ import local_db.sql_db_dal as DB_DAL
 from models.models import user_secret_signature_share, key_generation_share, user_modulus, user_public_share
 import APIs.UserToUserAPI 
 import Services.UserPublicShareService as UserPublicShareService
+import local_db.sql_db_dal as sql_dal
 
 class UserSignatureGenerator:
     def __init__(self, wallet : Wallet, user_public_keys : user_public_share):
@@ -52,7 +53,8 @@ class UserSignatureGenerator:
                 continue # Send Messages only for other users
             user_share = UserPublicShareService.filter_shares_by_user_index(users_signature_shares, user.user_index)
             user_share.target_user_matrix_id = user.user_id
-            #Better update that entity in DB.
+            #Better update that entity in DB. RON like that: (?)
+            sql_dal.update_signature_share(self.wallet_id, user_share)
             shares_dict[user.user_index] = user_share
 
         return self.send_share_for_every_participating_user(shares_dict=shares_dict)

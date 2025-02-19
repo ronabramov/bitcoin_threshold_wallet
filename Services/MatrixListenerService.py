@@ -10,8 +10,7 @@ from models.DTOs.message_dto import MessageType
 from models.commitment import Commitment
 from models.value_knowledge_zk_proof import value_knowledge_zk_proof
 from models.protocols.MtaAndMtaWcMessages import MtaChallenge, MtaCommitmentAlice, MtaCommitmentBob, MtaProofForChallengeAlice, MtaProofForChallengeBob, MtaWcCommitmentBob
-from local_db import sql_db_dal
-from Services.TransactionService import TransactionService
+import Services.TransactionService as TransactionService
 import Services.UserPublicShareService as UserPublicShareService
 
 class MatrixRoomListener:
