@@ -3,6 +3,7 @@ from typing import List, Optional, Dict
 from ecdsa.ellipticcurve import PointJacobi, CurveFp
 from ecdsa.curves import Curve, SECP256k1
 from ecdsa import curves
+import json
 from phe import paillier
 from models.DTOs.message_dto import MessageType
 
@@ -43,6 +44,20 @@ class key_generation_share(BaseModel):
     curve : str
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    @field_serializer("v_i", "v_0", when_used="json")
+    def serialize_point(self, value):
+        """ Convert PointJacobi to a serializable format """
+        def point_to_dict(p):
+            if isinstance(p, PointJacobi):
+                affine_p = p.to_affine()
+                return {"x": int(affine_p.x()), "y": int(affine_p.y())}
+            return None
+        
+        if isinstance(value, list):
+            return [point_to_dict(p) for p in value if p is not None]
+        return point_to_dict(value)
+
 
     def to_dict(self):
 
@@ -92,8 +107,6 @@ class key_generation_share(BaseModel):
             int(curve_data["p"]),
             int(curve_data["a"]),
             int(curve_data["b"]),
-            int(curve_data["order"]),
-            name=curve_data["name"]
         )
         v_0 = deserialize_point(data["v_0"])
         v_i = [deserialize_point(p) for p in data["v_i"] if p is not None]
@@ -107,9 +120,14 @@ class key_generation_share(BaseModel):
             v_0=v_0,
             curve=curve_data["name"]
         )
+    
+    def model_dump(self, *args, **kwargs):
+        """ Override Pydantic serialization but keep existing logic intact. """
+        return self.to_dict()
 
-
-
+    def model_dump_json(self, *args, **kwargs):
+        """ Override JSON serialization without modifying existing methods. """
+        return json.dumps(self.to_dict())
 
 class user_public_share(BaseModel):
     user_index: int
@@ -118,31 +136,17 @@ class user_public_share(BaseModel):
     user_modulus: user_modulus
 
     model_config = ConfigDict(arbitrary_types_allowed=True) 
-
+    
     @field_serializer("paillier_public_key")
-    def serialize_public_key(self, pub_key):
-        return {"n": str(pub_key.n)}
-
-    @field_serializer("paillier_secret_key")
-    def serialize_private_key(self, priv_key):
-        return {
-            "p": str(priv_key.p),
-            "q": str(priv_key.q)
-        }
-
+    def serialize_public_key(self, pub_key) -> Dict[str, str]:
+        return {"n": str(pub_key.n)} 
+    
     @field_validator("paillier_public_key", mode="before")
+    @classmethod
     def deserialize_public_key(cls, value):
-        if isinstance(value, dict):  # If already deserialized
+        if isinstance(value, dict):
             return paillier.PaillierPublicKey(n=int(value["n"]))
-        return value  # Already an object
-
-    @field_validator("paillier_secret_key", mode="before")
-    def deserialize_private_key(cls, value):
-        if isinstance(value, dict):  # If already deserialized
-            pub_key = paillier.PaillierPublicKey(n=int(value["p"]) * int(value["q"]))  # Reconstruct public key
-            return paillier.PaillierPrivateKey(pub_key, int(value["p"]), int(value["q"]))
-        return value  # Already an object
-
+        return value  
 
     # def to_dict(self):
     #     return {

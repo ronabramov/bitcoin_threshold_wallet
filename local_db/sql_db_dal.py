@@ -90,6 +90,7 @@ def insert_signature_share(wallet_id: str, share_data: key_generation_share) -> 
     share_index = share_data.target_user_index
     try:
         share_entry = sql_db.Room_Signature_Shares_Data(
+            share_id = f'{wallet_id}_{share_index}',
             share_index=share_index,
             share_data=share_data.to_dict(),
             wallet_id=wallet_id

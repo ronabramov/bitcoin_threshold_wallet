@@ -18,14 +18,15 @@ def send_key_share_for_participating_users(Shares : List[key_generation_share]) 
     """
     users_dont_got_message = [share.target_user_index for share in Shares]
     tries = 0
-    while tries <= MAX_RETRIES and users_dont_got_message.count() > 0: 
+    while tries <= MAX_RETRIES and len(users_dont_got_message) > 0: 
         for key_share in Shares:
-            message_to_user = MessageDTO(type=MessageType.KeyGenerationShare, data=key_share)
+            message_to_user = MessageDTO(type=MessageType.KeyGenerationShare, data=key_share).model_dump_json()
+
             try:
                 success = MatrixService.instance().send_private_message_to_user(target_user_matrix_id=key_share.target_user_matrix_id, message=message_to_user)
-                if success:
-                    users_dont_got_message.remove(key_share.target_user_index)
+                users_dont_got_message.remove(key_share.target_user_index)
             except Exception as e:
                 print(f'Failed sending message to user {key_share.target_user_index}, with matrix_id : {key_share.target_user_matrix_id}', e)
+                tries -=1
 
     return users_dont_got_message.count() == 0

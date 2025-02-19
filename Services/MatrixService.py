@@ -56,8 +56,8 @@ class MatrixService:
             return self._client
         client = MatrixClient(HOMESERVER_URL)
         # Log in as the admin
-        token = client.login_with_password(
-            username=self.matrix_user_id, password=self.matrix_user_password
+        token = client.login(
+            username=self.matrix_user_id, password=self.matrix_user_password, sync=True
         )
         print(f"Admin logged in successfully. Token: {token}")
         self._client = client
@@ -68,6 +68,7 @@ class MatrixService:
         Create new room and invite users
         """
         new_room : Room = self.create_room(room_name) 
+        self.client.join_room(new_room.room_id)
         room_id = new_room.room_id
         self.invite_users_to_room(new_room, users=users_Ids)
         
@@ -219,8 +220,9 @@ class MatrixService:
         return room.leave()
     
     def get_next_available_index(self, room_id: str) -> bool:
+        #NEEDS FIX - NOT loading , Gilad already solved similiar case
         room : Room = self.client.join_room(room_id)
-        return len(room._members)
+        return len(room.members_displaynames)
     
     def get_valid_json_messages(self, room_id, limit=100) -> List[MessageDTO]:
         valid_messages = []

@@ -1,4 +1,4 @@
-import local_db.sql_db as sql_db
+import sql_db as sql_db
 
 # test sql_db
 def basic_functionality():
