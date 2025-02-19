@@ -159,6 +159,7 @@ class user_public_share(BaseModel):
             return paillier.PaillierPublicKey(n=int(value["n"]))
         return value  
 
+    # TODO: RON why this is comment out?
     # def to_dict(self):
     #     return {
     #         "user_index": self.user_index,

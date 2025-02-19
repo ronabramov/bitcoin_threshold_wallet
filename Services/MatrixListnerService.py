@@ -12,7 +12,7 @@ from models.value_knowledge_zk_proof import value_knowledge_zk_proof
 from models.protocols.MtaAndMtaWcMessages import MtaChallenge, MtaCommitmentAlice, MtaCommitmentBob, MtaProofForChallengeAlice, MtaProofForChallengeBob, MtaWcCommitmentBob
 from local_db import sql_db_dal
 from Services.TransactionService import TransactionService
-
+import Services.UserPublicShareService as UserPublicShareService
 
 class MatrixRoomListener:
     """
@@ -61,7 +61,7 @@ class MatrixRoomListener:
         except (ValueError, KeyError, ValidationError):
             print(f"Failed to validate message {event['content']['body']}")
             pass 
-        self._handle_message_DTO(message_obj)
+        self._handle_message_DTO(message_obj, room_id)
         # Forward to a message handler (to be implemented later)
         print(f"Message received in room {room_id}: {event['content']['body']}")
 
@@ -83,7 +83,7 @@ class MatrixRoomListener:
         self.client.stop_listener_thread()
         print("MatrixRoomListener stopped.")
 
-    def _handle_message_DTO(self, message_dto: MessageDTO):
+    def _handle_message_DTO(self, message_dto: MessageDTO, wallet_id: str):
         """ Handles a message DTO. """
         print(f"Message received: {message_dto}")
         try:
@@ -100,9 +100,10 @@ class MatrixRoomListener:
                 return TransactionService.handle_incoming_transaction(transaction_response_obj)
         
             elif message_dto.type == MessageType.UserPublicShare:
-                user_public_share_obj = user_public_share.model_validate_json(message_dto.data)
                 print(f"User public share received: {user_public_share_obj}")
-            
+                user_public_share_obj = user_public_share.model_validate_json(message_dto.data)
+                UserPublicShareService.handle_incoming_public_share(user_public_share_obj, wallet_id)
+                return
             elif message_dto.type == MessageType.KeyGenerationShare:
                 key_generation_share_obj = key_generation_share.model_validate_json(message_dto.data)
                 print(f"Key generation share received: {key_generation_share_obj}")

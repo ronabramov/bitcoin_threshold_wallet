@@ -6,6 +6,7 @@ from local_db.sql_db import Wallet
 import local_db.sql_db_dal as DB_DAL
 from models.models import user_secret_signature_share, key_generation_share, user_modulus, user_public_share
 import APIs.UserToUserAPI 
+import Services.UserPublicShareService as UserPublicShareService
 
 class UserSignatureGenerator:
     def __init__(self, wallet : Wallet, user_public_keys : user_public_share):
@@ -49,7 +50,7 @@ class UserSignatureGenerator:
         for user in existing_users_keys:
             if user.user_index == self.user_index:
                 continue # Send Messages only for other users
-            user_share = [share for share in users_signature_shares if share.target_user_index == user.user_index][0]
+            user_share = UserPublicShareService.filter_shares_by_user_index(users_signature_shares, user.user_index)
             user_share.target_user_matrix_id = user.user_id
             #Better update that entity in DB.
             shares_dict[user.user_index] = user_share
@@ -58,7 +59,7 @@ class UserSignatureGenerator:
 
     
     def send_share_for_every_participating_user(self, shares_dict : dict) -> bool:
-        success = APIs.UserToUserAPI.send_key_share_for_participating_users(list(shares_dict.values()))
+        success = APIs.UserToUserAPI.bulk_send_key_share(list(shares_dict.values()))
         return success
     
     def apply_received_share(self, user_share : user_secret_signature_share, peer_share : key_generation_share):

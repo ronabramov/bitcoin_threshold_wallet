@@ -147,11 +147,11 @@ def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
         print(f"Failed to insert wallet {wallet.wallet_id}", e)
         return False
 
-def inser_new_room_user(wallet_id : str, user_index : int, user_matrix_id : str, user_public_keys : user_public_share):
+def insert_new_room_user(wallet_id : str, user_index : int, user_matrix_id : str, user_public_keys : user_public_share):
     try:
-        rooom_user_data = sql_db.Room_User_Data(user_index = user_index, user_matrix_id=user_matrix_id,
+        room_user_data = sql_db.Room_User_Data(user_index = user_index, user_matrix_id=user_matrix_id,
                                                  user_public_keys_data = user_public_keys.to_dict(), wallet_id=wallet_id)
-        sql_db.session.add(rooom_user_data)
+        sql_db.session.add(room_user_data)
         sql_db.session.commit()
         print(f"Successfully inserted room's user data for user {user_matrix_id} in wallet {wallet_id} to db")
         return True
@@ -180,3 +180,13 @@ def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO:
     transaction_dto.approvers_counter = transaction.approvals_counter
     transaction_dto.stage = TransactionStatus[transaction.status]
     return transaction_dto
+
+def update_signature_share(wallet_id : str, share : key_generation_share) -> bool:
+    try:
+        # TODO: RON - check if this is the correct way to update the share
+        share_id = f'{wallet_id}_{share.target_user_index}'
+        sql_db.session.query(sql_db.Room_Signature_Shares_Data).filter(sql_db.Room_Signature_Shares_Data.share_id == share_id).update(share.to_dict())
+        sql_db.session.commit()
+        return True
+    except Exception as e:
+        print(f"Failed to update signature share for wallet {wallet_id}", e)
