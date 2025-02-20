@@ -5,7 +5,7 @@ from ecdsa.curves import Curve, SECP256k1
 from ecdsa import curves
 import json
 from phe import paillier
-from models.DTOs.message_dto import MessageType
+from models.DTOs.MessageType import MessageType
 
 class TransactionInfo(BaseModel):
     wallet_id: str

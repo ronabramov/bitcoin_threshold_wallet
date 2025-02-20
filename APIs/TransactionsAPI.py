@@ -1,7 +1,7 @@
 from local_db import sql_db_dal
 from models.DTOs.transaction_dto import TransactionDTO
 from models.DTOs.message_dto import MessageDTO as MessageWrapper
-from models.DTOs.message_dto import MessageType
+from models.DTOs.MessageType import MessageType
 from models.DTOs.wallet_dto import WalletDto
 from models.transaction_status import TransactionStatus
 from models.transaction_response import TransactionResponse
@@ -9,7 +9,7 @@ from models.models import user_public_share
 from APIs.Algorithm_Steps_Implementation.user_transaction_configuration_handler import UserTransactionConfigurationHandler as ConfigHandler
 import uuid
 from Services.MatrixService import MatrixService
-from Services.TransactionService import TransactionService
+from Services import TransactionService
 
 """
 This is the APIs the controller should reach for any transaction service

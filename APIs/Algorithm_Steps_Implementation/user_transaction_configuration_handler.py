@@ -1,5 +1,5 @@
-from DTOs.transaction_dto import TransactionDTO
-from DTOs.wallet_dto import WalletDto
+from models.DTOs.transaction_dto import TransactionDTO
+from models.DTOs.wallet_dto import WalletDto
 from Services.MatrixService import MatrixService
 import common_utils as Utils
 from ecdsa import NIST256p, curves

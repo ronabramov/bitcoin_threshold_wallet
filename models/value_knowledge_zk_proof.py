@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from models.DTOs.message_dto import MessageType
+from models.DTOs.MessageType import MessageType
+
 """
 DTO object for Schnorr ZK proof of value x
 """

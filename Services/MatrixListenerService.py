@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from models.DTOs.transaction_dto import TransactionDTO
 from models.models import WalletGenerationMessage, user_public_share, key_generation_share
 from models.transaction_response import TransactionResponse
-from models.DTOs.message_dto import MessageType
+from models.DTOs.MessageType import MessageType
 from models.commitment import Commitment
 from models.value_knowledge_zk_proof import value_knowledge_zk_proof
 from models.protocols.MtaAndMtaWcMessages import MtaChallenge, MtaCommitmentAlice, MtaCommitmentBob, MtaProofForChallengeAlice, MtaProofForChallengeBob, MtaWcCommitmentBob

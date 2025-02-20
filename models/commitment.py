@@ -1,7 +1,7 @@
 from models.algorithm_step import Algorithm_Step
 from phe import paillier
 from pydantic import BaseModel, ConfigDict
-from models.DTOs.message_dto import MessageType
+from models.DTOs.MessageType import MessageType
 
 class Commitment(BaseModel):
     algorithm_step: Algorithm_Step

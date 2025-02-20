@@ -21,3 +21,4 @@ runtime/
 frontend/node_modules/
 local_db.sqlite
 .idea/
+.env

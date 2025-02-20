@@ -31,10 +31,10 @@ def respond_to_room_invitation(room_id : str, user_accepted_invitation : bool):
     
     room_name = MatrixService.instance().join_room_invitation(room_id=room_id)
     if is_wallet_room(room_name):
-        result = handle_joining_new_wallet(room_name=room_name, room_id=room_id)
+        result = _handle_joining_new_wallet(room_name=room_name, room_id=room_id)
         return result
 
-def handle_joining_new_wallet(user_id : str, room_id : str) -> bool:
+def _handle_joining_new_wallet(user_id : str, room_id : str) -> bool:
     """
     Should create Transaction_Room (db) object including mapping of other users public shares. 
     """
@@ -141,19 +141,19 @@ def is_wallet_room(room_name : str):
     return True
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
-    room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
-    transction_details = "Testing transction generation flow"
-    user_matrix_id = '@ron_test:matrix.org'
-    invitation_room_id = '!linNyiyZMvcVSSXEvQ:matrix.org'
-    tryjoin = handle_joining_new_wallet(user_id=user_matrix_id, room_id=invitation_room_id)
-    # gilad_matirx_user_id = '@gilad.i:matrix.org'
-    # gilad_email = 'gilad.ilani@gmail.com'
-    # db_dal.insert_new_friend(user_email=gilad_email, user_matrix_id=gilad_matirx_user_id)
-    my_friends = get_all_friends()[0].email
-    new_wallet = create_new_wallet(user_matrix_id, [my_friends], wallet_name=f'Wallet_Test_New_Flow_{random.randint(0,1000)}', wallet_threshold=2, max_participants=3)
-    test=True
-    transaction_name = transction_details
-    #Why should we ever search for the existing transaction here?
+    # room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
+    # transction_details = "Testing transction generation flow"
+    # user_matrix_id = '@ron_test:matrix.org'
+    # invitation_room_id = '!linNyiyZMvcVSSXEvQ:matrix.org'
+    # tryjoin = _handle_joining_new_wallet(user_id=user_matrix_id, room_id=invitation_room_id)
+    # # gilad_matirx_user_id = '@gilad.i:matrix.org'
+    # # gilad_email = 'gilad.ilani@gmail.com'
+    # # db_dal.insert_new_friend(user_email=gilad_email, user_matrix_id=gilad_matirx_user_id)
+    # my_friends = get_all_friends()[0].email
+    # new_wallet = create_new_wallet(user_matrix_id, [my_friends], wallet_name=f'Wallet_Test_New_Flow_{random.randint(0,1000)}', wallet_threshold=2, max_participants=3)
+    # test=True
+    # transaction_name = transction_details
+    # #Why should we ever search for the existing transaction here?
     

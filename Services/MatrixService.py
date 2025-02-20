@@ -11,7 +11,7 @@ import time
 from pydantic import ValidationError
 import sys
 import os
-
+import Config 
 ## FOR DEBUGGING MATRIX SERVICE DIRECTLY:
 # # Get the absolute path of the project root
 # PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -25,11 +25,29 @@ import os
 
 MATRIX_MESSAGES_MAIN_NODE = "chunk"
 MATRIX_PROPERTY_FOR_MESSAGES_TRACKING = "end" # If exists, this is token for next messages. Otherwise, no further messages exists.
-HOMESERVER_URL = "https://matrix.org" # Should be part of the user details. 
+
 
 # should be in a config file - in  a local db or run time instance
-matrix_user_id = "ron_test"
-matrix_user_password = "Roniparon32"
+
+class Context():
+    _matrix_user_id = ""
+    _matrix_user_password = ""
+    @staticmethod
+    def set(matrix_user_id : str, matrix_user_password : str):
+        Context._matrix_user_id = matrix_user_id
+        Context._matrix_user_password = matrix_user_password
+        MatrixService.instance().matrix_user_id = matrix_user_id
+        MatrixService.instance().matrix_user_password = matrix_user_password
+        MatrixService.instance()._instance = None
+    
+    @property
+    def matrix_user_id(self):
+        return self._matrix_user_id
+    
+    @property
+    def matrix_user_password(self):
+        return self._matrix_user_password
+    
 
 
 class MatrixService:
@@ -40,8 +58,8 @@ class MatrixService:
             raise Exception(
                 "This class is a singleton! Use MatrixService.instance to access it."
             )
-        self.matrix_user_id = matrix_user_id
-        self.matrix_user_password = matrix_user_password
+        self.matrix_user_id = Context._matrix_user_id
+        self.matrix_user_password = Context._matrix_user_password
         self._client = None
 
     @classmethod
@@ -54,7 +72,7 @@ class MatrixService:
     def client(self) -> MatrixClient:
         if self._client and self._client.token:
             return self._client
-        client = MatrixClient(HOMESERVER_URL)
+        client = MatrixClient(Config.HOMESERVER_URL)
         # Log in as the admin
         token = client.login(
             username=self.matrix_user_id, password=self.matrix_user_password, sync=True

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from phe import paillier, EncryptedNumber
 from ecdsa.ellipticcurve import PointJacobi
-from models.DTOs.message_dto import MessageType
+from models.DTOs.MessageType import MessageType
 
 class MtaChallenge(BaseModel):
     """Used both by Alice and Bob."""

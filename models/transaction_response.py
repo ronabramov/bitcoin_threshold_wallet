@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from models.transaction_status import TransactionStatus
-from models.DTOs.message_dto import MessageType
+from models.DTOs.MessageType import MessageType
 from typing import Optional
 
 class TransactionResponse(BaseModel):
