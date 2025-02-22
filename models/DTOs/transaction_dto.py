@@ -28,9 +28,9 @@ class TransactionDTO(BaseModel):
     
 
 # Example of usage
-transaction_dto = TransactionDTO(id='1', name="Payment", details="Monthly subscription", wallet_id="abc123")
-print(transaction_dto)
-transaction_dto.approve("user123")
-transaction_dto.approve("user456")
-print(transaction_dto.approvers)  # Output should be "user123,user456"
-print(transaction_dto.approvers_counter)  # Output should be 2
+# transaction_dto = TransactionDTO(id='1', name="Payment", details="Monthly subscription", wallet_id="abc123")
+# print(transaction_dto)
+# transaction_dto.approve("user123")
+# transaction_dto.approve("user456")
+# print(transaction_dto.approvers)  # Output should be "user123,user456"
+# print(transaction_dto.approvers_counter)  # Output should be 2

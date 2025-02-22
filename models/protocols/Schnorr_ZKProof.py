@@ -46,11 +46,11 @@ class Schnorr_ZK_Proof:
         return R_prime.x() == R_x
 
 # Example usage
-schnor_zk_protocol = Schnorr_ZK_Proof(SECP256k1) # example group from ECDSA
-private_key = 123456789  # Some private key as an integer
-public_key = private_key * schnor_zk_protocol.G
+# schnor_zk_protocol = Schnorr_ZK_Proof(SECP256k1) # example group from ECDSA
+# private_key = 123456789  # Some private key as an integer
+# public_key = private_key * schnor_zk_protocol.G
 
-proof = schnor_zk_protocol.provide_zk_proof_for_input(private_key)
-print("Proof:", proof)
-assert schnor_zk_protocol.verify_knowledge(public_key, proof)
-print("Verification: Successful")
+# proof = schnor_zk_protocol.provide_zk_proof_for_input(private_key)
+# print("Proof:", proof)
+# assert schnor_zk_protocol.verify_knowledge(public_key, proof)
+# print("Verification: Successful")

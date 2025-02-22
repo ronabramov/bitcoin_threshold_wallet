@@ -268,22 +268,22 @@ class MatrixService:
         return valid_messages
 
 
-# Example usage
-if __name__ == "__main__":
-    room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
-    destination_user_matrix_id = "@ronabramovich:matrix.org"
-    message = {"body": "This is a privatenessage"}
-    # MatrixService.instance().send_private_message_to_user(
-    #     destination_user_matrix_id, "This is a privatenessage"
-    # )
-    messages = MatrixService.instance().get_valid_json_messages(room_id=room_id)
-    print(f' My messages are : {[m for m in messages]} . \n And Thats all ')
-    print('\n \n \n CHECK CHECK \n \n \n')
-    MatrixService.instance().create_user_backup_room()
-    MatrixService.instance().get_room_history(room_id)
-    MatrixService.instance().send_message_to_wallet_room(room_id, message)
-    room = MatrixService.instance().create_room("test_room_new")
-    MatrixService.instance().invite_users_to_room(room, [destination_user_matrix_id])
+# # Example usage
+# if __name__ == "__main__":
+#     room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
+#     destination_user_matrix_id = "@ronabramovich:matrix.org"
+#     message = {"body": "This is a privatenessage"}
+#     # MatrixService.instance().send_private_message_to_user(
+#     #     destination_user_matrix_id, "This is a privatenessage"
+#     # )
+#     messages = MatrixService.instance().get_valid_json_messages(room_id=room_id)
+#     print(f' My messages are : {[m for m in messages]} . \n And Thats all ')
+#     print('\n \n \n CHECK CHECK \n \n \n')
+#     MatrixService.instance().create_user_backup_room()
+#     MatrixService.instance().get_room_history(room_id)
+#     MatrixService.instance().send_message_to_wallet_room(room_id, message)
+#     room = MatrixService.instance().create_room("test_room_new")
+#     MatrixService.instance().invite_users_to_room(room, [destination_user_matrix_id])
     
     
-    # TODO create room with invite_only=true - only invited users can join
+#     # TODO create room with invite_only=true - only invited users can join

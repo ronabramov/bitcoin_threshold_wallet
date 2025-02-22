@@ -68,15 +68,15 @@ def handle_reached_threshold_transaction(transaction : TransactionDTO, wallet: W
 def generate_unique_transaction_id():
     return "tx_" + str(uuid.uuid4())
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     
-    room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
-    transction_details = "Testing transction generation flow"
-    user_matrix_id = '@ron_test:matrix.org'
-    transaction_name = transction_details
-    #Why should we ever search for the existing transaction here?
-    existing_trans = sql_db_dal.get_transactions_by_wallet_id(room_id, should_convert_to_dto=True)
-    for trans in existing_trans:
-        approved = respond_to_new_transaction(user_id=user_matrix_id, transaction=trans,  user_response=True)
-    res = generate_transaction_and_send_to_wallet(user_matrix_id, room_id, transction_details, transaction_name)
+#     room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"
+#     transction_details = "Testing transction generation flow"
+#     user_matrix_id = '@ron_test:matrix.org'
+#     transaction_name = transction_details
+#     #Why should we ever search for the existing transaction here?
+#     existing_trans = sql_db_dal.get_transactions_by_wallet_id(room_id, should_convert_to_dto=True)
+#     for trans in existing_trans:
+#         approved = respond_to_new_transaction(user_id=user_matrix_id, transaction=trans,  user_response=True)
+#     res = generate_transaction_and_send_to_wallet(user_matrix_id, room_id, transction_details, transaction_name)
 

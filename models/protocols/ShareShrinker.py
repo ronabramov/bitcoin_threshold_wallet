@@ -32,10 +32,10 @@ class ShareShrinker:
         return (lambda_i_S * self.x_i) % self.q
 
 # Example usage
-S = {1, 2, 3, 4}  # Example set of t+1 indices
-x_i = 123  # Example secret share
-i = 2  # The index of the participant whose new share we want
-q = 7919  # Example prime field (large enough for security)
-shrinker = ShareShrinker(q=q,i=i,x_i=x_i,S=S)
-w_i = shrinker.compute_new_share()
-print(f"New share w_{i} in Z_{q} = {w_i}")
+# S = {1, 2, 3, 4}  # Example set of t+1 indices
+# x_i = 123  # Example secret share
+# i = 2  # The index of the participant whose new share we want
+# q = 7919  # Example prime field (large enough for security)
+# shrinker = ShareShrinker(q=q,i=i,x_i=x_i,S=S)
+# w_i = shrinker.compute_new_share()
+# print(f"New share w_{i} in Z_{q} = {w_i}")

@@ -134,16 +134,16 @@ mta = MTAProtocolWithZKP(q, N, h1, h2, N, h1, h2, a, b)  #For example both Alice
 
 
 # Protocol execution
-enc_a, pub_key, commitment_of_a = mta.alice_encrypting_a_and_sending_commitment(a)
-bob_challenges_alice = mta.bob_challenging_a_commitment()
-proof_for_challenge = mta.alice_sends_proof_answering_challenge(commitment_of_a, a, bob_challenges_alice)
-enc_result, beta_prime, bob_commitment = mta.bob_verify_a_commiting_encrypting_b(enc_a, pub_key, bob_challenges_alice,proof_for_challenge,
-                                                                                 commitment_of_a, mta.bob_alg_prover_settings)
-alice_challenges_bob = mta.alice_challenging_bob_commitment()
-bob_proof_for_alice_challenge = mta.bob_provide_proof_for_alice_challenge(bob_commitment,mta.bob_alg_prover_settings,alice_challenges_bob)
-alpha = mta.alice_finalize(bob_proof_for_alice_challenge, bob_commitment, enc_result, mta.Bob_Alg_verifier_Settings, alice_challenges_bob)
-beta = mta.bob_finalize(beta_prime)
+# enc_a, pub_key, commitment_of_a = mta.alice_encrypting_a_and_sending_commitment(a)
+# bob_challenges_alice = mta.bob_challenging_a_commitment()
+# proof_for_challenge = mta.alice_sends_proof_answering_challenge(commitment_of_a, a, bob_challenges_alice)
+# enc_result, beta_prime, bob_commitment = mta.bob_verify_a_commiting_encrypting_b(enc_a, pub_key, bob_challenges_alice,proof_for_challenge,
+#                                                                                  commitment_of_a, mta.bob_alg_prover_settings)
+# alice_challenges_bob = mta.alice_challenging_bob_commitment()
+# bob_proof_for_alice_challenge = mta.bob_provide_proof_for_alice_challenge(bob_commitment,mta.bob_alg_prover_settings,alice_challenges_bob)
+# alpha = mta.alice_finalize(bob_proof_for_alice_challenge, bob_commitment, enc_result, mta.Bob_Alg_verifier_Settings, alice_challenges_bob)
+# beta = mta.bob_finalize(beta_prime)
 
-# Verify correctness
-assert (alpha + beta) % N == (a * b) % N
-print(f"Alice's share: {alpha}, Bob's share: {beta}")
+# # Verify correctness
+# assert (alpha + beta) % N == (a * b) % N
+# print(f"Alice's share: {alpha}, Bob's share: {beta}")

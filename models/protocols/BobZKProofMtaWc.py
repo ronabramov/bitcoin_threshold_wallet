@@ -134,22 +134,22 @@ def pick_c1_and_c2(r, x, y, public_key : paillier.PaillierPublicKey):
 
 # RON TODO : We should move the selection of h1,h2, public keys etc to the appropriate places
 #            They should be passed as arguments.
-x = 11
-y = 13
-group = NIST256p
-generator = group.generator
-q = group.order
-X = x* generator
-Modulus_N = q^8 + 1
-public_key, secret_key = paillier.generate_paillier_keypair()
-r = pick_r(public_key.n)
-c1 = random.randint(0 , public_key.nsquare)
-c2 = (gmpy2.powmod(c1, x, public_key.nsquare) * gmpy2.powmod(public_key.g, y, public_key.nsquare) * gmpy2.powmod(r, public_key.n, public_key.nsquare)) % public_key.nsquare
-verifier_settings_for_proof = Bob_ZKProof_RegMta_Settings(public_key=public_key, Modulus_N=99, h1 = 13, h2=23, c1=c1, c2=c2, X=X, curve=group)
-prover_settings_for_proof = Bob_ZKProof_RegMta_Prover_Settings(public_key=public_key, Modulus_N=99, h1 = 13, h2 = 23, r=r,
-                                                                c1=c1, c2=c2, b=x, beta_prime=y, X=X, curve=group)
-#Test 1 : Should pass - valid arguments#
-prover_commitment = prover_generates_commitment(prover_settings_for_proof)
-challenge = verifier_send_challenge(verifier_settings_for_proof.Modulus_N)
-proof_for_challenge = prover_answers_challenge(prover_commitment, challenge, prover_settings_for_proof)
-result = verifier_verify_result(prover_commitment, proof_for_challenge, challenge, verifier_settings_for_proof)
+# x = 11
+# y = 13
+# group = NIST256p
+# generator = group.generator
+# q = group.order
+# X = x* generator
+# Modulus_N = q^8 + 1
+# public_key, secret_key = paillier.generate_paillier_keypair()
+# r = pick_r(public_key.n)
+# c1 = random.randint(0 , public_key.nsquare)
+# c2 = (gmpy2.powmod(c1, x, public_key.nsquare) * gmpy2.powmod(public_key.g, y, public_key.nsquare) * gmpy2.powmod(r, public_key.n, public_key.nsquare)) % public_key.nsquare
+# verifier_settings_for_proof = Bob_ZKProof_RegMta_Settings(public_key=public_key, Modulus_N=99, h1 = 13, h2=23, c1=c1, c2=c2, X=X, curve=group)
+# prover_settings_for_proof = Bob_ZKProof_RegMta_Prover_Settings(public_key=public_key, Modulus_N=99, h1 = 13, h2 = 23, r=r,
+#                                                                 c1=c1, c2=c2, b=x, beta_prime=y, X=X, curve=group)
+# #Test 1 : Should pass - valid arguments#
+# prover_commitment = prover_generates_commitment(prover_settings_for_proof)
+# challenge = verifier_send_challenge(verifier_settings_for_proof.Modulus_N)
+# proof_for_challenge = prover_answers_challenge(prover_commitment, challenge, prover_settings_for_proof)
+# result = verifier_verify_result(prover_commitment, proof_for_challenge, challenge, verifier_settings_for_proof)

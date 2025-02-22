@@ -55,17 +55,17 @@ class Feldman_VSS_Protocol:
 
 #Usage Example:
 # Parameters
-curve = NIST256p
-n = 5  # Number of participants
-t = 3  # Threshold
-protocol = Feldman_VSS_Protocol(curve=curve, n=n, t=t, generating_user_Index=1)
-secret = random.randint(1, curve.order - 1)
+# curve = NIST256p
+# n = 5  # Number of participants
+# t = 3  # Threshold
+# protocol = Feldman_VSS_Protocol(curve=curve, n=n, t=t, generating_user_Index=1)
+# secret = random.randint(1, curve.order - 1)
 
-# Generate shares
-shares = protocol.generate_shares(secret)
+# # Generate shares
+# shares = protocol.generate_shares(secret)
 
-# Verify shares
-verified = [protocol.verify_share(share) for share in shares]
-print("Shares verified:", all(verified))
+# # Verify shares
+# verified = [protocol.verify_share(share) for share in shares]
+# print("Shares verified:", all(verified))
 
 
