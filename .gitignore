@@ -22,3 +22,5 @@ frontend/node_modules/
 local_db.sqlite
 .idea/
 .env
+local_db/local_db1.sqlite
+local_db/local_db2.sqlite

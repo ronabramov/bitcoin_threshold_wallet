@@ -1,12 +1,12 @@
 from local_db import sql_db
+from local_db.sql_db import DB
 from typing import Dict, Optional, List
 from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
 from models.models import  user_public_share, key_generation_share
-
 def get_transaction_participating_users_data_by_trans_id(wallet_id : str) -> dict[int, sql_db.Room_User_Data]:
     try:
-        room_users_data = sql_db.session.query(sql_db.Room_User_Data).filter(
+        room_users_data = DB.session().query(sql_db.Room_User_Data).filter(
                                                      sql_db.Room_User_Data.wallet_id == wallet_id).all()
         if not room_users_data:
             print(f"Couldn't find room_transaction_data for transaction {wallet_id}")
@@ -17,7 +17,7 @@ def get_transaction_participating_users_data_by_trans_id(wallet_id : str) -> dic
 
 def get_user_by_email(user_email : str) -> sql_db.User :
     try:
-        user = sql_db.session.query(sql_db.User).filter(sql_db.User.email == user_email).first()
+        user = DB.session().query(sql_db.User).filter(sql_db.User.email == user_email).first()
         if not user :
             print (f"Couldn't find user with email {user_email}")
             raise FileNotFoundError(f"User with email {user_email} couldn't be found")
@@ -27,7 +27,7 @@ def get_user_by_email(user_email : str) -> sql_db.User :
 
 def get_friend_by_email(email : str) -> sql_db.Friend:
     try:
-        friend = sql_db.session.query(sql_db.Friend).filter(sql_db.Friend.email == email).first()
+        friend = DB.session().query(sql_db.Friend).filter(sql_db.Friend.email == email).first()
         if not friend :
             print (f"Couldn't find friend with email {email}")
             raise FileNotFoundError(f"Friend with email {email} couldn't be found")
@@ -37,12 +37,12 @@ def get_friend_by_email(email : str) -> sql_db.Friend:
 
 
 def get_all_user_friends() -> List[sql_db.User]:
-    users = sql_db.session.query(sql_db.Friend).all()
+    users = DB.session().query(sql_db.Friend).all()
     return users
 
 def get_wallet_by_id(wallet_id : str) -> sql_db.Wallet:
     try:
-        wallet = sql_db.session.query(sql_db.Wallet).filter(sql_db.Wallet.wallet_id == wallet_id).first()
+        wallet = DB.session().query(sql_db.Wallet).filter(sql_db.Wallet.wallet_id == wallet_id).first()
         if not wallet :
             print (f"Wallet with Id : {wallet_id} couldn't be found")
             raise FileNotFoundError(f"wallet with Id : {wallet_id} couldn't be found")
@@ -52,7 +52,7 @@ def get_wallet_by_id(wallet_id : str) -> sql_db.Wallet:
 
 def get_transaction_by_id(transaction_id : str) -> sql_db.Transaction:
     try:
-        transaction = sql_db.session.query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction_id).first()
+        transaction = DB.session().query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction_id).first()
         if not transaction :
             print (f"Couldn't find transaction with id : {transaction_id}")
             return None
@@ -62,7 +62,7 @@ def get_transaction_by_id(transaction_id : str) -> sql_db.Transaction:
 
 def get_transactions_by_wallet_id(wallet_id : str, should_convert_to_dto = False):
     try:
-        transactions = sql_db.session.query(sql_db.Transaction).filter(sql_db.Transaction.wallet_id == wallet_id).all()
+        transactions = DB.session().query(sql_db.Transaction).filter(sql_db.Transaction.wallet_id == wallet_id).all()
         if not transactions :
             print (f"Couldn't find transaction for wallet  : {wallet_id}")
             raise FileNotFoundError(f"Transaction with wallet id  {wallet_id} couldn't be found")
@@ -81,11 +81,12 @@ def get_signature_shares_by_wallet(wallet_id: str) -> list[key_generation_share]
     :param wallet_id: Wallet ID to fetch signature shares for.
     :return: List of `user_key_generation_share` objects.
     """
-    shares = sql_db.session.query(sql_db.Room_Signature_Shares_Data).filter_by(wallet_id=wallet_id).all()
+    shares = DB.session().query(sql_db.Room_Signature_Shares_Data).filter_by(wallet_id=wallet_id).all()
     return [key_generation_share.from_dict(share.share_data) for share in shares]
 
 
 def insert_signature_share(wallet_id: str, share_data: key_generation_share) -> bool:
+    # TODO: check issue here
     share_data = share_data[1]
     share_index = share_data.target_user_index
     try:
@@ -95,13 +96,13 @@ def insert_signature_share(wallet_id: str, share_data: key_generation_share) -> 
             share_data=share_data.to_dict(),
             wallet_id=wallet_id
         )
-        sql_db.session.add(share_entry)
-        sql_db.session.commit()
+        DB.session().add(share_entry)
+        DB.session().commit()
         print(f"Successfully inserted signature share {share_index} for wallet {wallet_id}.")
         return True
     
     except Exception as e:
-        sql_db.session.rollback()
+        DB.session().rollback()
         print(f"Failed to insert signature share {share_index} for wallet {wallet_id}: {e}")
         return False
 
@@ -109,6 +110,7 @@ def insert_signature_share(wallet_id: str, share_data: key_generation_share) -> 
 def insert_multiple_signature_shares(wallet_id: str, shares: list[key_generation_share]) -> bool:
     success = True
     for share in enumerate(shares):
+        # TODO: check issue here
         result = insert_signature_share(wallet_id, share_data=share)
         if not result:
             success = False
@@ -118,8 +120,8 @@ def insert_multiple_signature_shares(wallet_id: str, shares: list[key_generation
 def insert_new_transaction(transaction : TransactionDTO) -> bool:
     try:
         transaction_to_insert = sql_db.Transaction.from_dto(transaction_dto=transaction)
-        sql_db.session.add(transaction_to_insert)
-        sql_db.session.commit()
+        DB.session().add(transaction_to_insert)
+        DB.session().commit()
         print(f"Successfully inserted transaction {transaction.id}")
         return True
     except Exception as e:
@@ -129,8 +131,8 @@ def insert_new_transaction(transaction : TransactionDTO) -> bool:
 def update_transaction(transaction : TransactionDTO) -> bool:
     try:
         transaction_to_update = sql_db.Transaction.from_dto(transaction_dto=transaction)
-        sql_db.session.query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction.id).update(transaction_to_update)
-        sql_db.session.commit()
+        DB.session().query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction.id).update(transaction_to_update)
+        DB.session().commit()
         print(f"Successfully updated transaction {transaction.id}")
         return True
     except Exception as e:
@@ -139,8 +141,8 @@ def update_transaction(transaction : TransactionDTO) -> bool:
 
 def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
     try:
-        sql_db.session.add(wallet)
-        sql_db.session.commit()
+        DB.session().add(wallet)
+        DB.session().commit()
         print(f"Successfully inserted wallet {wallet.wallet_id} to db")
         return True
     except Exception as e:
@@ -151,22 +153,24 @@ def insert_new_room_user(wallet_id : str, user_index : int, user_matrix_id : str
     try:
         room_user_data = sql_db.Room_User_Data(user_index = user_index, user_matrix_id=user_matrix_id,
                                                  user_public_keys_data = user_public_keys.to_dict(), wallet_id=wallet_id)
-        sql_db.session.add(room_user_data)
-        sql_db.session.commit()
+        DB.session().add(room_user_data)
+        DB.session().commit()
         print(f"Successfully inserted room's user data for user {user_matrix_id} in wallet {wallet_id} to db")
         return True
     except Exception as e:
         print(f"Failed to insert user {user_matrix_id} into wallet {wallet_id}", e)
         return False
 
+# TODO: RON - there is no api call that use this function - why should a user has friends?
 def insert_new_friend(user_email : str, user_matrix_id : str) -> bool:
     friend_db_object = sql_db.Friend(email=user_email, matrix_id = user_matrix_id)
     try:
-        sql_db.session.add(friend_db_object)
-        sql_db.session.commit()
+        DB.session().add(friend_db_object)
+        DB.session().commit()
         return True
     except Exception as e:
         print(f"Failed to inserting user {user_matrix_id} into Friends table", e)
+        DB.session().rollback()
         return False
 
 def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO:
@@ -185,8 +189,8 @@ def update_signature_share(wallet_id : str, share : key_generation_share) -> boo
     try:
         # TODO: RON - check if this is the correct way to update the share
         share_id = f'{wallet_id}_{share.target_user_index}'
-        sql_db.session.query(sql_db.Room_Signature_Shares_Data).filter(sql_db.Room_Signature_Shares_Data.share_id == share_id).update(share.to_dict())
-        sql_db.session.commit()
+        DB.session().query(sql_db.Room_Signature_Shares_Data).filter(sql_db.Room_Signature_Shares_Data.share_id == share_id).update(share.to_dict())
+        DB.session().commit()
         return True
     except Exception as e:
         print(f"Failed to update signature share for wallet {wallet_id}", e)

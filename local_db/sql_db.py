@@ -2,13 +2,19 @@ import os
 from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from models.models import user_public_share, user_secret_signature_share, key_generation_share
+from models.models import (
+    user_public_share,
+    user_secret_signature_share,
+    key_generation_share,
+)
 from models.DTOs.transaction_dto import TransactionDTO
 import json
+import Config
 
+from Services.Context import Context
 
 Base = declarative_base()
-DB_FILE = "/local_db/local_db.sqlite"
+
 
 class User(Base):
     __tablename__ = "users"
@@ -23,23 +29,30 @@ class Friend(Base):
     email = Column(String, primary_key=True, nullable=False)
     matrix_id = Column(String, primary_key=False, nullable=False)
 
+
 class Wallet(Base):
     __tablename__ = "wallets"
-    wallet_id = Column(String, primary_key=True, nullable=False) #This will be the room Id.
+    wallet_id = Column(
+        String, primary_key=True, nullable=False
+    )  # This will be the room Id.
     threshold = Column(Integer, nullable=False)
     max_num_of_users = Column(Integer, nullable=False)
-    users = Column(Text, nullable=True) #@alice:matrix.org,@bob:matrix.org - we will save comma parsed absolute path for participating users
-    configuration = Column(Text, nullable=True) # User secret
+    users = Column(
+        Text, nullable=True
+    )  # @alice:matrix.org,@bob:matrix.org - we will save comma parsed absolute path for participating users
+    configuration = Column(Text, nullable=True)  # User secret
     curve_name = Column(Text, nullable=True)
     transactions = relationship("Transaction", back_populates="wallet")
     users_data = relationship("Room_User_Data", back_populates="wallet")
-    signature_shares = relationship("Room_Signature_Shares_Data", back_populates="wallet")
+    signature_shares = relationship(
+        "Room_Signature_Shares_Data", back_populates="wallet"
+    )
 
-    #We should save here also the participants data from the Room_Users_Data and destroy Room_Users_Data object. 
+    # We should save here also the participants data from the Room_Users_Data and destroy Room_Users_Data object.
     # This should happen in way s.t every other user will have row in another table with the room_id and the user as ids and the json of his data.
-    #When inserting wallet we insert these rows afterwards, and when pulling a wallet we pull also that data.
+    # When inserting wallet we insert these rows afterwards, and when pulling a wallet we pull also that data.
 
-    def set_room_secret_user_data(self, data : user_secret_signature_share):
+    def set_room_secret_user_data(self, data: user_secret_signature_share):
         self.configuration = data.model_dump_json()
 
     def get_room_secret_user_data(self):
@@ -47,7 +60,6 @@ class Wallet(Base):
             data = json.loads(self.configuration)
             return user_secret_signature_share.model_validate(data)
         return None
-    
 
 
 class Transaction(Base):
@@ -69,36 +81,50 @@ class Transaction(Base):
             approvers=transaction_dto.approvers,
             approvals_counter=transaction_dto.approvers_counter,
             wallet_id=transaction_dto.wallet_id,
-            status=transaction_dto.stage.value 
+            status=transaction_dto.stage.value,
         )
-        return transaction    
+        return transaction
+
 
 class Room_User_Data(Base):
     """
     One per room - include all necessary participants' keys.
     """
+
     __tablename__ = "room_user_data"
-    
+
     user_index = Column(Integer, primary_key=True, nullable=False)
     user_matrix_id = Column(String, primary_key=True, nullable=False)
-    user_public_keys_data = Column(JSON, nullable=False, default={})  #Paillier Public key and Modulus data
-    signature_shared_data = Column(JSON, nullable=False, default={})  # Includes the signature share the user sent in channel
-    mta_data = Column(JSON, nullable=False, default={})  # Stores relevant data for MTA process with the user
+    user_public_keys_data = Column(
+        JSON, nullable=False, default={}
+    )  # Paillier Public key and Modulus data
+    signature_shared_data = Column(
+        JSON, nullable=False, default={}
+    )  # Includes the signature share the user sent in channel
+    mta_data = Column(
+        JSON, nullable=False, default={}
+    )  # Stores relevant data for MTA process with the user
 
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="users_data")
 
     ### PARTICIPANT DATA MANAGEMENT ###
-    
+
     def set_user_public_keys(self, user_data: user_public_share):
         self.user_public_keys_data = user_data.to_dict()
 
     def get_user_public_keys(self) -> user_public_share:
-        return user_public_share.from_dict(self.user_public_keys_data) if self.user_public_keys_data else None
+        return (
+            user_public_share.from_dict(self.user_public_keys_data)
+            if self.user_public_keys_data
+            else None
+        )
 
     def update_user_public_keys(self, user_data: user_public_share):
         if not self.user_public_keys_data:
-            raise ValueError(f"No user public key data found for user {self.user_matrix_id}")
+            raise ValueError(
+                f"No user public key data found for user {self.user_matrix_id}"
+            )
 
         self.user_public_keys_data = user_data.to_dict()
 
@@ -106,7 +132,7 @@ class Room_User_Data(Base):
         self.user_public_keys_data = {}
 
     ### SIGNATURE SHARE MANAGEMENT ###
-    
+
     def add_signature_share(self, signature_share: dict):
         self.signature_shared_data = signature_share
 
@@ -117,7 +143,7 @@ class Room_User_Data(Base):
         self.signature_shared_data = {}
 
     ### MTA DATA MANAGEMENT ###
-    
+
     def add_mta_data(self, mta_info: dict):
         self.mta_data = mta_info
 
@@ -127,31 +153,44 @@ class Room_User_Data(Base):
     def remove_mta_data(self):
         self.mta_data = {}
 
+
 class Room_Signature_Shares_Data(Base):
     __tablename__ = "room_signature_shares_data"
     share_id = Column(String, primary_key=True, nullable=False)
     share_index = Column(Integer, primary_key=False, nullable=False)
-    share_data = Column(JSON, nullable=False, default={}) # data of to dict/from_dict of key_generation_share.
+    share_data = Column(
+        JSON, nullable=False, default={}
+    )  # data of to dict/from_dict of key_generation_share.
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="signature_shares")
 
-    def get_signature_share(self, user_index : int) -> key_generation_share:
+    def get_signature_share(self, user_index: int) -> key_generation_share:
         return key_generation_share.from_dict(self.share_data)
 
 
 # check if the database exists
-if not os.path.exists(DB_FILE):
+def create_db_if_not_exists(db_file_name): 
+    current_path = os.path.dirname(
+            os.path.abspath(__file__)
+        )
+    abs_path = os.path.join(current_path, db_file_name)
+    engine = create_engine(f"sqlite:///{abs_path}")
+    if not os.path.exists(abs_path):    
+        Base.metadata.create_all(engine)
+    # Session maker
+    Session = sessionmaker(bind=engine)
+    # this is the session that will be used to interact with the database
+    session = Session()
+    return session
 
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Get the directory of the script
-    DB_FILE = os.path.join(BASE_DIR, "local_db.sqlite")  # Construct the full path
 
-    engine = create_engine(f"sqlite:///{DB_FILE}")
-    Base.metadata.create_all(engine)
-else:
-    engine = create_engine(f"sqlite:///{DB_FILE}")
-
-# Session maker
-Session = sessionmaker(bind=engine)
-
-# this is the session that will be used to interact with the database
-session = Session()
+class DB():
+    sessions = {
+        Config.Test.User1.matrix_id: create_db_if_not_exists(Config.DB_FILE1),
+        Config.Test.User2.matrix_id: create_db_if_not_exists(Config.DB_FILE2),
+    } if Config.is_test else { 'default': create_db_if_not_exists(Config.DB_FILE1)}
+    def session():
+        if Config.is_test:
+            return DB.sessions[Context.matrix_user_id()]
+        else:
+            return list(DB.sessions.values())[0]

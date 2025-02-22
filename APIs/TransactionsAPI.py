@@ -1,6 +1,6 @@
 from local_db import sql_db_dal
 from models.DTOs.transaction_dto import TransactionDTO
-from models.DTOs.message_dto import MessageDTO as MessageWrapper
+from models.DTOs.message_dto import MessageDTO
 from models.DTOs.MessageType import MessageType
 from models.DTOs.wallet_dto import WalletDto
 from models.transaction_status import TransactionStatus
@@ -10,7 +10,7 @@ from APIs.Algorithm_Steps_Implementation.user_transaction_configuration_handler 
 import uuid
 from Services.MatrixService import MatrixService
 from Services import TransactionService
-
+from Services.Context import Context
 """
 This is the APIs the controller should reach for any transaction service
 Methods:
@@ -32,15 +32,16 @@ def generate_transaction_and_send_to_wallet(user_id, wallet_id, transaction_deta
     if not insertion_succeded:
         return False
     # transaction request message is handled as a transaction message
-    transaction_json = MessageWrapper(type=MessageType.TransactionRequest, data=transaction).model_dump_json()
+    transaction_json = MessageDTO(type=MessageType.TransactionRequest, data=transaction).model_dump_json()
     return MatrixService.instance().send_message_to_wallet_room(room_id = wallet_id, message = transaction_json)
 
-def respond_to_new_transaction(user_id : str, transaction : TransactionDTO, user_response : bool) -> bool:
+def respond_to_new_transaction(transaction : TransactionDTO, user_response : bool) -> bool:
     """
     * With respect to user response, updates provers list and transaction stage.
     * Saves in local_db the transaction stage
     * send transaction_response message in the corresponding room - only if approved. 
     """
+    user_id = Context.matrix_user_id()
     if not user_response:
         print (f"user {user_id} rejects transaction {transaction.id}")
         return True
@@ -52,7 +53,7 @@ def respond_to_new_transaction(user_id : str, transaction : TransactionDTO, user
         if not insertion_succeeded:
             return False
         
-        approved_transaction_json = MessageWrapper(type = MessageType.TransactionResponse, data=transaction_response).model_dump_json()
+        approved_transaction_json = MessageDTO(type = MessageType.TransactionResponse, data=transaction_response).model_dump_json()
         if threshold_achieved:
             handle_reached_threshold_transaction(transaction=transaction, wallet=wallet)
 
@@ -61,7 +62,7 @@ def respond_to_new_transaction(user_id : str, transaction : TransactionDTO, user
 def handle_reached_threshold_transaction(transaction : TransactionDTO, wallet: WalletDto) -> bool: #####RE VISIT
     config_handler = ConfigHandler()
     _, transaction_room_id, public_key = config_handler.define_transaction_user_config_and_send_shares(transaction=transaction, wallet=wallet) #Consider passing Curve.
-    public_keys_message = MessageWrapper(type = user_public_share, data=public_key).model_dump_json()
+    public_keys_message = MessageDTO(type = MessageType.UserPublicShare, data=public_key).model_dump_json()
     return MatrixService.instance().send_message_to_wallet_room(room_id=transaction_room_id, message=public_keys_message)
     
 

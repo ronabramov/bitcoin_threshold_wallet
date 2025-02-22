@@ -25,8 +25,7 @@ class UserSignatureGenerator:
     def handle_key_generation_for_user(self):
         """
         1. Generates signature for user. Update Wallet secret with signature data
-        2. Records signature shares in DB
-        """
+        2. Records signature shares in DB        """
         user_key_generation_participants_shares, user_secret = self.generate_secret_and_shares_for_other_users()
         self.enrich_user_secret_data_with_signature_details(secret=user_secret, share = user_key_generation_participants_shares[self.user_public_keys.user_index])
         insertion_success = DB_DAL.insert_multiple_signature_shares(wallet_id=self.wallet_id, shares= list(user_key_generation_participants_shares.values()))
@@ -45,7 +44,7 @@ class UserSignatureGenerator:
         shares_dict = {share.target_user_index: share for share in shares}
         return shares_dict, secret
     
-    def handle_existing_users_signatures(self, existing_users_keys : list[user_public_share]):
+    def  handle_existing_users_signatures(self, existing_users_keys : list[user_public_share]):
         shares_dict = {}
         users_signature_shares = DB_DAL.get_signature_shares_by_wallet(self.wallet_id)
         for user in existing_users_keys:

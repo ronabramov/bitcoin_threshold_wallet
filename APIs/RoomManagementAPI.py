@@ -14,6 +14,7 @@ import common_utils as Utils
 from ecdsa import NIST256p, curves
 from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
 import random
+from Services.Context import Context
 
 
 GENERATING_USER_INDEX = 1
@@ -31,10 +32,10 @@ def respond_to_room_invitation(room_id : str, user_accepted_invitation : bool):
     
     room_name = MatrixService.instance().join_room_invitation(room_id=room_id)
     if is_wallet_room(room_name):
-        result = _handle_joining_new_wallet(room_name=room_name, room_id=room_id)
+        result = _handle_joining_new_wallet(room_id=room_id)
         return result
 
-def _handle_joining_new_wallet(user_id : str, room_id : str) -> bool:
+def _handle_joining_new_wallet(room_id : str) -> bool:
     """
     Should create Transaction_Room (db) object including mapping of other users public shares. 
     """
@@ -48,7 +49,7 @@ def _handle_joining_new_wallet(user_id : str, room_id : str) -> bool:
     participating_users = ",".join([msg.user_id for msg in existing_users_shares_messages])
     wallet = get_wallet_from_generating_wallet_message(wallet_id=room_id, wallet_participants=participating_users, generation_message=generation_wallet_msg)
     
-    user_room_secret_data, user_public_data = Utils.generate_user_room_keys(user_index=user_index_in_wallet, user_matrix_id=user_id, wallet=wallet)
+    user_room_secret_data, user_public_data = Utils.generate_user_room_keys(user_index=user_index_in_wallet, user_matrix_id=Context.matrix_user_id(), wallet=wallet)
     signature_created = handle_wallet_signature(wallet=wallet, user_secret_data=user_room_secret_data, user_keys=user_public_data,
                                                  existing_users_in_wallet=existing_users_shares_messages)
     if not signature_created:

@@ -1,17 +1,16 @@
 
 import common_utils
-import local_db.sql_db as sql_db
-
+from  local_db.sql_db import DB, User
 
 def save_user_data(email: str, password: str, homeserver):
     hashed_password = common_utils.hash_password(password)
     # check if user already exists
-    if sql_db.session.query(sql_db.User).filter(sql_db.User.email == email).first():
+    if DB.session().query(User).filter(User.email == email).first():
         print("User already exists")
         return
 
-    sql_db.session.add(
-        sql_db.User(
+    DB.session().add(
+        User(
             email=email,
             hashed_password=hashed_password,
             homeserver_url=homeserver["url"],
@@ -19,12 +18,12 @@ def save_user_data(email: str, password: str, homeserver):
             homeserver_password=homeserver["password"],
         )
     )
-    sql_db.session.commit()
+    DB.session().commit()
 
 
 def retrieve_users():  # Testing users retival.
     """Retrieve and display all users from the local database."""
-    users = sql_db.session.query(sql_db.User).all()
+    users = DB.session().query(User).all()
     for user in users:
         print("Email:", user.email)
         print("Hashed Password:", user.hashed_password)

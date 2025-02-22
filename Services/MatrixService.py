@@ -1,11 +1,13 @@
 from matrix_client.client import MatrixClient
 from matrix_client.room import Room
 from matrix_client.user import User
+
 #Should put commoun_utils and models dto import in comment for direct debug.
 import common_utils
 from models.DTOs.message_dto import MessageDTO
 import requests
 import random   
+from Services.Context import Context
 from typing import List
 import time
 from pydantic import ValidationError
@@ -28,40 +30,27 @@ MATRIX_PROPERTY_FOR_MESSAGES_TRACKING = "end" # If exists, this is token for nex
 
 
 # should be in a config file - in  a local db or run time instance
+matrix_user_id = "ron_test"
+matrix_user_password = "Roniparon32"
 
-class Context():
-    _matrix_user_id = ""
-    _matrix_user_password = ""
-    @staticmethod
-    def set(matrix_user_id : str, matrix_user_password : str):
-        Context._matrix_user_id = matrix_user_id
-        Context._matrix_user_password = matrix_user_password
-        MatrixService.instance().matrix_user_id = matrix_user_id
-        MatrixService.instance().matrix_user_password = matrix_user_password
-        MatrixService.instance()._instance = None
-    
-    @property
-    def matrix_user_id(self):
-        return self._matrix_user_id
-    
-    @property
-    def matrix_user_password(self):
-        return self._matrix_user_password
-    
 
 
 class MatrixService:
     _instance = None
-
+    _client = None
     def __init__(self):
         if MatrixService._instance is not None:
             raise Exception(
                 "This class is a singleton! Use MatrixService.instance to access it."
             )
-        self.matrix_user_id = Context._matrix_user_id
-        self.matrix_user_password = Context._matrix_user_password
-        self._client = None
-
+        self.reset()
+    
+    @classmethod
+    def reset(self):
+        if self._client:
+            self._client.logout()
+        self._instance = None
+    
     @classmethod
     def instance(cls):
         if cls._instance is None:
@@ -75,7 +64,7 @@ class MatrixService:
         client = MatrixClient(Config.HOMESERVER_URL)
         # Log in as the admin
         token = client.login(
-            username=self.matrix_user_id, password=self.matrix_user_password, sync=True
+            username=Context.matrix_user_id(), password=Context.matrix_user_password(), sync=True
         )
         print(f"Admin logged in successfully. Token: {token}")
         self._client = client
@@ -130,18 +119,18 @@ class MatrixService:
     def create_user_backup_room(self):
         try:
             backup_room: Room = self.client.create_room(
-                alias=f"remote_user_backup_{self.matrix_user_id}", is_public=False
+                alias=f"remote_user_backup_{Context.matrix_user_id()}", is_public=False
             )
             room_id = backup_room.room_id
             self.client.join_room(room_id)
-            encrypted_password = common_utils.hash_password(self.matrix_user_password)
+            encrypted_password = common_utils.hash_password(Context.matrix_user_password())
             self.save_data_to_backup(
-                {self.matrix_user_id, encrypted_password, self.client.token, room_id},
+                {Context.matrix_user_id(), encrypted_password, self.client.token, room_id},
                 backup_room,
             )
             self.client.logout()
         except Exception as e:
-            print(f"Error creating backup room to user {self.matrix_user_id}: {e}")
+            print(f"Error creating backup room to user {Context.matrix_user_id()}: {e}")
 
     def save_data_to_backup(self, data: list, room: Room):
         for message in data:
@@ -152,7 +141,7 @@ class MatrixService:
 
     def get_room_history(self, room_id: str, num_of_messages_to_retrieve: int = 20):
         token = self.client.token
-        url = f"{HOMESERVER_URL}/_matrix/client/v3/rooms/{room_id}/messages"
+        url = f"{Config.HOMESERVER_URL}/_matrix/client/v3/rooms/{room_id}/messages"
         params = {
             "dir": "b",
             "limit": num_of_messages_to_retrieve,
@@ -194,7 +183,7 @@ class MatrixService:
 
         if not target_room:
             unix_timestamp = int(time.time())
-            room_name = f"private_room_for_{self.__user_matrix_id_to_room_name(self.matrix_user_id)}_and_{self.__user_matrix_id_to_room_name(target_user_matrix_id)}_{unix_timestamp}"
+            room_name = f"private_room_for_{self.__user_matrix_id_to_room_name(Context.matrix_user_id())}_and_{self.__user_matrix_id_to_room_name(target_user_matrix_id)}_{unix_timestamp}"
             new_room: Room = self.client.create_room(
                 alias=room_name, invitees=[target_user_matrix_id]
             )
@@ -213,8 +202,9 @@ class MatrixService:
                 )
                 return room
         return None
-    
+    # TODO: private message is sent in a public room - should be fixed
     def send_private_message_to_user(self, target_user_matrix_id: str, message: str):
+
         target_room: Room = self.__get_private_room_with_user(target_user_matrix_id)
         target_room.send_text(message)
         print(f"Successfuly sent private message in room {target_room.room_id}")

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
 from typing import List, Optional, Dict
 from ecdsa.ellipticcurve import PointJacobi, CurveFp
-from ecdsa.curves import Curve, SECP256k1
+from ecdsa.curves import NIST256p
 from ecdsa import curves
 import json
 from phe import paillier
@@ -47,11 +47,20 @@ class key_generation_share(BaseModel):
     v_0 : Optional[PointJacobi]
     curve : str
 
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        validate_assignment=False  # This will make validation even more lenient
+    )
+    
     @property
     def type(self):
         return MessageType.KeyGenerationShare
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    # TODO: implement deserialization validation
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        validate_assignment=False  # This will make validation even more lenient
+    )
 
     @field_serializer("v_i", "v_0", when_used="json")
     def serialize_point(self, value):
@@ -68,7 +77,6 @@ class key_generation_share(BaseModel):
 
 
     def to_dict(self):
-
         def serialize_point(p):
             if isinstance(p, PointJacobi):
                 affine_p = p.to_affine()  
@@ -100,7 +108,11 @@ class key_generation_share(BaseModel):
             "curve": curve_data
         }
 
-
+    @field_validator("v_i","v_0", mode="before")
+    @classmethod
+    def deserialize_points(cls, value):
+        return value
+    
     @classmethod
     def from_dict(cls, data):
         """Deserialize and reconstruct elliptic curve points inside the object."""
