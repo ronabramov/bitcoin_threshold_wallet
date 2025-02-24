@@ -29,6 +29,14 @@ class user_modulus(BaseModel):
     N : int
     h1 : int
     h2: int 
+    
+    def to_dict(self):
+        return {
+            "N": self.N,
+            "h1": self.h1,
+            "h2": self.h2
+        }
+    
 
 class key_generation_share(BaseModel):
     """
@@ -172,32 +180,28 @@ class user_public_share(BaseModel):
         return value  
 
     # TODO: RON why this is comment out?
-    # def to_dict(self):
-    #     return {
-    #         "user_index": self.user_index,
-    #         "user_id": self.user_id,
-    #         "paillier_public_key": {"n": self.paillier_public_key.n},  # Store only `n`
-    #         "user_modulus": {
-    #             "N": self.user_modulus.N,
-    #             "h1": self.user_modulus.h1,
-    #             "h2": self.user_modulus.h2
-    #         }
-    #     }
+    def to_dict(self):
+        return {
+            "user_index": self.user_index,
+            "user_id": self.user_id,
+            "paillier_public_key": {"n": self.paillier_public_key.n},  # Store only `n`
+            "user_modulus": self.user_modulus.to_dict()
+        }
 
-    # @classmethod
-    # def from_dict(cls, data):
-    #     paillier_pub = paillier.PaillierPublicKey(n=data["paillier_public_key"]["n"])
-    #     user_mod = user_modulus(
-    #         N=data["user_modulus"]["N"],
-    #         h1=data["user_modulus"]["h1"],
-    #         h2=data["user_modulus"]["h2"]
-    #     )
-    #     return cls(
-    #         user_index=data["user_index"],
-    #         user_id=data["user_id"],
-    #         paillier_public_key=paillier_pub,
-    #         user_modulus=user_mod,
-    #     )
+    @classmethod
+    def from_dict(cls, data):
+        paillier_pub = paillier.PaillierPublicKey(n=data["paillier_public_key"]["n"])
+        user_mod = user_modulus(
+            N=data["user_modulus"]["N"],
+            h1=data["user_modulus"]["h1"],
+            h2=data["user_modulus"]["h2"]
+        )
+        return cls(
+            user_index=data["user_index"],
+            user_id=data["user_id"],
+            paillier_public_key=paillier_pub,
+            user_modulus=user_mod,
+        )
 
 
 
