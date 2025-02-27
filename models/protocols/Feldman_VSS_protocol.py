@@ -51,6 +51,7 @@ class Feldman_VSS_Protocol:
         product = 0 * G  # Identity element
         for j, v in enumerate(share.v_i):
             product += (share.target_user_index ** j) * v
+            # TODO: maybe cast to int
         return g_p_i == product
 
 

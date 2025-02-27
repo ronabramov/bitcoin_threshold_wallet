@@ -33,7 +33,8 @@ def handle_incoming_key_generation_share(key_generation_share_obj : key_generati
     if not user_share:
         print(f"User share not found in the wallet")
         return
-    user_share = UserSignatureGenerator.apply_received_share(peer_share=key_generation_share_obj, user_share=user_share)
+    signature_generator = UserSignatureGenerator(wallet=wallet,  user_public_keys=user_share)
+    user_share = signature_generator.apply_received_share(peer_share=key_generation_share_obj, user_share=user_share)
     if not user_share:
         print(f"Failed applying received share")
     else:
