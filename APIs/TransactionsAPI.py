@@ -17,7 +17,7 @@ Methods:
 1. generate_transaction_and_send_to_wallet
 2. respond_to_new_transaction
 """
-def generate_transaction_and_send_to_wallet(user_id, wallet_id, transaction_details, name) -> bool:
+def generate_transaction_and_send_to_wallet( wallet_id, transaction_details, name) -> bool:
     """
     * Generate new transaction
     * Saves transaction in local_db 
@@ -25,11 +25,12 @@ def generate_transaction_and_send_to_wallet(user_id, wallet_id, transaction_deta
 
     Return True iff all stages done successfuly.  
     """
+    user_id = Context.matrix_user_id()
     transaction_id = generate_unique_transaction_id()
     transaction = TransactionDTO(id= transaction_id, name=name, details=transaction_details, wallet_id=wallet_id)
     transaction.approve(user_id)
-    insertion_succeded = sql_db_dal.insert_new_transaction(transaction)
-    if not insertion_succeded:
+    insertion_succeeded = sql_db_dal.insert_new_transaction(transaction)
+    if not insertion_succeeded:
         return False
     # transaction request message is handled as a transaction message
     transaction_json = MessageDTO(type=MessageType.TransactionRequest, data=transaction).model_dump_json()

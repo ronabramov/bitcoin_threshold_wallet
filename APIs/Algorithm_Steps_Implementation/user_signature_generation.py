@@ -6,7 +6,7 @@ from local_db.sql_db import Wallet
 import local_db.sql_db_dal as DB_DAL
 from models.models import user_secret_signature_share, key_generation_share, user_modulus, user_public_share
 import APIs.UserToUserAPI 
-import Services.UserPublicShareService as UserPublicShareService
+import Services.UserShareService as UserShareService
 import local_db.sql_db_dal as sql_dal
 
 class UserSignatureGenerator:
@@ -50,7 +50,7 @@ class UserSignatureGenerator:
         for user in existing_users_keys:
             if user.user_index == self.user_index:
                 continue # Send Messages only for other users
-            user_share = UserPublicShareService.filter_shares_by_user_index(users_signature_shares, user.user_index)
+            user_share = UserShareService.filter_shares_by_user_index(users_signature_shares, user.user_index)
             user_share.target_user_matrix_id = user.user_id
             #Better update that entity in DB. RON like that: (?)
             sql_dal.update_signature_share(self.wallet_id, user_share)
@@ -66,7 +66,8 @@ class UserSignatureGenerator:
     def apply_received_share(self, user_share : user_secret_signature_share, peer_share : key_generation_share):
         validated_share = self.validate_peer_share(peer_share=peer_share)
         if not validated_share:
-            print(f'User {peer_share.generating_user_index} sent unvalid key share!')
+            # TODO: maybe keep print(f'User {peer_share.generating_user_index} sent unvalid key share!')
+            raise ValueError(f'User {peer_share.generating_user_index} sent unvalid key share!')
         user_share.user_evaluation += peer_share.target_user_evaluation
         return user_share
     

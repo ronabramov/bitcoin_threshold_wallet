@@ -61,7 +61,7 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
         print (f"Failed saving wallet to local db")
         return False
     
-    insertion_succeeded = save_room_users_data_to_db(wallet_id=room_id, generating_wallet_message=generation_wallet_msg, rest_users_messages=existing_users_shares_messages)
+    insertion_succeeded = save_room_users_data_to_db(wallet_id=room_id ,rest_users_messages=existing_users_shares_messages)
     if not insertion_succeeded:
         print (f"Failed saving room_users_data to local db")
         return False
@@ -92,12 +92,13 @@ def save_room_users_data_to_db(wallet_id: str, rest_users_messages: list[user_pu
 
     return success
 
-def create_new_wallet(user_id : str, invited_users_emails : List[str], wallet_name : str, wallet_threshold : int,
+def create_new_wallet(invited_users_emails : List[str], wallet_name : str, wallet_threshold : int,
                        max_participants : int, curve_name : str = NIST256p.name ):
     """
     Creating matrix room and sending invitaiton for the specified users. 
     In addition, sharing Public keys of the generating user.
     """
+    user_id = Context.matrix_user_id()
     wallet_generation_message = MessageDTO(type = MessageType.WalletGenerationMessage, 
                                            data=WalletGenerationMessage(threshold=wallet_threshold, curve_name=curve_name,
                                                                          max_number_of_participants=max_participants)).model_dump_json()
@@ -139,6 +140,7 @@ def handle_wallet_signature(wallet : Wallet, user_secret_data : user_secret_sign
 
 def is_wallet_room(room_name : str):
     #TODO:implement. 
+    # should set room name to include 'wallet' in alias
     return True
 
 

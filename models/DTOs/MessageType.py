@@ -1,6 +1,7 @@
 from enum import Enum
 
 class MessageType(Enum):
+    # RON - i keep forgetting what is the difference between transaction request and transaction response v-v
     TransactionRequest = "transaction_request"
     TransactionResponse = "transaction_response"
     KeyGenerationShare = "key_generation_share"

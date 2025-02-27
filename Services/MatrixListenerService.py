@@ -11,7 +11,7 @@ from models.commitment import Commitment
 from models.value_knowledge_zk_proof import value_knowledge_zk_proof
 from models.protocols.MtaAndMtaWcMessages import MtaChallenge, MtaCommitmentAlice, MtaCommitmentBob, MtaProofForChallengeAlice, MtaProofForChallengeBob, MtaWcCommitmentBob
 import Services.TransactionService as TransactionService
-import Services.UserPublicShareService as UserPublicShareService
+import Services.UserShareService as UserShareService
 
 class MatrixRoomListener:
     """
@@ -102,11 +102,11 @@ class MatrixRoomListener:
             elif message_dto.type == MessageType.UserPublicShare:
                 print(f"User public share received: {message_dto.data}")
                 user_public_share_obj = message_dto.data
-                UserPublicShareService.handle_incoming_public_share(user_public_share_obj, wallet_id)
-                return
+                return UserShareService.handle_incoming_public_share(user_public_share_obj, wallet_id)
             elif message_dto.type == MessageType.KeyGenerationShare:
                 key_generation_share_obj = message_dto.data
                 print(f"Key generation share received: {key_generation_share_obj}")
+                return UserShareService.handle_incoming_key_generation_share(key_generation_share_obj, wallet_id)
             
             elif message_dto.type == MessageType.WalletGenerationMessage:
                 wallet_generation_message_obj = message_dto.data
