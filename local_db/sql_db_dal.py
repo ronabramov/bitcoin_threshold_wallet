@@ -4,6 +4,8 @@ from typing import Dict, Optional, List
 from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
 from models.models import  user_public_share, key_generation_share
+from models.DTOs.transaction_response_dto import TransactionResponseDTO
+
 def get_transaction_participating_users_data_by_trans_id(wallet_id : str) -> dict[int, sql_db.Room_User_Data]:
     try:
         room_users_data = DB.session().query(sql_db.Room_User_Data).filter(
@@ -195,3 +197,21 @@ def update_signature_share(wallet_id : str, share : key_generation_share) -> boo
         return True
     except Exception as e:
         print(f"Failed to update signature share for wallet {wallet_id}", e)
+        
+def get_transaction_responses_by_transaction_id(transaction_id : str) -> sql_db.TransactionResponse:
+    try:
+        return  DB.session().query(sql_db.TransactionResponse).filter(sql_db.TransactionResponse.transaction_id == transaction_id).all()
+    except Exception as e:
+        print(f"Failed to get transaction response for transaction {transaction_id}", e)
+        return None
+
+def insert_transaction_response(transaction_response : TransactionResponseDTO) -> bool:
+    try:
+        transaction_response_to_insert = sql_db.TransactionResponse.from_dto(transaction_response_dto=transaction_response)
+        DB.session().add(transaction_response_to_insert)
+        DB.session().commit()
+        print(f"Successfully inserted transaction response {transaction_response.transaction_id}")
+        return True
+    except Exception as e:
+        print(f"Failed to insert transaction response {transaction_response.transaction_id}", e)
+        return False

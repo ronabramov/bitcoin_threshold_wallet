@@ -5,7 +5,7 @@ from models.DTOs.message_dto import MessageDTO
 from pydantic import ValidationError
 from models.DTOs.transaction_dto import TransactionDTO
 from models.models import WalletGenerationMessage, user_public_share, key_generation_share
-from models.transaction_response import TransactionResponse
+from models.DTOs.transaction_response_dto import TransactionResponseDTO
 from models.DTOs.MessageType import MessageType
 from models.commitment import Commitment
 from models.value_knowledge_zk_proof import value_knowledge_zk_proof
@@ -89,22 +89,23 @@ class MatrixRoomListener:
         try:
             if message_dto.type == MessageType.TransactionRequest:
                 print(f"Transaction request received: {message_dto.data}")
-                transaction_request_obj = message_dto.data
+                transaction_request_obj: TransactionDTO = message_dto.data
                 TransactionService.handler_new_transaction(transaction_request_obj)
                 # User need to fetch the transaction from local db and display it in the UI
                 return
             
             elif message_dto.type == MessageType.TransactionResponse:
                 print(f"Transaction response received: {message_dto.data}")
-                transaction_response_obj = message_dto.data
+                transaction_response_obj: TransactionResponseDTO = message_dto.data
                 return TransactionService.handle_incoming_transaction_response(transaction_response_obj)
         
             elif message_dto.type == MessageType.UserPublicShare:
                 print(f"User public share received: {message_dto.data}")
-                user_public_share_obj = message_dto.data
+                user_public_share_obj: user_public_share = message_dto.data
                 return UserShareService.handle_incoming_public_share(user_public_share_obj, wallet_id)
+            
             elif message_dto.type == MessageType.KeyGenerationShare:
-                key_generation_share_obj = message_dto.data
+                key_generation_share_obj: key_generation_share = message_dto.data
                 print(f"Key generation share received: {key_generation_share_obj}")
                 return UserShareService.handle_incoming_key_generation_share(key_generation_share_obj, wallet_id)
             

@@ -4,7 +4,7 @@ from models.DTOs.message_dto import MessageDTO
 from models.DTOs.MessageType import MessageType
 from models.DTOs.wallet_dto import WalletDto
 from models.transaction_status import TransactionStatus
-from models.transaction_response import TransactionResponse
+from models.DTOs.transaction_response_dto import TransactionResponseDTO
 from models.models import user_public_share
 from APIs.Algorithm_Steps_Implementation.user_transaction_configuration_handler import UserTransactionConfigurationHandler as ConfigHandler
 import uuid
@@ -48,16 +48,18 @@ def respond_to_new_transaction(transaction : TransactionDTO, user_response : boo
         return True
     else:
         transaction.approve(user_id)
-        threshold_achieved, wallet = TransactionService.check_threshold(transaction)
-        transaction_response = TransactionResponse(transaction_id=transaction.id, stage=TransactionStatus.THRESHOLD_ACHIEVED if threshold_achieved  else transaction.stage, response=user_response, approvers_counter=transaction.approvers_counter, approvers=transaction.approvers)
+        threshold_achieved = TransactionService.threshold_reached(transaction.approvers_counter, transaction.wallet_id)
+        transaction_response = TransactionResponseDTO(transaction_id=transaction.id, stage=TransactionStatus.THRESHOLD_ACHIEVED if threshold_achieved  else transaction.stage, response=user_response, approvers_counter=transaction.approvers_counter, approvers=transaction.approvers)
         insertion_succeeded = sql_db_dal.insert_new_transaction(transaction)
+        
         if not insertion_succeeded:
             return False
         
-        approved_transaction_json = MessageDTO(type = MessageType.TransactionResponse, data=transaction_response).model_dump_json()
-        if threshold_achieved:
+        if threshold_achieved:    
+            wallet = sql_db_dal.get_wallet_by_id(transaction.wallet_id)
             handle_reached_threshold_transaction(transaction=transaction, wallet=wallet)
-
+            
+        approved_transaction_json = MessageDTO(type = MessageType.TransactionResponse, data=transaction_response).model_dump_json()
         return MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= approved_transaction_json)   
 
 def handle_reached_threshold_transaction(transaction : TransactionDTO, wallet: WalletDto) -> bool: #####RE VISIT
