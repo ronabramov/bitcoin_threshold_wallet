@@ -26,19 +26,19 @@ class UserSignatureGenerator:
         """
         1. Generates signature for user. Update Wallet secret with signature data
         2. Records signature shares in DB        """
-        user_key_generation_participants_shares, user_secret = self.generate_secret_and_shares_for_other_users()
-        self.enrich_user_secret_data_with_signature_details(secret=user_secret, share = user_key_generation_participants_shares[self.user_public_keys.user_index])
+        user_key_generation_participants_shares, user_secret = self._generate_secret_and_shares_for_other_users()
+        self._enrich_user_secret_data_with_signature_details(secret=user_secret, share = user_key_generation_participants_shares[self.user_public_keys.user_index])
         insertion_success = DB_DAL.insert_multiple_signature_shares(wallet_id=self.wallet_id, shares= list(user_key_generation_participants_shares.values()))
         return insertion_success
 
-    def enrich_user_secret_data_with_signature_details(self, secret : int, share : key_generation_share):
+    def _enrich_user_secret_data_with_signature_details(self, secret : int, share : key_generation_share):
         wallet_secret = self.wallet.get_room_secret_user_data()
         wallet_secret.original_secret_share = secret
         wallet_secret.original_secret_share = share.target_user_evaluation
         wallet_secret.num_of_updates = 0
         self.wallet.set_room_secret_user_data(wallet_secret)
 
-    def generate_secret_and_shares_for_other_users(self):
+    def _generate_secret_and_shares_for_other_users(self):
         secret = random.randint(1, self.q - 1)
         shares = self.key_gen_protocol.generate_shares(secret=secret)
         shares_dict = {share.target_user_index: share for share in shares}
@@ -56,33 +56,33 @@ class UserSignatureGenerator:
             sql_dal.update_signature_share(self.wallet_id, user_share)
             shares_dict[user.user_index] = user_share
 
-        return self.send_share_for_every_participating_user(shares_dict=shares_dict)
+        return self._send_share_for_every_participating_user(shares_dict=shares_dict)
 
     
-    def send_share_for_every_participating_user(self, shares_dict : dict) -> bool:
+    def _send_share_for_every_participating_user(self, shares_dict : dict) -> bool:
         success = APIs.UserToUserAPI.bulk_send_key_share(list(shares_dict.values()))
         return success
     
-    def apply_received_share(self, user_share : user_secret_signature_share, peer_share : key_generation_share):
-        validated_share = self.validate_peer_share(peer_share=peer_share)
+    def aggregate_received_share(self, user_secret : user_secret_signature_share, peer_share : key_generation_share):
+        validated_share = self._validate_peer_share(peer_share=peer_share)
         if not validated_share:
             # TODO: maybe keep print(f'User {peer_share.generating_user_index} sent unvalid key share!')
             raise ValueError(f'User {peer_share.generating_user_index} sent unvalid key share!')
-        user_share.user_evaluation += peer_share.target_user_evaluation
-        return user_share
+        user_secret.user_evaluation += peer_share.target_user_evaluation
+        return user_secret
     
-    def validate_peer_share(self, peer_share : key_generation_share):
+    def _validate_peer_share(self, peer_share : key_generation_share):
         peer_user_protocol = Feldman_VSS_Protocol(self.n, self.t, peer_share.transaction_id, self.user_index_to_user_matrixId,
                                                    generating_user_Index=peer_share.generating_user_index, curve=peer_share.curve)
         is_valid = peer_user_protocol.verify_share(peer_share)
         return is_valid
     
-    def get_user_shrinked_secret(self, user_share : user_secret_signature_share):
+    def shrink_user_secret(self, user_secret : user_secret_signature_share):
         """
         After all users passed their shares, we generate from the user_evaluation
-        a shrinked (t,t+1) share of x.
+        a shrunken (t,t+1) share of x.
         """
-        secret_shrinker = ShareShrinker(q=self.q, i=self.user_index, x_i=user_share.user_evaluation, S = self.participating_users_indecis)
-        shrinked_share = secret_shrinker.compute_new_share()
-        user_share.shrinked_secret_share = shrinked_share
-        return user_share
+        secret_shrinker = ShareShrinker(q=self.q, i=self.user_index, x_i=user_secret.user_evaluation, S = self.participating_users_indecis)
+        shrunken_share = secret_shrinker.compute_new_share()
+        user_secret.shrunken_secret_share = shrunken_share
+        return user_secret

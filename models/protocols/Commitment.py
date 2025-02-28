@@ -1,4 +1,4 @@
-from phe import paillier, PaillierPrivateKey, PaillierPublicKey
+from phe import PaillierPrivateKey, PaillierPublicKey
 
 def commit_x(public_key : PaillierPublicKey , x):
     """

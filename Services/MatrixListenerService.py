@@ -97,7 +97,7 @@ class MatrixRoomListener:
             elif message_dto.type == MessageType.TransactionResponse:
                 print(f"Transaction response received: {message_dto.data}")
                 transaction_response_obj = message_dto.data
-                return TransactionService.handle_incoming_transaction(transaction_response_obj)
+                return TransactionService.handle_incoming_transaction_response(transaction_response_obj)
         
             elif message_dto.type == MessageType.UserPublicShare:
                 print(f"User public share received: {message_dto.data}")
@@ -111,6 +111,7 @@ class MatrixRoomListener:
             elif message_dto.type == MessageType.WalletGenerationMessage:
                 wallet_generation_message_obj = message_dto.data
                 print(f"Wallet generation message received: {wallet_generation_message_obj}")
+                
             
             elif message_dto.type == MessageType.Commitment:
                 commitment_obj = message_dto.data

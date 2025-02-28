@@ -148,9 +148,10 @@ def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
     except Exception as e:
         print(f"Failed to insert wallet {wallet.wallet_id}", e)
         return False
-
+# TODO: maybe remove matrix id and index as parameters since we get them from the user_public_keys
 def insert_new_room_user(wallet_id : str, user_index : int, user_matrix_id : str, user_public_keys : user_public_share):
     try:
+        # TODO: add a check if the user share already exists in the db
         room_user_data = sql_db.Room_User_Data(user_index = user_index, user_matrix_id=user_matrix_id,
                                                  user_public_keys_data = user_public_keys.to_dict(), wallet_id=wallet_id)
         DB.session().add(room_user_data)

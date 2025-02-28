@@ -15,20 +15,20 @@ class ShareShrinker:
         self.x_i = x_i
         self.S = S
 
-    def mod_inverse(self, a, q) -> int:
+    def _mod_inverse(self, a, q) -> int:
         """ Compute modular inverse of a mod q using Fermat's theorem"""
         return pow(a, q - 2, q)  # a^(q-2) mod q
 
-    def compute_lagrange_coefficient(self, i, S, q) -> int:
+    def _compute_lagrange_coefficient(self, i, S, q) -> int:
         """ Compute Lagrange coefficient λ_{i,S} in Z_q. """
         numerator = reduce(lambda acc, j: (acc * j) % q, (j for j in S if j != i), 1)
         denominator = reduce(lambda acc, j: (acc * (j - i)) % q, (j for j in S if j != i), 1)
         
-        return (numerator * self.mod_inverse(denominator, q)) % q
+        return (numerator * self._mod_inverse(denominator, q)) % q
 
     def compute_new_share(self) -> int:
         """ Compute the transformed share w_i = λ_{i,S} * x_i in Z_q. """
-        lambda_i_S = self.compute_lagrange_coefficient(self.i, self.S, self.q)
+        lambda_i_S = self._compute_lagrange_coefficient(self.i, self.S, self.q)
         return (lambda_i_S * self.x_i) % self.q
 
 # Example usage

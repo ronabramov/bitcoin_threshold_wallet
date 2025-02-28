@@ -29,23 +29,27 @@ def filter_shares_by_user_index(shares : list[key_generation_share], user_index 
 def handle_incoming_key_generation_share(key_generation_share_obj : key_generation_share, wallet_id : str):
     print(f"Key generation share received: {key_generation_share_obj}")
     wallet = sql_db_dal.get_wallet_by_id(wallet_id)
-    user_share = wallet.get_room_secret_user_data()
-    if not user_share:
+    user_secret = wallet.get_room_secret_user_data()
+    if not user_secret:
         print(f"User share not found in the wallet")
         return
-    signature_generator = UserSignatureGenerator(wallet=wallet,  user_public_keys=user_share)
-    user_share = signature_generator.apply_received_share(peer_share=key_generation_share_obj, user_share=user_share)
-    if not user_share:
+    signature_generator = UserSignatureGenerator(wallet=wallet,  user_public_keys=user_secret)
+    
+    user_secret = signature_generator.aggregate_received_share(peer_share=key_generation_share_obj, user_secret=user_secret)
+    if not user_secret:
         print(f"Failed applying received share")
     else:
         print(f"User share applied successfully")
-        sql_db_dal.update_signature_share(wallet_id, user_share)
+        sql_db_dal.update_signature_share(wallet_id, user_secret)
     
-    if user_share.num_of_updates == wallet.threshold:
+    if user_secret.num_of_updates == wallet.threshold:
         # update full secret share (RON - how?)
         print(f"Threshold reached, generating secret and shares for other users")
-        # generate shrinked secret share
-        user_shrinked_secret = UserSignatureGenerator.get_user_shrinked_secret(user_share=user_share)
-        # update shrinked secret share in db (RON - like that?)
-        sql_db_dal.update_signature_share(wallet_id,user_shrinked_secret)
+        # generate shrunken secret share
+        user_shrunken_secret = signature_generator.shrink_user_secret(user_secret=user_secret)
+        # TODO: add space to save shrunken secret share in db (must not be broadcasted)
+                
+        # trigger algorithm step 1
+        
+        
     return

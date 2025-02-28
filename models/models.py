@@ -225,7 +225,7 @@ class user_secret_signature_share(BaseModel):
     user_modulus: user_modulus
     num_of_updates: int = 0
     original_secret_share: Optional[int] = None
-    shrinked_secret_share: Optional[int] = None
+    shrunken_secret_share: Optional[int] = None
     model_config = ConfigDict(arbitrary_types_allowed=True) 
     
     @field_serializer("paillier_public_key")
