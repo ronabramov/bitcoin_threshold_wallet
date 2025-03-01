@@ -8,6 +8,7 @@ class TransactionDTO(BaseModel):
     name: str
     details: str
     wallet_id: str
+    shrunken_secret_share : int
     stage: TransactionStatus = TransactionStatus.WAITING  # Default enum value
     
     @property
