@@ -22,9 +22,9 @@ def handle_incoming_public_share(incoming_user_public_share : user_public_share,
     UserToUserAPI.send_key_share(user_key_generation_share)
 
 
-def handle_incoming_key_generation_share(key_generation_share_obj : wallet_key_generation_share, wallet_id : str):
+def handle_incoming_key_generation_share(key_generation_share_obj : wallet_key_generation_share):
     print(f"Key generation share received: {key_generation_share_obj}")
-    wallet = sql_db_dal.get_wallet_by_id(wallet_id)
+    wallet = sql_db_dal.get_wallet_by_id(key_generation_share_obj.wallet_id)
     user_secret = wallet.get_room_secret_user_data()
     if not user_secret:
         print(f"User share not found in the wallet")
@@ -36,16 +36,7 @@ def handle_incoming_key_generation_share(key_generation_share_obj : wallet_key_g
         print(f"Failed applying received share")
     else:
         print(f"User share applied successfully")
-        sql_db_dal.update_signature_share(wallet_id, user_secret)
-    
-    if user_secret.num_of_updates == wallet.threshold:
-        # update full secret share (RON - how?)
-        print(f"Threshold reached, generating secret and shares for other users")
-        # generate shrunken secret share
-        user_shrunken_secret = signature_generator.shrink_user_secret(user_secret=user_secret)
-        # TODO: add space to save shrunken secret share in db (must not be broadcasted)
-                
-        # trigger algorithm step 1
+        sql_db_dal.update_signature_share(key_generation_share_obj.wallet_id, user_secret)
         
         
     return

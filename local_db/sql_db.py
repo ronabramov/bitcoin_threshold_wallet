@@ -3,7 +3,6 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from models.models import (
-    user_public_share,
     user_secret_signature_share,
     wallet_key_generation_share,
 )

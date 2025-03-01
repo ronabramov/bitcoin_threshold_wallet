@@ -42,8 +42,22 @@ def handle_incoming_transaction_response(transaction_response: TransactionRespon
         local_transaction_dto.stage = TransactionStatus.THRESHOLD_ACHIEVED
         sql_db_dal.update_transaction(local_transaction_dto)
         
+        
+        
         wallet = sql_db_dal.get_wallet_by_id(local_transaction_dto.wallet_id)
         handle_reached_threshold_transaction(transaction=local_transaction_dto, wallet=wallet)
+        
+        # shrink secret share
+        # if user_secret.num_of_updates == wallet.threshold:
+        # # update full secret share (RON - how?)
+        # print(f"Threshold reached, generating secret and shares for other users")
+        # # generate shrunken secret share
+        # user_shrunken_secret = signature_generator.shrink_user_secret(user_secret=user_secret)
+        # # save shrunken secret share in db (must not be broadcasted)
+        # # TODO:- get wallet id
+        # sql_db_dal.insert_transaction_secret(wallet_id, user_shrunken_secret)
+        # # trigger algorithm step 1
+        # StepOne.execute(wallet_id)
         return
     
     # threshold not reached
