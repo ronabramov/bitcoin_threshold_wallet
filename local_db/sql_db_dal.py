@@ -83,7 +83,7 @@ def get_signature_shares_by_wallet(wallet_id: str) -> list[wallet_key_generation
     :param wallet_id: Wallet ID to fetch signature shares for.
     :return: List of `user_key_generation_share` objects.
     """
-    shares = DB.session().query(sql_db.Room_Signature_Shares_Data).filter_by(wallet_id=wallet_id).all()
+    shares = DB.session().query(sql_db.Wallet_Signature_Shares_Data).filter_by(wallet_id=wallet_id).all()
     return [wallet_key_generation_share.from_dict(share.share_data) for share in shares]
 
 
@@ -92,7 +92,7 @@ def insert_signature_share(wallet_id: str, share_data: wallet_key_generation_sha
     share_data = share_data[1]
     share_index = share_data.target_user_index
     try:
-        share_entry = sql_db.Room_Signature_Shares_Data(
+        share_entry = sql_db.Wallet_Signature_Shares_Data(
             share_id = f'{wallet_id}_{share_index}',
             share_index=share_index,
             share_data=share_data.to_dict(),
@@ -199,8 +199,9 @@ def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO:
 def update_signature_share(wallet_id : str, share : wallet_key_generation_share) -> bool:
     try:
         # TODO: RON - check if this is the correct way to update the share
+        # TODO - update the Signature Shares Data with the user_matrix_id from the share. 
         share_id = f'{wallet_id}_{share.target_user_index}'
-        DB.session().query(sql_db.Room_Signature_Shares_Data).filter(sql_db.Room_Signature_Shares_Data.share_id == share_id).update(share.to_dict())
+        DB.session().query(sql_db.Wallet_Signature_Shares_Data).filter(sql_db.Wallet_Signature_Shares_Data.share_id == share_id).update(share.to_dict())
         DB.session().commit()
         return True
     except Exception as e:

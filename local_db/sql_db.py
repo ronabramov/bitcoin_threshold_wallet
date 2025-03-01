@@ -119,55 +119,16 @@ class WalletUserData(Base):
 
     user_index = Column(Integer, primary_key=True, nullable=False)
     user_matrix_id = Column(String, primary_key=True, nullable=False)
-    user_public_keys_data = Column(
-        JSON, nullable=False, default={}
-    )  # Paillier Public key and Modulus data - that is the user_public_share
-    signature_shared_data = Column(
-        JSON, nullable=False, default={}
-    )  # Includes the signature share the user sent in channel - that is the key_generation_share
-
+    user_public_keys_data = Column(JSON, nullable=False, default={})  # Paillier Public key and Modulus data - that is the user_public_share
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="users_data")
 
-    ### PARTICIPANT DATA MANAGEMENT ###
 
-    def set_user_public_keys(self, user_data: user_public_share):
-        self.user_public_keys_data = user_data.to_dict()
-
-    def get_user_public_keys(self) -> user_public_share:
-        return (
-            user_public_share.from_dict(self.user_public_keys_data)
-            if self.user_public_keys_data
-            else None
-        )
-
-    def update_user_public_keys(self, user_data: user_public_share):
-        if not self.user_public_keys_data:
-            raise ValueError(
-                f"No user public key data found for user {self.user_matrix_id}"
-            )
-
-        self.user_public_keys_data = user_data.to_dict()
-
-    def remove_user_public_keys(self):
-        self.user_public_keys_data = {}
-
-    ### SIGNATURE SHARE MANAGEMENT ###
-
-    def add_signature_share(self, signature_share: dict):
-        self.signature_shared_data = signature_share
-
-    def get_signature_share(self) -> dict:
-        return self.signature_shared_data
-
-    def remove_signature_share(self):
-        self.signature_shared_data = {}
-
-
-class Room_Signature_Shares_Data(Base):
+class Wallet_Signature_Shares_Data(Base):
     __tablename__ = "room_signature_shares_data"
     share_id = Column(String, primary_key=True, nullable=False)
     share_index = Column(Integer, primary_key=False, nullable=False)
+    user_matrix_id = Column(String,primary_key=False, nullable=True)
     share_data = Column(
         JSON, nullable=False, default={}
     )  # data of to dict/from_dict of key_generation_share.
@@ -195,7 +156,6 @@ class TransactionResponse(Base):
             approvers=transaction_response_dto.approvers
         )
 
-# check if the database exists
 def create_db_if_not_exists(db_file_name): 
     current_path = os.path.dirname(
             os.path.abspath(__file__)
