@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, JSON
+from sqlalchemy import create_engine, Column, Integer, String, Text, ForeignKey, JSON, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from models.models import (
@@ -8,6 +8,7 @@ from models.models import (
     key_generation_share,
 )
 from models.DTOs.transaction_dto import TransactionDTO
+from models.DTOs.transaction_response_dto import TransactionResponseDTO
 import json
 import Config
 
@@ -167,6 +168,23 @@ class Room_Signature_Shares_Data(Base):
     def get_signature_share(self, user_index: int) -> key_generation_share:
         return key_generation_share.from_dict(self.share_data)
 
+class TransactionResponse(Base):
+    __tablename__ = "transaction_responses"
+    id = Column(Integer, primary_key=True, nullable=False)
+    transaction_id = Column(String, ForeignKey("transactions.transaction_id"), nullable=False)
+    stage = Column(Integer, nullable=False)
+    response = Column(Boolean, nullable=False)
+    approvers_counter = Column(Integer, nullable=False)
+    approvers = Column(String, nullable=True)
+    
+    def from_dto(cls, transaction_response_dto: TransactionResponseDTO):
+        return cls(
+            transaction_id=transaction_response_dto.transaction_id,
+            stage=transaction_response_dto.stage,
+            response=transaction_response_dto.response,
+            approvers_counter=transaction_response_dto.approvers_counter,
+            approvers=transaction_response_dto.approvers
+        )
 
 # check if the database exists
 def create_db_if_not_exists(db_file_name): 
