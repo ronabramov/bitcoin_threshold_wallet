@@ -255,5 +255,6 @@ def get_transaction_user_data_by_index(transaction_id : str, user_index : int) -
 def get_transaction_user_data_by_matrix_id(transaction_id : str, user_matrix_id : str) -> sql_db.TransactionUserData:
     return DB.session().query(sql_db.TransactionUserData).filter(sql_db.TransactionUserData.transaction_id == transaction_id, sql_db.TransactionUserData.user_matrix_id == user_matrix_id).first()
 
+
 def get_all_transaction_user_data(transaction_id : str) -> List[sql_db.TransactionUserData]:
     return DB.session().query(sql_db.TransactionUserData).filter(sql_db.TransactionUserData.transaction_id == transaction_id).all()
