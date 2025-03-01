@@ -1,4 +1,5 @@
 from local_db import sql_db_dal
+from local_db.sql_db import Wallet
 import random
 from ecdsa import curves
 from models.protocols.Commitment import commit_x
@@ -10,10 +11,9 @@ from APIs.RoomManagementAPI import send_private_message_to_every_user_in_Wallet
 from phe import paillier
 
 class StepOne:
-    def execute(self, wallet_id : str):
-        wallet = sql_db_dal.get_wallet_by_id(wallet_id)
+    def execute(self, wallet : Wallet) -> bool:
         curve = curves.curve_by_name(wallet.curve_name)
-        q = curve.order -1
+        q = curve.order
         gamma_i = random.randint(0, q)
         k_i = random.randint(0, q)
         # save k_i, gamma_i to db

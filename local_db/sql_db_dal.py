@@ -1,5 +1,5 @@
 from local_db import sql_db
-from local_db.sql_db import DB
+from local_db.sql_db import DB, Transaction
 from typing import List
 from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
@@ -120,11 +120,9 @@ def insert_new_transaction(transaction : TransactionDTO) -> bool:
         print(f'failed to insert transaction {transaction.id} to db.', e)
         return False
 
-def update_transaction(transaction : TransactionDTO) -> bool:
+def update_transaction(transaction : Transaction) -> bool:
     try:
-        # TODO - add from_dto (it is not working as you see)
-        transaction_to_update = sql_db.Transaction.from_dto(transaction_dto=transaction)
-        DB.session().query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction.id).update(transaction_to_update)
+        DB.session().query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction.id).update(transaction)
         DB.session().commit()
         print(f"Successfully updated transaction {transaction.id}")
         return True
