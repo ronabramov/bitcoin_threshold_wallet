@@ -132,7 +132,7 @@ def insert_new_transaction(transaction : TransactionDTO) -> bool:
 
 def update_transaction(transaction : TransactionDTO) -> bool:
     try:
-        # TODO - add from_dto
+        # TODO - add from_dto (it is not working as you see)
         transaction_to_update = sql_db.Transaction.from_dto(transaction_dto=transaction)
         DB.session().query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction.id).update(transaction_to_update)
         DB.session().commit()
@@ -173,7 +173,6 @@ def insert_new_wallet_user_data(wallet_id : str, user_index : int, user_matrix_i
         print(f"Failed to insert user {user_matrix_id} into wallet {wallet_id}", e)
         return False
 
-# TODO: RON - there is no api call that use this function - why should a user has friends?
 def insert_new_friend(user_email : str, user_matrix_id : str) -> bool:
     friend_db_object = sql_db.Friend(email=user_email, matrix_id = user_matrix_id)
     try:
@@ -199,10 +198,11 @@ def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO:
 
 def update_signature_share(wallet_id : str, share : wallet_key_generation_share) -> bool:
     try:
-        # TODO: RON - check if this is the correct way to update the share
-        # TODO - update the Signature Shares Data with the user_matrix_id from the share. 
-        share_id = f'{wallet_id}_{share.target_user_index}'
-        DB.session().query(sql_db.WalletSignatureSharesData).filter(sql_db.WalletSignatureSharesData.share_id == share_id).update(share.to_dict())
+        share_db_object = DB.session().query(sql_db.WalletSignatureSharesData).filter(
+            sql_db.WalletSignatureSharesData.share_index == share.target_user_index, 
+            sql_db.WalletSignatureSharesData.wallet_id == wallet_id).first()
+        share_db_object.user_matrix_id = share.target_user_matrix_id
+        share_db_object.share_data = share.to_dict()
         DB.session().commit()
         return True
     except Exception as e:
