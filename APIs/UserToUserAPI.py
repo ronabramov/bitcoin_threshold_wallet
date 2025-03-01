@@ -1,4 +1,4 @@
-from models.models import key_generation_share
+from models.models import wallet_key_generation_share
 from typing import List
 from models.DTOs.message_dto import MessageDTO, MessageType
 from Services.MatrixService import MatrixService
@@ -12,7 +12,7 @@ Methods:
 2. 
 """
 
-def bulk_send_key_share(Shares : List[key_generation_share]) -> bool:
+def bulk_send_key_share(Shares : List[wallet_key_generation_share]) -> bool:
     """
     Send private message for every participating user with it's share.
     """
@@ -27,7 +27,7 @@ def bulk_send_key_share(Shares : List[key_generation_share]) -> bool:
     
     return success
 
-def send_key_share(key_share : key_generation_share) -> bool:
+def send_key_share(key_share : wallet_key_generation_share) -> bool:
     tries = 0
     while tries <= MAX_RETRIES:
         try:

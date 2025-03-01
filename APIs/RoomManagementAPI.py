@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import local_db.sql_db_dal as db_dal
-from local_db.sql_db import User, Wallet, Friend, Room_User_Data
+from local_db.sql_db import User, Wallet, Friend, WalletUserData
 from Services.MatrixService import MatrixService
 from typing import Dict, Optional, List
 from models.DTOs.message_dto import MessageDTO, MessageType
@@ -49,8 +49,8 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
     participating_users = ",".join([msg.user_id for msg in existing_users_shares_messages])
     wallet = get_wallet_from_generating_wallet_message(wallet_id=room_id, wallet_participants=participating_users, generation_message=generation_wallet_msg)
     
-    user_room_secret_data, user_public_data = Utils.generate_user_room_keys(user_index=user_index_in_wallet, user_matrix_id=Context.matrix_user_id(), wallet=wallet)
-    signature_created = handle_wallet_signature(wallet=wallet, user_secret_data=user_room_secret_data, user_keys=user_public_data,
+    user_room_secret_data, users_public_data = Utils.generate_user_room_keys(user_index=user_index_in_wallet, user_matrix_id=Context.matrix_user_id(), wallet=wallet)
+    signature_created = handle_wallet_signature(wallet=wallet, user_secret_data=user_room_secret_data, user_public_data=users_public_data,
                                                  existing_users_in_wallet=existing_users_shares_messages)
     if not signature_created:
         print (f"Failed generating wallet's signature")
@@ -66,7 +66,7 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
         print (f"Failed saving room_users_data to local db")
         return False
     
-    public_keys_message = MessageDTO(type=MessageType.UserPublicShare, data=user_public_data).model_dump_json()
+    public_keys_message = MessageDTO(type=MessageType.UserPublicShare, data=users_public_data).model_dump_json()
     message_sent = MatrixService.instance().send_message_to_wallet_room(room_id=room_id, message=public_keys_message)
     if not message_sent:
         print(f' Failed sending joining message to wallet room.')
@@ -113,7 +113,7 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
     user_room_secret_data, user_room_public_data = Utils.generate_user_room_keys(user_index=GENERATING_USER_INDEX,
                                                                                              user_matrix_id=user_id, wallet=wallet)
     
-    signature_created = handle_wallet_signature(wallet=wallet, user_keys=user_room_public_data, user_secret_data=user_room_secret_data)
+    signature_created = handle_wallet_signature(wallet=wallet, user_public_data=user_room_public_data, user_secret_data=user_room_secret_data)
     
     if not signature_created:
         print(f'Failed Generating signature data for wallet {wallet.wallet_id}')
@@ -128,11 +128,11 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
     message_sent = MatrixService.instance().send_message_to_wallet_room(room_id=room_id, message=public_keys_message)
     return insertion_succeded and message_sent, wallet
 
-def handle_wallet_signature(wallet : Wallet, user_secret_data : user_secret_signature_share, user_keys : user_public_share,
+def handle_wallet_signature(wallet : Wallet, user_secret_data : user_secret_signature_share, user_public_data : user_public_share,
                              existing_users_in_wallet : list[user_public_share] = None) -> bool:
     wallet.set_room_secret_user_data(user_secret_data)
-    signature_generator = UserSignatureGenerator(wallet=wallet,  user_public_keys=user_keys)
-    signature_flow_is_valid = signature_generator.handle_key_generation_for_user()
+    signature_generator = UserSignatureGenerator(wallet=wallet,  user_public_keys=user_public_data)
+    signature_flow_is_valid, user_public_X = signature_generator.handle_key_generation_for_user()
     if signature_flow_is_valid and existing_users_in_wallet is not None :
         signature_flow_is_valid = signature_generator.handle_existing_users_signatures(existing_users_keys=existing_users_in_wallet)
     return signature_flow_is_valid

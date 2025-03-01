@@ -3,19 +3,18 @@ from local_db.sql_db import DB
 from typing import Dict, Optional, List
 from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
-from models.models import  user_public_share, key_generation_share
+from models.models import  user_public_share, wallet_key_generation_share
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
 
-def get_transaction_participating_users_data_by_trans_id(wallet_id : str) -> dict[int, sql_db.Room_User_Data]:
+def get_transaction_participating_users_data_by_trans_id(transaction_id : int) -> dict[int, user_public_share]: ##CHANGEA
+    result = dict[int, user_public_share]()
     try:
-        room_users_data = DB.session().query(sql_db.Room_User_Data).filter(
-                                                     sql_db.Room_User_Data.wallet_id == wallet_id).all()
-        if not room_users_data:
-            print(f"Couldn't find room_transaction_data for transaction {wallet_id}")
-            raise FileNotFoundError(f"Couldn't find room_transaction_data for transaction {wallet_id}")
-        return {user.user_index: user for user in room_users_data}
-    except Exception as e:
-        print(f"There was and error while trying to retrieve users data for transaction {wallet_id}", e)
+        transaction_approvers = get_transaction_by_id(transaction_id=transaction_id).approvers
+        for approver in transaction_approvers:
+            continue
+    except :
+        print()
+
 
 def get_user_by_email(user_email : str) -> sql_db.User :
     try:
@@ -75,7 +74,7 @@ def get_transactions_by_wallet_id(wallet_id : str, should_convert_to_dto = False
     except Exception as e:
         print(f"There was and error while trying to retrieve transaction for wallet {wallet_id}", e)
 
-def get_signature_shares_by_wallet(wallet_id: str) -> list[key_generation_share]:
+def get_signature_shares_by_wallet(wallet_id: str) -> list[wallet_key_generation_share]:
     """
     Retrieves all signature shares for a given wallet.
 
@@ -84,10 +83,10 @@ def get_signature_shares_by_wallet(wallet_id: str) -> list[key_generation_share]
     :return: List of `user_key_generation_share` objects.
     """
     shares = DB.session().query(sql_db.Room_Signature_Shares_Data).filter_by(wallet_id=wallet_id).all()
-    return [key_generation_share.from_dict(share.share_data) for share in shares]
+    return [wallet_key_generation_share.from_dict(share.share_data) for share in shares]
 
 
-def insert_signature_share(wallet_id: str, share_data: key_generation_share) -> bool:
+def insert_signature_share(wallet_id: str, share_data: wallet_key_generation_share) -> bool:
     # TODO: check issue here
     share_data = share_data[1]
     share_index = share_data.target_user_index
@@ -109,7 +108,7 @@ def insert_signature_share(wallet_id: str, share_data: key_generation_share) -> 
         return False
 
 
-def insert_multiple_signature_shares(wallet_id: str, shares: list[key_generation_share]) -> bool:
+def insert_multiple_signature_shares(wallet_id: str, shares: list[wallet_key_generation_share]) -> bool:
     success = True
     for share in enumerate(shares):
         # TODO: check issue here
@@ -155,7 +154,7 @@ def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
 def insert_new_room_user(wallet_id : str, user_index : int, user_matrix_id : str, user_public_share : user_public_share):
     try:
         # TODO: add a check if the user share already exists in the db
-        room_user_data = sql_db.Room_User_Data(user_index = user_index, user_matrix_id=user_matrix_id,
+        room_user_data = sql_db.WalletUserData(user_index = user_index, user_matrix_id=user_matrix_id,
                                                  user_public_keys_data = user_public_share.to_dict(), wallet_id=wallet_id)
         DB.session().add(room_user_data)
         DB.session().commit()
@@ -189,7 +188,7 @@ def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO:
     transaction_dto.stage = TransactionStatus[transaction.status]
     return transaction_dto
 
-def update_signature_share(wallet_id : str, share : key_generation_share) -> bool:
+def update_signature_share(wallet_id : str, share : wallet_key_generation_share) -> bool:
     try:
         # TODO: RON - check if this is the correct way to update the share
         share_id = f'{wallet_id}_{share.target_user_index}'

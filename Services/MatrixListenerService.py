@@ -4,7 +4,7 @@ import time
 from models.DTOs.message_dto import MessageDTO
 from pydantic import ValidationError
 from models.DTOs.transaction_dto import TransactionDTO
-from models.models import WalletGenerationMessage, user_public_share, key_generation_share
+from models.models import WalletGenerationMessage, user_public_share, wallet_key_generation_share
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
 from models.DTOs.MessageType import MessageType
 from models.commitment import Commitment
@@ -105,7 +105,7 @@ class MatrixRoomListener:
                 return UserShareService.handle_incoming_public_share(user_public_share_obj, wallet_id)
             
             elif message_dto.type == MessageType.KeyGenerationShare:
-                key_generation_share_obj: key_generation_share = message_dto.data
+                key_generation_share_obj: wallet_key_generation_share = message_dto.data
                 print(f"Key generation share received: {key_generation_share_obj}")
                 return UserShareService.handle_incoming_key_generation_share(key_generation_share_obj, wallet_id)
             
