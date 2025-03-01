@@ -11,6 +11,7 @@ from models.DTOs.transaction_dto import TransactionDTO
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
 import json
 import Config
+import uuid
 
 from Services.Context import Context
 
@@ -73,6 +74,17 @@ class Transaction(Base):
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
     shrunken_secret_share = Column(Integer, nullable=True)
+
+
+# check every transaction user changes - should we change simething in this table?
+class TransactionUserData(Base):
+    __tablename__ = "transaction_user_data"
+    # id with uuid default val
+    id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    transaction_id = Column(String, ForeignKey("transactions.transaction_id"), nullable=False)
+    user_matrix_id = Column(String, primary_key=True, nullable=False)
+    user_index = Column(Integer, primary_key=True, nullable=False)
+    mta_data = Column(JSON, nullable=True) 
     
     def add_mta_data(self, mta_info: dict):
         self.mta_data = mta_info
@@ -83,7 +95,6 @@ class Transaction(Base):
     def remove_mta_data(self):
         self.mta_data = {}
 
-    # TODO: add  mta data
 
     @classmethod
     def from_dto(cls, transaction_dto: "TransactionDTO"):

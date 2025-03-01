@@ -248,3 +248,19 @@ def get_transaction_secret(transaction_id : str):
     except Exception as e:
         print(f"Failed to get transaction secret {transaction_id}", e)
         return None
+
+def insert_transaction_user_data(transaction_id : str, user_index : int, user_matrix_id : str) -> bool:
+    try:
+        transaction_user_data = sql_db.TransactionUserData(transaction_id=transaction_id, user_index=user_index, user_matrix_id=user_matrix_id)
+        DB.session().add(transaction_user_data)
+        DB.session().commit()
+        return True
+    except Exception as e:
+        print(f"Failed to insert transaction user data {transaction_id}", e)
+        return False
+
+def get_transaction_user_data_by_index(transaction_id : str, user_index : int) -> sql_db.TransactionUserData:
+    return DB.session().query(sql_db.TransactionUserData).filter(sql_db.TransactionUserData.transaction_id == transaction_id, sql_db.TransactionUserData.user_index == user_index).first()
+
+def get_transaction_user_data_by_matrix_id(transaction_id : str, user_matrix_id : str) -> sql_db.TransactionUserData:
+    return DB.session().query(sql_db.TransactionUserData).filter(sql_db.TransactionUserData.transaction_id == transaction_id, sql_db.TransactionUserData.user_matrix_id == user_matrix_id).first()
