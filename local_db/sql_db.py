@@ -41,7 +41,7 @@ class Wallet(Base):
     users = Column(
         Text, nullable=True
     )  # @alice:matrix.org,@bob:matrix.org - we will save comma parsed absolute path for participating users
-    configuration = Column(Text, nullable=True)  # User user_secret_signature_share
+    configuration = Column(Text, nullable=True)  # User secret (real type is user_secret_signature_share)
     curve_name = Column(Text, nullable=True)
     transactions = relationship("Transaction", back_populates="wallet")
     users_data = relationship("Room_User_Data", back_populates="wallet")
@@ -72,6 +72,18 @@ class Transaction(Base):
     status = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
+    shrunken_secret_share = Column(Integer, nullable=True)
+    
+    def add_mta_data(self, mta_info: dict):
+        self.mta_data = mta_info
+
+    def get_mta_data(self) -> dict:
+        return self.mta_data
+
+    def remove_mta_data(self):
+        self.mta_data = {}
+
+    # TODO: add  mta data
 
     @classmethod
     def from_dto(cls, transaction_dto: "TransactionDTO"):

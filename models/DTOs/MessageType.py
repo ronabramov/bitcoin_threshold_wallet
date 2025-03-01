@@ -3,7 +3,7 @@ from enum import Enum
 class MessageType(Enum):
     TransactionRequest = "transaction_request" # propose new transaction
     TransactionResponse = "transaction_response" # approve transacion
-    KeyGenerationShare = "key_generation_share"
+    KeyGenerationShare = "key_generation_share"  # this is a private message between users
     UserPublicShare = "user_public_share"
     Commitment = "commitment"
     ValueKnowledgeZkProof = "value_knowledge_zk_proof"

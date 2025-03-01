@@ -6,8 +6,7 @@ from local_db.sql_db import Wallet
 import local_db.sql_db_dal as DB_DAL
 from models.models import user_secret_signature_share, wallet_key_generation_share, user_public_share
 import APIs.UserToUserAPI 
-import Services.UserShareService as UserShareService
-import local_db.sql_db_dal as sql_dal
+from Services.UserShareUtils import filter_shares_by_user_index
 
 class UserSignatureGenerator:
     def __init__(self, wallet : Wallet, user_public_keys : user_public_share):
@@ -51,9 +50,11 @@ class UserSignatureGenerator:
         for user in existing_users_keys:
             if user.user_index == self.user_index:
                 continue # Send Messages only for other users
-            user_share = UserShareService.filter_shares_by_user_index(users_signature_shares, user.user_index)
+            user_share = filter_shares_by_user_index(users_signature_shares, user.user_index)
             user_share.target_user_matrix_id = user.user_id
-            sql_dal.update_signature_share(self.wallet_id, user_share)
+
+            #Better update that entity in DB. RON like that: (?)
+            DB_DAL.update_signature_share(self.wallet_id, user_share)
             shares_dict[user.user_index] = user_share
 
         return self._send_share_for_every_participating_user(shares_dict=shares_dict)
@@ -86,3 +87,5 @@ class UserSignatureGenerator:
         shrunken_share = secret_shrinker.compute_new_share()
         user_secret.shrunken_secret_share = shrunken_share
         return user_secret
+    
+    

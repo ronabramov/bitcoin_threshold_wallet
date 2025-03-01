@@ -216,7 +216,7 @@ class user_secret_signature_share(BaseModel):
     Composed from shares of all other users participated in the transaction
     user_evaluation - the user secret key. 
     """
-    threshold: int
+    threshold: int 
     user_index: int
     user_id: str
     user_evaluation: Optional[int] = None
@@ -224,9 +224,9 @@ class user_secret_signature_share(BaseModel):
     paillier_public_key: paillier.PaillierPublicKey
     paillier_secret_key: paillier.PaillierPrivateKey
     user_modulus: user_modulus
-    num_of_updates: int = 0
-    original_secret_share: Optional[int] = None
-    shrunken_secret_share: Optional[int] = None
+    num_of_updates: int = 0 # remove
+    original_secret_share: Optional[int] = None 
+    shrunken_secret_share: Optional[int] = None # remove
     model_config = ConfigDict(arbitrary_types_allowed=True) 
     
     @field_serializer("paillier_public_key")
