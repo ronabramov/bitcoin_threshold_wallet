@@ -3,8 +3,9 @@ from APIs import UserToUserAPI
 
 from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
 from APIs.Algorithm_Steps_Implementation.StepOne import StepOne
-from models.models import user_public_share
+from models.models import user_public_share, wallet_key_generation_share
 from Services.UserShareUtils import filter_shares_by_user_index
+
 
 # TODO: RON - check if this is the correct way to handle the incoming public share
 def handle_incoming_public_share(incoming_user_public_share : user_public_share, wallet_id : str):
