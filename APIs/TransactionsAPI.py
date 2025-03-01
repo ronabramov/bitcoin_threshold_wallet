@@ -21,7 +21,7 @@ def generate_transaction_and_send_to_wallet( wallet_id, transaction_details, nam
     * Saves transaction in local_db 
     * Send to corresponding wallet.
 
-    Return True iff all stages done successfuly.  
+    Return True iff all stages done successfully.  
     """
     user_id = Context.matrix_user_id()
     transaction_id = generate_unique_transaction_id()
