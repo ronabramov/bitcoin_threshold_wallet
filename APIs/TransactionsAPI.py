@@ -24,6 +24,12 @@ def generate_transaction_and_send_to_wallet( wallet_id, transaction_details, nam
     Return True iff all stages done successfully.  
     """
     user_id = Context.matrix_user_id()
+    # check if all users approve the wallet
+    invited_users = MatrixService.instance().get_invited_users_in_room(wallet_id)
+    if len(invited_users) > 0:
+        print("cannot generate transaction, there are invited users in the wallet")
+        return False
+    
     transaction_id = generate_unique_transaction_id()
     transaction = TransactionDTO(id= transaction_id, name=name, details=transaction_details, wallet_id=wallet_id)
     # add my data to the transaction
@@ -31,6 +37,7 @@ def generate_transaction_and_send_to_wallet( wallet_id, transaction_details, nam
     
     insertion_succeeded = sql_db_dal.insert_new_transaction(transaction)
     sql_db_dal.insert_transaction_user_data(transaction_id=transaction_id,user_matrix_id=user_id,user_index=my_wallet_user_data.user_index)
+    
     if not insertion_succeeded:
         return False
     # transaction request message is handled as a transaction message

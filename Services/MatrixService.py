@@ -202,12 +202,13 @@ class MatrixService:
                 )
                 return room
         return None
+    
     # TODO: private message is sent in a public room - should be fixed
     def send_private_message_to_user(self, target_user_matrix_id: str, message: str):
 
         target_room: Room = self.__get_private_room_with_user(target_user_matrix_id)
         target_room.send_text(message)
-        print(f"Successfuly sent private message in room {target_room.room_id}")
+        print(f"Successfully sent private message in room {target_room.room_id}")
     
     def fetch_pending_invited_rooms(self) -> List[Room]:
         rooms = self.client.invited_rooms
@@ -222,7 +223,6 @@ class MatrixService:
         rooms = self.client.invited_rooms
         for room  in rooms.values():
             self.reject_room_invitation(room=room) # Should be fixed
-
     
     def reject_room_invitation(self, room : Room) -> bool:
         return room.leave()
@@ -256,6 +256,37 @@ class MatrixService:
                 break
         
         return valid_messages
+
+    def _get_users_in_room(self, room_id: str, limit=100, membership: str = "invite") -> List[str]:
+        room : Room = self.client.join_room(room_id)
+        users = []
+        prev_batch = room.prev_batch
+        while True:
+            res = self.client.api.get_room_members (room.room_id)
+
+            # Extract only message events
+            chunk = res.get(MATRIX_MESSAGES_MAIN_NODE)
+
+            for event in chunk:
+                if event.get("content").get("membership") == membership or membership == "all":
+                    users.append(event["state_key"])
+                    
+
+            prev_batch = res.get(MATRIX_PROPERTY_FOR_MESSAGES_TRACKING) if MATRIX_PROPERTY_FOR_MESSAGES_TRACKING in res else None
+            if not chunk or not prev_batch:
+                break
+        
+        return users
+
+    def get_existing_users_in_room(self, room_id: str) -> List[str]:
+        return self._get_users_in_room(room_id, membership="join")
+    
+    def get_invited_users_in_room(self, room_id: str) -> List[str]:
+        return self._get_users_in_room(room_id, membership="invite")
+    
+    def get_all_users_in_room(self, room_id: str) -> List[str]:
+        return self._get_users_in_room(room_id, membership="all")
+    
 
 
 # # Example usage

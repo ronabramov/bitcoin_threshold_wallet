@@ -43,15 +43,17 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
 
     generation_wallet_msg  = [msg for msg in room_messages if msg.type == MessageType.WalletGenerationMessage][0].data
     existing_users_shares_messages : list[user_public_share] = [user_msg.data for user_msg in room_messages if user_msg.type == MessageType.UserPublicShare]
-
-    participating_users = ",".join([msg.user_id for msg in existing_users_shares_messages])
+    
+    all_users_in_room = MatrixService.instance().get_all_users_in_room(room_id=room_id)
+    
+    participating_users = ",".join(all_users_in_room) 
     wallet = get_wallet_from_generating_wallet_message(wallet_id=room_id, wallet_participants=participating_users, generation_message=generation_wallet_msg)
     
     user_room_secret_data, users_public_data = Utils.generate_user_room_keys(user_index=user_index_in_wallet, user_matrix_id=Context.matrix_user_id(), wallet=wallet)
     signature_created = handle_wallet_signature(wallet=wallet, user_secret_data=user_room_secret_data, user_public_data=users_public_data,
                                                  existing_users_in_wallet=existing_users_shares_messages)
     
-    db_dal.insert_my_wallet_user_data(wallet_id=room_id, user_index=user_index_in_wallet, user_public_keys=user_public_data)
+    db_dal.insert_my_wallet_user_data(wallet_id=room_id, user_index=user_index_in_wallet, user_public_keys=users_public_data)
     
     if not signature_created:
         print (f"Failed generating wallet's signature")
@@ -110,7 +112,8 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
         return False, None
     
     #Every user will add user to his wallet only when user has been joined
-    wallet = Wallet(wallet_id=room_id,threshold=wallet_threshold,users="", curve_name = curve_name, max_num_of_users = max_participants) 
+    users = ",".join(users_ids)
+    wallet = Wallet(wallet_id=room_id,threshold=wallet_threshold,users=users, curve_name = curve_name, max_num_of_users = max_participants) 
     user_room_secret_data, user_room_public_data = Utils.generate_user_room_keys(user_index=GENERATING_USER_INDEX,
                                                                                              user_matrix_id=user_id, wallet=wallet)
 
