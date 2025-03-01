@@ -1,7 +1,7 @@
 from phe import paillier
 import random
 import gmpy2
-from protocols.BobZKProofMtAModels import Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
+from models.protocols.BobZKProofMtAModels import Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
 
 """
     Zero Knowledge Proof used by Bob in the case he wants to prove values x,y are small
@@ -29,10 +29,10 @@ def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings ) 
     :return: Bob ZK Proof Commitment composed of alpha, beta, little_gamma, rho, rho',tau,sigma,z,z',t,v, w
     """
     q = settings.q
-    Modulus_N = settings.Modulus_N
+    Modulus_N = settings.verifier_modulus.N
     paillier_N = settings.paillier_public_key.n
-    h1 = settings.h1
-    h2 = settings.h2
+    h1 = settings.verifier_modulus.h1
+    h2 = settings.verifier_modulus.h2
     c1 = settings.c1
 
     q_third = q ** 3
@@ -83,9 +83,9 @@ def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitme
     
     q = settings.q
     paillier_N = settings.paillier_public_key.n
-    Modulus_N = settings.Modulus_N
-    h1 = settings.h1
-    h2 = settings.h2
+    Modulus_N = settings.verifier_modulus.N
+    h1 = settings.verifier_modulus.h1
+    h2 = settings.verifier_modulus.h2
     paillier_g = settings.paillier_public_key.g
 
     q_third = q ** 3
@@ -114,7 +114,7 @@ def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitme
 
     return valid_s1 and valid_t1 and valid_z_power_e_times_z_prime and valid_t_power_e_times_w and valid_t_power_e_times_v
 
-def pick_r(paillier_N):  #JUST FOR TESTS
+def pick_r(paillier_N):
     return pick_element_from_Multiplicative_group(paillier_N)
 
 def pick_c1_and_c2(r, x, y, public_key : paillier.PaillierPublicKey):

@@ -97,7 +97,7 @@ class Room_User_Data(Base):
     user_matrix_id = Column(String, primary_key=True, nullable=False)
     user_public_keys_data = Column(
         JSON, nullable=False, default={}
-    )  # Paillier Public key and Modulus data
+    )  # Paillier Public key and Modulus data - that is the user_public_share
     signature_shared_data = Column(
         JSON, nullable=False, default={}
     )  # Includes the signature share the user sent in channel

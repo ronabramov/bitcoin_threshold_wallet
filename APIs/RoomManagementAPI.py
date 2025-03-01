@@ -78,14 +78,13 @@ def get_wallet_from_generating_wallet_message(wallet_id : str, wallet_participan
                   curve_name = generation_message.curve_name, max_num_of_users = generation_message.max_number_of_participants)
 
 def save_room_users_data_to_db(wallet_id: str, rest_users_messages: list[user_public_share]) -> bool:
-
     success = True
     for user_message in rest_users_messages:
         result = db_dal.insert_new_room_user(
             wallet_id=wallet_id,
             user_index=user_message.user_index,
             user_matrix_id=user_message.user_id,
-            user_public_keys=user_message
+            user_public_share=user_message
         )
         if not result:
             success = False  # If any insertion fails, mark as failure
