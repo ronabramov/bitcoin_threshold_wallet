@@ -41,7 +41,7 @@ def handle_incoming_transaction_response(transaction_response: TransactionRespon
     
     sql_db_dal.update_transaction(local_transaction_dto)
     
-    if (threshold_reached(transaction_response.approvers_counter, local_transaction_dto.wallet_id)):
+    if (threshold_reached( local_transaction_dto.wallet_id, local_transaction_dto.id)):
         handle_reached_threshold_transaction(transaction=local_transaction_dto)
         # shrink secret share
         # if user_secret.num_of_updates == wallet.threshold:
