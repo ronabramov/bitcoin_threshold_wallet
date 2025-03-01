@@ -1,10 +1,11 @@
 from local_db import sql_db
 from local_db.sql_db import DB
-from typing import Dict, Optional, List
+from typing import List
 from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
 from models.models import  user_public_share, key_generation_share
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
+from Services.Context import Context
 
 def get_transaction_participating_users_data_by_trans_id(wallet_id : str) -> dict[int, sql_db.Room_User_Data]:
     try:
@@ -150,6 +151,13 @@ def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
     except Exception as e:
         print(f"Failed to insert wallet {wallet.wallet_id}", e)
         return False
+
+def insert_my_wallet_user_data(wallet_id : str,  user_public_keys : user_public_share):
+    insert_new_room_user(wallet_id=wallet_id, user_index=user_public_keys.user_index, user_matrix_id=Context.matrix_user_id(), user_public_keys=user_public_keys)
+
+def get_my_wallet_user_data(wallet_id : str) -> sql_db.Room_User_Data:
+    return DB.session().query(sql_db.Room_User_Data).filter(sql_db.Room_User_Data.wallet_id == wallet_id, sql_db.Room_User_Data.user_matrix_id == Context.matrix_user_id()).first()
+
 # TODO: maybe remove matrix id and index as parameters since we get them from the user_public_keys
 def insert_new_room_user(wallet_id : str, user_index : int, user_matrix_id : str, user_public_keys : user_public_share):
     try:
@@ -215,3 +223,28 @@ def insert_transaction_response(transaction_response : TransactionResponseDTO) -
     except Exception as e:
         print(f"Failed to insert transaction response {transaction_response.transaction_id}", e)
         return False
+    
+def insert_transaction_secret(transaction_id : str, shrunken_secret_share : int) -> bool:
+    try:
+        transaction = DB.session().query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction_id).first()
+        if not transaction:
+            print(f"Transaction {transaction_id} not found")
+            return False
+        transaction.shrunken_secret_share = shrunken_secret_share
+        DB.session().commit()
+        return True
+    except Exception as e:
+        print(f"Failed to insert transaction secret {transaction_id}", e)
+        DB.session().rollback()
+        return False
+
+def get_transaction_secret(transaction_id : str):
+    """
+    Do not broadcast!
+    """
+    try:
+        transaction = DB.session().query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction_id).first()
+        return transaction.shrunken_secret_share
+    except Exception as e:
+        print(f"Failed to get transaction secret {transaction_id}", e)
+        return None

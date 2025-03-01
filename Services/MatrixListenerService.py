@@ -1,15 +1,10 @@
 from matrix_client.client import MatrixClient
-from matrix_client.room import Room
-import time
 from models.DTOs.message_dto import MessageDTO
 from pydantic import ValidationError
 from models.DTOs.transaction_dto import TransactionDTO
-from models.models import WalletGenerationMessage, user_public_share, key_generation_share
+from models.models import user_public_share, key_generation_share
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
 from models.DTOs.MessageType import MessageType
-from models.commitment import Commitment
-from models.value_knowledge_zk_proof import value_knowledge_zk_proof
-from models.protocols.MtaAndMtaWcMessages import MtaChallenge, MtaCommitmentAlice, MtaCommitmentBob, MtaProofForChallengeAlice, MtaProofForChallengeBob, MtaWcCommitmentBob
 import Services.TransactionService as TransactionService
 import Services.UserShareService as UserShareService
 
@@ -91,7 +86,6 @@ class MatrixRoomListener:
                 print(f"Transaction request received: {message_dto.data}")
                 transaction_request_obj: TransactionDTO = message_dto.data
                 TransactionService.handler_new_transaction(transaction_request_obj)
-                # User need to fetch the transaction from local db and display it in the UI
                 return
             
             elif message_dto.type == MessageType.TransactionResponse:
@@ -107,16 +101,16 @@ class MatrixRoomListener:
             elif message_dto.type == MessageType.KeyGenerationShare:
                 key_generation_share_obj: key_generation_share = message_dto.data
                 print(f"Key generation share received: {key_generation_share_obj}")
-                return UserShareService.handle_incoming_key_generation_share(key_generation_share_obj, wallet_id)
+                return UserShareService.handle_incoming_key_generation_share(key_generation_share_obj)
+                
+            elif message_dto.type == MessageType.Commitment:
+                commitment_obj = message_dto.data
+                print(f"Commitment received: {commitment_obj}")
+
             
             elif message_dto.type == MessageType.WalletGenerationMessage:
                 wallet_generation_message_obj = message_dto.data
                 print(f"Wallet generation message received: {wallet_generation_message_obj}")
-                
-            
-            elif message_dto.type == MessageType.Commitment:
-                commitment_obj = message_dto.data
-                print(f"Commitment received: {commitment_obj}")
             
             elif message_dto.type == MessageType.ValueKnowledgeZkProof:
                 value_knowledge_zk_proof_obj = message_dto.data

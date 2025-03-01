@@ -3,7 +3,10 @@ from models.transaction_status import TransactionStatus
 from local_db import sql_db_dal
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
 from Services.Context import Context
-from APIs.TransactionsAPI import handle_reached_threshold_transaction
+from APIs.RoomManagementAPI import MatrixService
+from models.DTOs.message_dto import MessageDTO, MessageType
+from APIs.Algorithm_Steps_Implementation.user_transaction_configuration_handler import UserTransactionConfigurationHandler as ConfigHandler
+from models.DTOs.wallet_dto import WalletDto
 # TODO: change to the user's matrix id
 # ME = "@my_user_id:matrix.org"
 
@@ -66,11 +69,13 @@ def _merge_transactions(
     local_transaction.approvers = ",".join(merged_approvers)
     local_transaction.stage = max(local_transaction.stage, incoming_transaction.stage)
     return local_transaction
-# TODO: check exsting transactions in transaction response db and handle using handle_incoming_transaction_response
+
+
 def handler_new_transaction(transaction: TransactionDTO):
     local_transaction = sql_db_dal.get_transaction_by_id(transaction.id)
     if local_transaction is None:
         sql_db_dal.insert_new_transaction(transaction)
+        # User need to fetch the transaction from local db and display it in the UI.
         # check past transaction response in the db:
         past_transaction_responses = sql_db_dal.get_transaction_responses_by_transaction_id(transaction.id)
         for response in past_transaction_responses:
@@ -78,3 +83,9 @@ def handler_new_transaction(transaction: TransactionDTO):
     else:
         print(f"Transaction {transaction.id} already exists in the local db")
     return
+
+def handle_reached_threshold_transaction(transaction : TransactionDTO, wallet: WalletDto) -> bool: #####RE VISIT
+    config_handler = ConfigHandler()
+    _, transaction_room_id, public_key = config_handler.define_transaction_user_config_and_send_shares(transaction=transaction, wallet=wallet) #Consider passing Curve.
+    public_keys_message = MessageDTO(type = MessageType.UserPublicShare, data=public_key).model_dump_json()
+    return MatrixService.instance().send_message_to_wallet_room(room_id=transaction_room_id, message=public_keys_message)

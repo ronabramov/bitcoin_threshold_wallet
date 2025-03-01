@@ -2,11 +2,9 @@ from local_db import sql_db_dal
 from models.DTOs.transaction_dto import TransactionDTO
 from models.DTOs.message_dto import MessageDTO
 from models.DTOs.MessageType import MessageType
-from models.DTOs.wallet_dto import WalletDto
 from models.transaction_status import TransactionStatus
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
-from models.models import user_public_share
-from APIs.Algorithm_Steps_Implementation.user_transaction_configuration_handler import UserTransactionConfigurationHandler as ConfigHandler
+from Services.TransactionService import handle_reached_threshold_transaction
 import uuid
 from Services.MatrixService import MatrixService
 from Services import TransactionService
@@ -61,12 +59,6 @@ def respond_to_new_transaction(transaction : TransactionDTO, user_response : boo
             
         approved_transaction_json = MessageDTO(type = MessageType.TransactionResponse, data=transaction_response).model_dump_json()
         return MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= approved_transaction_json)   
-
-def handle_reached_threshold_transaction(transaction : TransactionDTO, wallet: WalletDto) -> bool: #####RE VISIT
-    config_handler = ConfigHandler()
-    _, transaction_room_id, public_key = config_handler.define_transaction_user_config_and_send_shares(transaction=transaction, wallet=wallet) #Consider passing Curve.
-    public_keys_message = MessageDTO(type = MessageType.UserPublicShare, data=public_key).model_dump_json()
-    return MatrixService.instance().send_message_to_wallet_room(room_id=transaction_room_id, message=public_keys_message)
     
 
 def generate_unique_transaction_id():

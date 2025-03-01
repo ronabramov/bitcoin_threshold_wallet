@@ -11,9 +11,8 @@ from typing import Dict, Optional, List
 from models.DTOs.message_dto import MessageDTO, MessageType
 from models.models import user_public_share, WalletGenerationMessage, user_secret_signature_share
 import common_utils as Utils
-from ecdsa import NIST256p, curves
+from ecdsa import NIST256p
 from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
-import random
 from Services.Context import Context
 
 
@@ -42,7 +41,6 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
     user_index_in_wallet = MatrixService.instance().get_next_available_index(room_id=room_id)
     room_messages = MatrixService.instance().get_valid_json_messages(room_id=room_id)
 
-
     generation_wallet_msg  = [msg for msg in room_messages if msg.type == MessageType.WalletGenerationMessage][0].data
     existing_users_shares_messages : list[user_public_share] = [user_msg.data for user_msg in room_messages if user_msg.type == MessageType.UserPublicShare]
 
@@ -52,6 +50,9 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
     user_room_secret_data, user_public_data = Utils.generate_user_room_keys(user_index=user_index_in_wallet, user_matrix_id=Context.matrix_user_id(), wallet=wallet)
     signature_created = handle_wallet_signature(wallet=wallet, user_secret_data=user_room_secret_data, user_keys=user_public_data,
                                                  existing_users_in_wallet=existing_users_shares_messages)
+    
+    db_dal.insert_my_wallet_user_data(wallet_id=room_id, user_index=user_index_in_wallet, user_public_keys=user_public_data)
+    
     if not signature_created:
         print (f"Failed generating wallet's signature")
         return False
@@ -113,21 +114,21 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
     wallet = Wallet(wallet_id=room_id,threshold=wallet_threshold,users="", curve_name = curve_name, max_num_of_users = max_participants) 
     user_room_secret_data, user_room_public_data = Utils.generate_user_room_keys(user_index=GENERATING_USER_INDEX,
                                                                                              user_matrix_id=user_id, wallet=wallet)
-    
+    db_dal.insert_my_wallet_user_data(wallet_id=room_id, user_public_keys=user_room_public_data)
     signature_created = handle_wallet_signature(wallet=wallet, user_keys=user_room_public_data, user_secret_data=user_room_secret_data)
     
     if not signature_created:
         print(f'Failed Generating signature data for wallet {wallet.wallet_id}')
         return False, None
     
-    insertion_succeded = db_dal.insert_new_wallet(wallet=wallet)
-    if not insertion_succeded:
+    insertion_succeeded = db_dal.insert_new_wallet(wallet=wallet)
+    if not insertion_succeeded:
         print (f"Failed saving wallet to local db")
         return False, None
     
     public_keys_message = MessageDTO(type=MessageType.UserPublicShare, data=user_room_public_data).model_dump_json()
     message_sent = MatrixService.instance().send_message_to_wallet_room(room_id=room_id, message=public_keys_message)
-    return insertion_succeded and message_sent, wallet
+    return insertion_succeeded and message_sent, wallet
 
 def handle_wallet_signature(wallet : Wallet, user_secret_data : user_secret_signature_share, user_keys : user_public_share,
                              existing_users_in_wallet : list[user_public_share] = None) -> bool:
@@ -141,6 +142,26 @@ def handle_wallet_signature(wallet : Wallet, user_secret_data : user_secret_sign
 def is_wallet_room(room_name : str):
     #TODO:implement. 
     # should set room name to include 'wallet' in alias
+    return True
+
+def send_private_message_to_every_user_in_Wallet(message : MessageDTO, wallet_id : str) -> bool:
+    """
+    Send message to every participating user in the wallet.
+    """
+    wallet = db_dal.get_wallet_by_id(wallet_id)
+    users = wallet.users.split(',')
+    for user_matrix_id in users:
+        retries = 3
+        while retries > 0:
+            try:
+                MatrixService.instance().send_private_message_to_user(target_user_matrix_id=user_matrix_id, message=message.model_dump_json())
+                break
+            except Exception as e:
+                retries -= 1
+                print(f"Failed to send message to user {user_matrix_id}, retrying... {retries} retries left")
+        if retries == 0:
+            print(f"Failed to send message to user {user_matrix_id}")
+            return False
     return True
 
 

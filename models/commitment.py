@@ -7,7 +7,7 @@ class Commitment(BaseModel):
     algorithm_step: Algorithm_Step
     committing_user_index: int
     committed_values: list[int]
-    paillier_public_key: paillier.PaillierPublicKey
+    committing_user_paillier_public_key: paillier.PaillierPublicKey
     model_config = ConfigDict(arbitrary_types_allowed=True) 
     
     @property
@@ -21,7 +21,7 @@ class Commitment(BaseModel):
             "committing_user_index": self.committing_user_index,
             "committed_values": self.committed_values,
             "paillier_public_key": {
-                "n": self.paillier_public_key.n  # Store only `n`, enough to reconstruct the key
+                "n": self.committing_user_paillier_public_key.n  # Store only `n`, enough to reconstruct the key
             }
         }
 

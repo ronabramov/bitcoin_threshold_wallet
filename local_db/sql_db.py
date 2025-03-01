@@ -41,7 +41,7 @@ class Wallet(Base):
     users = Column(
         Text, nullable=True
     )  # @alice:matrix.org,@bob:matrix.org - we will save comma parsed absolute path for participating users
-    configuration = Column(Text, nullable=True)  # User secret
+    configuration = Column(Text, nullable=True)  # User secret (real type is user_secret_signature_share)
     curve_name = Column(Text, nullable=True)
     transactions = relationship("Transaction", back_populates="wallet")
     users_data = relationship("Room_User_Data", back_populates="wallet")
@@ -72,6 +72,18 @@ class Transaction(Base):
     status = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
+    shrunken_secret_share = Column(Integer, nullable=True)
+    
+    def add_mta_data(self, mta_info: dict):
+        self.mta_data = mta_info
+
+    def get_mta_data(self) -> dict:
+        return self.mta_data
+
+    def remove_mta_data(self):
+        self.mta_data = {}
+
+    # TODO: add  mta data
 
     @classmethod
     def from_dto(cls, transaction_dto: "TransactionDTO"):
@@ -102,9 +114,6 @@ class Room_User_Data(Base):
     signature_shared_data = Column(
         JSON, nullable=False, default={}
     )  # Includes the signature share the user sent in channel
-    mta_data = Column(
-        JSON, nullable=False, default={}
-    )  # Stores relevant data for MTA process with the user
 
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="users_data")
@@ -143,16 +152,6 @@ class Room_User_Data(Base):
     def remove_signature_share(self):
         self.signature_shared_data = {}
 
-    ### MTA DATA MANAGEMENT ###
-
-    def add_mta_data(self, mta_info: dict):
-        self.mta_data = mta_info
-
-    def get_mta_data(self) -> dict:
-        return self.mta_data
-
-    def remove_mta_data(self):
-        self.mta_data = {}
 
 
 class Room_Signature_Shares_Data(Base):
