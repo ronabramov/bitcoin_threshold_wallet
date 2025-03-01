@@ -50,10 +50,6 @@ class Wallet(Base):
         "Room_Signature_Shares_Data", back_populates="wallet"
     )
 
-    # We should save here also the participants data from the Room_Users_Data and destroy Room_Users_Data object.
-    # This should happen in way s.t every other user will have row in another table with the room_id and the user as ids and the json of his data.
-    # When inserting wallet we insert these rows afterwards, and when pulling a wallet we pull also that data.
-
     def set_room_secret_user_data(self, data: user_secret_signature_share):
         self.configuration = data.model_dump_json()
 
