@@ -25,3 +25,5 @@ local_db.sqlite
 local_db/local_db1.sqlite
 local_db/local_db2.sqlite
 .DS_Store
+
+.vs/
