@@ -12,12 +12,9 @@ from phe import paillier
 class StepOne:
     def execute(self, wallet_id : str):
         wallet = sql_db_dal.get_wallet_by_id(wallet_id)
-        # get curve 
         curve = curves.curve_by_name(wallet.curve_name)
         q = curve.order -1
-        # select u.a.r k_i,  from Z_q
         gamma_i = random.randint(0, q)
-        # select u.a.r gamma_i from Z_q
         k_i = random.randint(0, q)
         # save k_i, gamma_i to db
         G = curve.generator
