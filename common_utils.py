@@ -34,7 +34,6 @@ def pick_element_from_Multiplicative_group(N):
             return a
 
 def generate_user_room_keys(user_index : int, user_matrix_id : str, wallet :  Wallet):
-    #TODO : Add the key generation shares to that object?
     user_modulus = generate_user_modulus_parameters()
     paillier_public_key, paillier_private_key = generate_paillier_keypair()
     room_secret_user_share = user_secret_signature_share(threshold=wallet.threshold, user_index=user_index, user_id=user_matrix_id,
