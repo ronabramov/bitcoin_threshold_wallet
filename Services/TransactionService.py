@@ -6,16 +6,20 @@ from Services.Context import Context
 from models.protocols.ShareShrinker import ShareShrinker
 from ecdsa import curves
 
-def threshold_reached(approvers_counter: int, wallet_id: int):
+def threshold_reached( wallet_id: int, transaction_id: str):
     try :
         wallet = sql_db_dal.get_wallet_by_id(wallet_id=wallet_id)
-        return approvers_counter >= wallet.threshold
+        transaction_user_data = sql_db_dal.get_all_transaction_user_data(transaction_id=transaction_id)
+        return len(transaction_user_data) >= wallet.threshold
     except :
         raise FileNotFoundError(f"Failed finding wallet {wallet_id} in local_db")
 
 def _approved_by_me(transaction_response: TransactionResponseDTO):
     ME = Context.matrix_user_id()
-    return ME in transaction_response.approvers
+    transaction_user_data = sql_db_dal.get_all_transaction_user_data(transaction_id=transaction_response.transaction_id)
+    # filter by ME with next()
+    my_data = next((user_data for user_data in transaction_user_data if user_data.user_matrix_id == ME), None)
+    return my_data is not None
 
 def handle_incoming_transaction_response(transaction_response: TransactionResponseDTO):
     # get related transaction from local db
@@ -37,7 +41,7 @@ def handle_incoming_transaction_response(transaction_response: TransactionRespon
     
     sql_db_dal.update_transaction(local_transaction_dto)
     
-    if (threshold_reached(transaction_response.approvers_counter, local_transaction_dto.wallet_id)):
+    if (threshold_reached( local_transaction_dto.wallet_id, local_transaction_dto.id)):
         handle_reached_threshold_transaction(transaction=local_transaction_dto)
         # shrink secret share
         # if user_secret.num_of_updates == wallet.threshold:
@@ -52,6 +56,7 @@ def handle_incoming_transaction_response(transaction_response: TransactionRespon
         # StepOne.execute(wallet_id)
         return
     
+
 
 def handler_new_transaction(transaction: TransactionDTO):
     local_transaction = sql_db_dal.get_transaction_by_id(transaction.id)
