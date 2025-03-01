@@ -5,6 +5,7 @@ from models.DTOs.transaction_response_dto import TransactionResponseDTO
 from Services.Context import Context
 from models.protocols.ShareShrinker import ShareShrinker
 from ecdsa import curves
+from APIs.Algorithm_Steps_Implementation.StepOne import StepOne
 
 def threshold_reached( wallet_id: int, transaction_id: str):
     try :
@@ -78,3 +79,5 @@ def handle_reached_threshold_transaction(transaction : TransactionDTO, user_inde
     shrunken_secret = shrinker.compute_new_share()
     transaction.shrunken_secret_share = shrunken_secret
     sql_db_dal.update_transaction(transaction=transaction)
+    successeded_stage_one = StepOne.execute(wallet=wallet)
+

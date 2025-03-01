@@ -45,7 +45,7 @@ class MTAProtocolWithZKP:
         self.Alice_Alg_prover_paillier_Gamma = self.Alice_Alg_public_key.g
         self.Alice_Alg_r = AliceZKProof.pick_r(self.Alice_Alg_prover_paillier_N)
         if a_value is not None:
-            self.Alice_Alg_c = AliceZKProof.calculate_c(self.Alice_Alg_prover_paillier_Gamma, a_value, self.Alice_Alg_prover_paillier_N, self.Alice_Alg_r)
+            self.Alice_Alg_c = AliceZKProof.calculate_c(self.Alice_Alg_prover_paillier_Gamma, a_value, self.Alice_Alg_prover_paillier_N, self.Alice_Alg_r) #Enc(a)
         else:
             self.Alice_Alg_c = None
         
@@ -54,7 +54,7 @@ class MTAProtocolWithZKP:
         Bob_Alg_Public_key = bob_public_share.paillier_public_key
         Bob_Alg_r = BobZKProofMTA.pick_r(Bob_Alg_Public_key.n)
         if b_value is not None:
-            Bob_Alg_c1, Bob_Alg_c2 = BobZKProofMTA.pick_c1_and_c2(r=Bob_Alg_r, x = b_value,y=Bob_Alg_Beta_Prime,public_key= Bob_Alg_Public_key)
+            Bob_Alg_c1, Bob_Alg_c2 = BobZKProofMTA.pick_c1_and_c2(r=Bob_Alg_r, x = b_value, y=Bob_Alg_Beta_Prime, public_key= Bob_Alg_Public_key) # Enc(a,b)
         else:
             Bob_Alg_c1, Bob_Alg_c2 = None, None
         self.Bob_Alg_verifier_Settings = Bob_ZKProof_RegMta_Settings(public_key=Bob_Alg_Public_key, 
