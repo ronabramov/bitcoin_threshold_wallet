@@ -66,10 +66,12 @@ def handler_new_transaction(transaction: TransactionDTO):
         print(f"Transaction {transaction.id} already exists in the local db")
     return
 
-def handle_reached_threshold_transaction(transaction : TransactionDTO, user_index) -> bool: #####RE VISIT
+def handle_reached_threshold_transaction(transaction : TransactionDTO, user_index) -> bool: 
     transaction.stage = TransactionStatus.THRESHOLD_ACHIEVED
     wallet = sql_db_dal.get_wallet_by_id(transaction.wallet_id)
     user_secret_signature_data = wallet.get_room_secret_user_data()
     approvers_indecis = [participating_user.user_index for participating_user in sql_db_dal.get_transaction_users_data_by_transaction_id(transaction_id=transaction.id)]
     curve = curves.curve_by_name(wallet.curve_name)
     shrinker = ShareShrinker(q= curve.order, i = user_index, S=approvers_indecis, x_i=user_secret_signature_data.user_evaluation)
+    shrunken_secret = shrinker.compute_new_share()
+    
