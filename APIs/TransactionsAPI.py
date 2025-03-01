@@ -58,9 +58,14 @@ def respond_to_new_transaction(transaction : TransactionDTO, user_response : boo
         if not insertion_succeeded:
             return False
         
-        # TODO: add digest for all saved transaction responsesG
+    
         approved_transaction_json = MessageDTO(type = MessageType.TransactionResponse, data=transaction_response).model_dump_json()
-        return MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= approved_transaction_json)   
+        MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= approved_transaction_json)   
+        
+        if TransactionService.threshold_reached( transaction.wallet_id, transaction.id):
+            TransactionService.handle_reached_threshold_transaction(transaction=transaction)
+            
+        return True
     
 
 def generate_unique_transaction_id():
