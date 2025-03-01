@@ -7,8 +7,6 @@ class TransactionResponseDTO(BaseModel):
     transaction_id : str
     stage : TransactionStatus
     response: bool
-    approvers_counter: int
-    approvers: Optional[str]
     
     @property
     def type(self):

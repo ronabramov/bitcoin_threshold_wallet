@@ -26,8 +26,11 @@ def generate_transaction_and_send_to_wallet( wallet_id, transaction_details, nam
     user_id = Context.matrix_user_id()
     transaction_id = generate_unique_transaction_id()
     transaction = TransactionDTO(id= transaction_id, name=name, details=transaction_details, wallet_id=wallet_id)
-    transaction.approve(user_id)
+    # add my data to the transaction
+    my_wallet_user_data = sql_db_dal.get_my_wallet_user_data(wallet_id=wallet_id)
+    
     insertion_succeeded = sql_db_dal.insert_new_transaction(transaction)
+    sql_db_dal.insert_transaction_user_data(transaction_id=transaction_id,user_matrix_id=user_id,user_index=my_wallet_user_data.user_index)
     if not insertion_succeeded:
         return False
     # transaction request message is handled as a transaction message
@@ -45,18 +48,17 @@ def respond_to_new_transaction(transaction : TransactionDTO, user_response : boo
         print (f"user {user_id} rejects transaction {transaction.id}")
         return True
     else:
-        transaction.approve(user_id)
-        threshold_achieved = TransactionService.threshold_reached(transaction.approvers_counter, transaction.wallet_id)
-        transaction_response = TransactionResponseDTO(transaction_id=transaction.id, stage=TransactionStatus.THRESHOLD_ACHIEVED if threshold_achieved  else transaction.stage, response=user_response, approvers_counter=transaction.approvers_counter, approvers=transaction.approvers)
+        transaction_response = TransactionResponseDTO(transaction_id=transaction.id, stage=transaction.stage, response=user_response)
         insertion_succeeded = sql_db_dal.insert_new_transaction(transaction)
+        
+        # add my data to the transaction
+        my_wallet_user_data = sql_db_dal.get_my_wallet_user_data(wallet_id=transaction.wallet_id)
+        sql_db_dal.insert_transaction_user_data(transaction_id=transaction.id,user_matrix_id=user_id,user_index=my_wallet_user_data.user_index)
         
         if not insertion_succeeded:
             return False
         
-        if threshold_achieved:    
-            wallet = sql_db_dal.get_wallet_by_id(transaction.wallet_id)
-            handle_reached_threshold_transaction(transaction=transaction, wallet=wallet)
-            
+        # TODO: add digest for all saved transaction responsesG
         approved_transaction_json = MessageDTO(type = MessageType.TransactionResponse, data=transaction_response).model_dump_json()
         return MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= approved_transaction_json)   
     

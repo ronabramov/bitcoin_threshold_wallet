@@ -63,8 +63,6 @@ class Transaction(Base):
     __tablename__ = "Transaction"
     transaction_id = Column(String, primary_key=True, nullable=False)
     details = Column(Text, nullable=True)
-    approvers = Column(Text, nullable=True)
-    approvals_counter = Column(Integer, nullable=True)
     status = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
@@ -97,8 +95,6 @@ class TransactionUserData(Base):
         transaction = cls(
             transaction_id=transaction_dto.id,
             details=transaction_dto.details,
-            approvers=transaction_dto.approvers,
-            approvals_counter=transaction_dto.approvers_counter,
             wallet_id=transaction_dto.wallet_id,
             status=transaction_dto.stage.value,
         )
@@ -139,16 +135,12 @@ class TransactionResponse(Base):
     transaction_id = Column(String, ForeignKey("Transaction.transaction_id"), nullable=False)
     stage = Column(Integer, nullable=False)
     response = Column(Boolean, nullable=False)
-    approvers_counter = Column(Integer, nullable=False)
-    approvers = Column(String, nullable=True)
     
     def from_dto(cls, transaction_response_dto: TransactionResponseDTO):
         return cls(
             transaction_id=transaction_response_dto.transaction_id,
             stage=transaction_response_dto.stage,
-            response=transaction_response_dto.response,
-            approvers_counter=transaction_response_dto.approvers_counter,
-            approvers=transaction_response_dto.approvers
+            response=transaction_response_dto.response
         )
 
 def create_db_if_not_exists(db_file_name): 

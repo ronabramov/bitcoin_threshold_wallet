@@ -11,16 +11,20 @@ from models.DTOs.wallet_dto import WalletDto
 # ME = "@my_user_id:matrix.org"
 
 
-def threshold_reached(approvers_counter: int, wallet_id: int):
+def threshold_reached( wallet_id: int, transaction_id: str):
     try :
         wallet = sql_db_dal.get_wallet_by_id(wallet_id=wallet_id)
-        return approvers_counter >= wallet.threshold
+        transaction_user_data = sql_db_dal.get_all_transaction_user_data(transaction_id=transaction_id)
+        return len(transaction_user_data) >= wallet.threshold
     except :
         raise FileNotFoundError(f"Failed finding wallet {wallet_id} in local_db")
 
 def _approved_by_me(transaction_response: TransactionResponseDTO):
     ME = Context.matrix_user_id()
-    return ME in transaction_response.approvers
+    transaction_user_data = sql_db_dal.get_all_transaction_user_data(transaction_id=transaction_response.transaction_id)
+    # filter by ME with next()
+    my_data = next((user_data for user_data in transaction_user_data if user_data.user_matrix_id == ME), None)
+    return my_data is not None
 
 def handle_incoming_transaction_response(transaction_response: TransactionResponseDTO):
     # get related transaction from local db
@@ -43,7 +47,6 @@ def handle_incoming_transaction_response(transaction_response: TransactionRespon
         sql_db_dal.update_transaction(local_transaction_dto)
         
         
-        
         wallet = sql_db_dal.get_wallet_by_id(local_transaction_dto.wallet_id)
         handle_reached_threshold_transaction(transaction=local_transaction_dto, wallet=wallet)
         
@@ -61,30 +64,8 @@ def handle_incoming_transaction_response(transaction_response: TransactionRespon
         return
     
     # threshold not reached
-    local_transaction_dto = _merge_transactions(transaction_response, local_transaction_dto)
     sql_db_dal.update_transaction(local_transaction_dto)
         
-
-def _merge_transactions(
-    self,
-    incoming_transaction: TransactionResponseDTO,
-    local_transaction: TransactionDTO,
-):
-    local_approvers = local_transaction.approvers.split(",")
-    incoming_approvers = incoming_transaction.approvers.split(",")
-    
-    local_approvers_counter = local_transaction.approvers_counter
-    incoming_approvers_counter = incoming_transaction.approvers_counter
-    
-    merged_approvers = set(local_approvers + incoming_approvers)
-    incoming_transaction.approvers = max(
-        local_approvers_counter, incoming_approvers_counter
-    )
-    local_transaction.approvers = ",".join(merged_approvers)
-    local_transaction.stage = max(local_transaction.stage, incoming_transaction.stage)
-    return local_transaction
-
-
 def handler_new_transaction(transaction: TransactionDTO):
     local_transaction = sql_db_dal.get_transaction_by_id(transaction.id)
     if local_transaction is None:
