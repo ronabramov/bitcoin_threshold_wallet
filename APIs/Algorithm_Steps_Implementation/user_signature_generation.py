@@ -1,10 +1,10 @@
 from models.protocols.Feldman_VSS_protocol import Feldman_VSS_Protocol
-from ecdsa import NIST256p, curves
+from ecdsa import curves
 from models.protocols.ShareShrinker import ShareShrinker
 import random
 from local_db.sql_db import Wallet
 import local_db.sql_db_dal as DB_DAL
-from models.models import user_secret_signature_share, key_generation_share, user_public_share
+from models.models import user_secret_signature_share, wallet_key_generation_share, user_public_share
 import APIs.UserToUserAPI 
 from Services.UserShareUtils import filter_shares_by_user_index
 
@@ -26,16 +26,17 @@ class UserSignatureGenerator:
         1. Generates signature for user. Update Wallet secret with signature data
         2. Records signature shares in DB        """
         user_key_generation_participants_shares, user_secret = self._generate_secret_and_shares_for_other_users()
-        self._enrich_user_secret_data_with_signature_details(secret=user_secret, share = user_key_generation_participants_shares[self.user_public_keys.user_index])
+        user_public_X = self._enrich_user_secret_data_with_signature_details(secret=user_secret, share = user_key_generation_participants_shares[self.user_public_keys.user_index])
         insertion_success = DB_DAL.insert_multiple_signature_shares(wallet_id=self.wallet_id, shares= list(user_key_generation_participants_shares.values()))
-        return insertion_success
+        return insertion_success, user_public_X
 
-    def _enrich_user_secret_data_with_signature_details(self, secret : int, share : key_generation_share):
+    def _enrich_user_secret_data_with_signature_details(self, secret : int, share : wallet_key_generation_share):
         wallet_secret = self.wallet.get_room_secret_user_data()
         wallet_secret.original_secret_share = secret
         wallet_secret.original_secret_share = share.target_user_evaluation
         wallet_secret.num_of_updates = 0
         self.wallet.set_room_secret_user_data(wallet_secret)
+        return self.curve.generator * wallet_secret # X = g^x - public key
 
     def _generate_secret_and_shares_for_other_users(self):
         secret = random.randint(1, self.q - 1)
@@ -51,6 +52,7 @@ class UserSignatureGenerator:
                 continue # Send Messages only for other users
             user_share = filter_shares_by_user_index(users_signature_shares, user.user_index)
             user_share.target_user_matrix_id = user.user_id
+
             #Better update that entity in DB. RON like that: (?)
             DB_DAL.update_signature_share(self.wallet_id, user_share)
             shares_dict[user.user_index] = user_share
@@ -62,7 +64,7 @@ class UserSignatureGenerator:
         success = APIs.UserToUserAPI.bulk_send_key_share(list(shares_dict.values()))
         return success
     
-    def aggregate_received_share(self, user_secret : user_secret_signature_share, peer_share : key_generation_share):
+    def aggregate_received_share(self, user_secret : user_secret_signature_share, peer_share : wallet_key_generation_share):
         validated_share = self._validate_peer_share(peer_share=peer_share)
         if not validated_share:
             # TODO: maybe keep print(f'User {peer_share.generating_user_index} sent unvalid key share!')
@@ -70,7 +72,7 @@ class UserSignatureGenerator:
         user_secret.user_evaluation += peer_share.target_user_evaluation
         return user_secret
     
-    def _validate_peer_share(self, peer_share : key_generation_share):
+    def _validate_peer_share(self, peer_share : wallet_key_generation_share):
         peer_user_protocol = Feldman_VSS_Protocol(self.n, self.t, peer_share.transaction_id, self.user_index_to_user_matrixId,
                                                    generating_user_Index=peer_share.generating_user_index, curve=peer_share.curve)
         is_valid = peer_user_protocol.verify_share(peer_share)

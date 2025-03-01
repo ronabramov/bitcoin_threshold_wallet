@@ -1,5 +1,5 @@
 from ecdsa import NIST256p, curves
-from models.models import key_generation_share
+from models.models import wallet_key_generation_share
 from typing import Dict
 import random
 
@@ -29,7 +29,7 @@ class Feldman_VSS_Protocol:
     def evaluate_polynomial(self, x, coeffs):
         return sum(coeff * (x ** i) for i, coeff in enumerate(coeffs))
 
-    def generate_shares(self, secret) -> list[key_generation_share]:
+    def generate_shares(self, secret) -> list[wallet_key_generation_share]:
 
         # Using the notation from the paper, v_i := g^a_i. 
         # In the Feldman VSS, in addition to a share, every player gets {v_i}_i=1 ^t.
@@ -39,13 +39,13 @@ class Feldman_VSS_Protocol:
         v_i = self.compute_v_i(coeffs)
         g_secret = v_i[0]
         shares = [
-            key_generation_share(generating_user_index=self.generating_user_index,curve=self.curve.name, target_user_index=i, v_i = v_i,
+            wallet_key_generation_share(generating_user_index=self.generating_user_index,curve=self.curve.name, target_user_index=i, v_i = v_i,
                                          target_user_evaluation=self.evaluate_polynomial(i, coeffs), v_0=g_secret)
         # TODO: check if we should start from 1 or 0
          for i in range(0, self.n)]
         return shares
 
-    def verify_share(self, share : key_generation_share):
+    def verify_share(self, share : wallet_key_generation_share):
         G = self.G
         g_p_i = share.target_user_evaluation * G # g^p(i) should be = product (e.g sum) og the shares g^a_j ^ (i^j)
         product = 0 * G  # Identity element

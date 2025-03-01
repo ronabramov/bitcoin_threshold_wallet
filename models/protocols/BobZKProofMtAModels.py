@@ -1,6 +1,7 @@
 from phe import paillier
 from ecdsa import NIST256p, curves
 from pydantic import BaseModel
+from models.models import user_modulus
 
 class Bob_ZKProof_RegMta_ProverCommitment:
     def __init__(self, alpha, rho, rho_prime, sigma, beta, gamma, tau, z, z_prime, t, v, w, u = None):
@@ -29,28 +30,24 @@ class Bob_ZKProof_RegMta_Proof_For_Challenge:
 
 
 class Bob_ZKProof_RegMta_Settings:
-    def __init__(self, public_key : paillier.PaillierPublicKey, Modulus_N, h1, h2, c1, c2, X, curve : curves.Curve = NIST256p):
-        # Eliptic curve NIST256p as the default curve.
-        # This is mainly data that the prover holds. 
-        # We might prefer having settings for prover and settings for verifier
+    # Eliptic curve NIST256p as the default curve.
+    # This is data shared between prover and verifier
+    def __init__(self, public_key : paillier.PaillierPublicKey, verifier_modulus : user_modulus, c1, c2, X, curve : curves.Curve = NIST256p):
         self.q = curve.order
-        self.paillier_public_key = public_key
-        self.Modulus_N = Modulus_N
-        self.h1 = h1
-        self.h2 = h2
         self.c1 = c1
         self.c2 = c2
+        self.paillier_public_key = public_key
+        self.verifier_modulus = verifier_modulus
         self.curve = curve
         self.g = curve.generator
         self.X = X
         
 
 class Bob_ZKProof_RegMta_Prover_Settings(Bob_ZKProof_RegMta_Settings):
-    def __init__(self, public_key, Modulus_N, h1, h2, b, beta_prime, r, c1, c2, X, curve : curves.Curve = NIST256p):
-        super().__init__(public_key, Modulus_N, h1, h2, c1, c2, X, curve)
+    # Additional data - kept only for the Prover
+    def __init__(self, public_key, verifier_modulus, b, beta_prime, r, c1, c2, X, curve : curves.Curve = NIST256p):
+        super().__init__(public_key, verifier_modulus, c1, c2, X, curve)
         self.r = r
         self.beta_prime = beta_prime
         self.b = b
-        if X != b*self.g :
-            print("The valid of X isn't Valid!!")
-        self.X = b * self.g if X == b*self.g else X 
+        self.X = X 

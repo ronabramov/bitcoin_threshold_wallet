@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker, relationship
 from models.models import (
     user_public_share,
     user_secret_signature_share,
-    key_generation_share,
+    wallet_key_generation_share,
 )
 from models.DTOs.transaction_dto import TransactionDTO
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
@@ -99,21 +99,21 @@ class Transaction(Base):
         return transaction
 
 
-class Room_User_Data(Base):
+class WalletUserData(Base):
     """
-    One per room - include all necessary participants' keys.
+    One per user X Wallet
     """
 
-    __tablename__ = "room_user_data"
+    __tablename__ = "wallet_user_data"
 
     user_index = Column(Integer, primary_key=True, nullable=False)
     user_matrix_id = Column(String, primary_key=True, nullable=False)
     user_public_keys_data = Column(
         JSON, nullable=False, default={}
-    )  # Paillier Public key and Modulus data
+    )  # Paillier Public key and Modulus data - that is the user_public_share
     signature_shared_data = Column(
         JSON, nullable=False, default={}
-    )  # Includes the signature share the user sent in channel
+    )  # Includes the signature share the user sent in channel - that is the key_generation_share
 
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="users_data")
@@ -153,7 +153,6 @@ class Room_User_Data(Base):
         self.signature_shared_data = {}
 
 
-
 class Room_Signature_Shares_Data(Base):
     __tablename__ = "room_signature_shares_data"
     share_id = Column(String, primary_key=True, nullable=False)
@@ -164,8 +163,8 @@ class Room_Signature_Shares_Data(Base):
     wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="signature_shares")
 
-    def get_signature_share(self, user_index: int) -> key_generation_share:
-        return key_generation_share.from_dict(self.share_data)
+    def get_signature_share(self, user_index: int) -> wallet_key_generation_share:
+        return wallet_key_generation_share.from_dict(self.share_data)
 
 class TransactionResponse(Base):
     __tablename__ = "transaction_responses"

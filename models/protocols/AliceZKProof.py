@@ -1,8 +1,12 @@
-from phe import paillier
 import random
 import gmpy2
-from protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
-
+from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
+from models.models import user_modulus
+"""
+Arguments : 
+user_modulus : N,h1,h2 are of the Verifier
+paillier public key - Prover
+"""
 def pick_element_from_Multiplicative_group(N):
     if N <= 1:
         raise ValueError("N must be greater than 1.")
@@ -18,18 +22,21 @@ def calculate_c(paillier_gamma, a, paillier_N, r):
 def pick_r(paillier_N):
     return pick_element_from_Multiplicative_group(paillier_N)
 
-def prover_generates_commitment(q, paillier_N, paillier_Gamma, Modulus_N, a, h1, h2) -> AliceZKProof_Commitment:
-    # RON TODO - genertae settings objects just as in bobs proofs
+def prover_generates_commitment(q, paillier_N, paillier_Gamma, verifier_modulus : user_modulus, a) -> AliceZKProof_Commitment:
     """
     Generate and return commitments and related values as a dictionary.
     
     :param q: Security parameter or order of the group
-    :param paillier_N: Paillier modulus
-    :param paillier_Gamma: Base used in Paillier encryption (usually g)
-    :param Modulus_N: Another modulus used for non-Paillier operations
+    :param paillier_N: Prover's Paillier N
+    :param paillier_Gamma: Prover's Paillier G
+    :param Modulus_N: Verifier Modulus_N
     :return: Alice ZK Proof Commitment composed of alpha, beta, little_gamma, rho, z, u, w
     """
+    
     q_third = q ** 3
+    Modulus_N = verifier_modulus.N
+    h1 = verifier_modulus.h1
+    h2 = verifier_modulus.h2
     q_third_Modulus_N = q_third * Modulus_N
     alpha = random.randint(1,q_third-1)
     beta = pick_element_from_Multiplicative_group(paillier_N)
@@ -54,10 +61,12 @@ def prover_answers_challenge(alpha, beta, little_gamma, rho, r, e, a, paillier_N
     proof_for_challenge = AliceZKProof_Proof_For_Challenge(s=s, s1=s1, s2=s2)
     return proof_for_challenge
 
-def verifier_verify_result(z, u, w, s, s1, s2, e, c, q, h1, h2, Modulus_N, paillier_N, paillier_g):
+def verifier_verify_result(z, u, w, s, s1, s2, e, c, q, user_modulus : user_modulus, paillier_N, paillier_g):
     q_third = q ** 3
     valid_s1 = s1 <= q_third
-    
+    Modulus_N = user_modulus.N
+    h1= user_modulus.h1
+    h2 = user_modulus.h2
     # Calculate u to verify
     paillier_g_s1 = gmpy2.powmod(paillier_g, s1, paillier_N**2)
     s_paillier_N = gmpy2.powmod(s, paillier_N, paillier_N**2)

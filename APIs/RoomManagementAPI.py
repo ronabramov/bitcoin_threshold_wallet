@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import local_db.sql_db_dal as db_dal
-from local_db.sql_db import User, Wallet, Friend, Room_User_Data
+from local_db.sql_db import User, Wallet, Friend, WalletUserData
 from Services.MatrixService import MatrixService
 from typing import Dict, Optional, List
 from models.DTOs.message_dto import MessageDTO, MessageType
@@ -47,8 +47,8 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
     participating_users = ",".join([msg.user_id for msg in existing_users_shares_messages])
     wallet = get_wallet_from_generating_wallet_message(wallet_id=room_id, wallet_participants=participating_users, generation_message=generation_wallet_msg)
     
-    user_room_secret_data, user_public_data = Utils.generate_user_room_keys(user_index=user_index_in_wallet, user_matrix_id=Context.matrix_user_id(), wallet=wallet)
-    signature_created = handle_wallet_signature(wallet=wallet, user_secret_data=user_room_secret_data, user_keys=user_public_data,
+    user_room_secret_data, users_public_data = Utils.generate_user_room_keys(user_index=user_index_in_wallet, user_matrix_id=Context.matrix_user_id(), wallet=wallet)
+    signature_created = handle_wallet_signature(wallet=wallet, user_secret_data=user_room_secret_data, user_public_data=users_public_data,
                                                  existing_users_in_wallet=existing_users_shares_messages)
     
     db_dal.insert_my_wallet_user_data(wallet_id=room_id, user_index=user_index_in_wallet, user_public_keys=user_public_data)
@@ -67,7 +67,7 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
         print (f"Failed saving room_users_data to local db")
         return False
     
-    public_keys_message = MessageDTO(type=MessageType.UserPublicShare, data=user_public_data).model_dump_json()
+    public_keys_message = MessageDTO(type=MessageType.UserPublicShare, data=users_public_data).model_dump_json()
     message_sent = MatrixService.instance().send_message_to_wallet_room(room_id=room_id, message=public_keys_message)
     if not message_sent:
         print(f' Failed sending joining message to wallet room.')
@@ -79,14 +79,13 @@ def get_wallet_from_generating_wallet_message(wallet_id : str, wallet_participan
                   curve_name = generation_message.curve_name, max_num_of_users = generation_message.max_number_of_participants)
 
 def save_room_users_data_to_db(wallet_id: str, rest_users_messages: list[user_public_share]) -> bool:
-
     success = True
     for user_message in rest_users_messages:
         result = db_dal.insert_new_room_user(
             wallet_id=wallet_id,
             user_index=user_message.user_index,
             user_matrix_id=user_message.user_id,
-            user_public_keys=user_message
+            user_public_share=user_message
         )
         if not result:
             success = False  # If any insertion fails, mark as failure
@@ -114,8 +113,9 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
     wallet = Wallet(wallet_id=room_id,threshold=wallet_threshold,users="", curve_name = curve_name, max_num_of_users = max_participants) 
     user_room_secret_data, user_room_public_data = Utils.generate_user_room_keys(user_index=GENERATING_USER_INDEX,
                                                                                              user_matrix_id=user_id, wallet=wallet)
+
     db_dal.insert_my_wallet_user_data(wallet_id=room_id, user_public_keys=user_room_public_data)
-    signature_created = handle_wallet_signature(wallet=wallet, user_keys=user_room_public_data, user_secret_data=user_room_secret_data)
+    signature_created = handle_wallet_signature(wallet=wallet, user_public_data=user_room_public_data, user_secret_data=user_room_secret_data)
     
     if not signature_created:
         print(f'Failed Generating signature data for wallet {wallet.wallet_id}')
@@ -130,11 +130,11 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
     message_sent = MatrixService.instance().send_message_to_wallet_room(room_id=room_id, message=public_keys_message)
     return insertion_succeeded and message_sent, wallet
 
-def handle_wallet_signature(wallet : Wallet, user_secret_data : user_secret_signature_share, user_keys : user_public_share,
+def handle_wallet_signature(wallet : Wallet, user_secret_data : user_secret_signature_share, user_public_data : user_public_share,
                              existing_users_in_wallet : list[user_public_share] = None) -> bool:
     wallet.set_room_secret_user_data(user_secret_data)
-    signature_generator = UserSignatureGenerator(wallet=wallet,  user_public_keys=user_keys)
-    signature_flow_is_valid = signature_generator.handle_key_generation_for_user()
+    signature_generator = UserSignatureGenerator(wallet=wallet,  user_public_keys=user_public_data)
+    signature_flow_is_valid, user_public_X = signature_generator.handle_key_generation_for_user()
     if signature_flow_is_valid and existing_users_in_wallet is not None :
         signature_flow_is_valid = signature_generator.handle_existing_users_signatures(existing_users_keys=existing_users_in_wallet)
     return signature_flow_is_valid

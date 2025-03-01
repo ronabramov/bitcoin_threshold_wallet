@@ -1,9 +1,11 @@
 from local_db import sql_db_dal
 from APIs import UserToUserAPI
+
 from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
 from APIs.Algorithm_Steps_Implementation.StepOne import StepOne
-from models.models import user_public_share, key_generation_share
+from models.models import user_public_share
 from Services.UserShareUtils import filter_shares_by_user_index
+
 # TODO: RON - check if this is the correct way to handle the incoming public share
 def handle_incoming_public_share(incoming_user_public_share : user_public_share, wallet_id : str):
     sql_db_dal.get_wallet_by_id(wallet_id)
@@ -24,8 +26,8 @@ def handle_incoming_public_share(incoming_user_public_share : user_public_share,
     # 7 send key share for participating user
     UserToUserAPI.send_key_share(user_share)
 
+def handle_incoming_key_generation_share(key_generation_share_obj : wallet_key_generation_share, wallet_id : str):
 
-def handle_incoming_key_generation_share(key_generation_share_obj : key_generation_share):
     print(f"Key generation share received: {key_generation_share_obj}")
     wallet = sql_db_dal.get_wallet_by_id(key_generation_share_obj.wallet_id)
     # add key_generation_share_obj to new table
