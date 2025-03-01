@@ -19,7 +19,7 @@ Base = declarative_base()
 
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "User"
     email = Column(String, primary_key=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     homeserver_url = Column(String, nullable=True)
@@ -27,13 +27,13 @@ class User(Base):
     homeserver_password = Column(String, nullable=True)
 
 class Friend(Base):
-    __tablename__ = "friends"
+    __tablename__ = "Friend"
     email = Column(String, primary_key=True, nullable=False)
     matrix_id = Column(String, primary_key=False, nullable=False)
 
 
 class Wallet(Base):
-    __tablename__ = "wallets"
+    __tablename__ = "Wallet"
     wallet_id = Column(
         String, primary_key=True, nullable=False
     )  # This will be the room Id.
@@ -45,9 +45,9 @@ class Wallet(Base):
     configuration = Column(Text, nullable=True)  # User secret (real type is user_secret_signature_share)
     curve_name = Column(Text, nullable=True)
     transactions = relationship("Transaction", back_populates="wallet")
-    users_data = relationship("Room_User_Data", back_populates="wallet")
+    users_data = relationship("WalletUserData", back_populates="wallet")
     signature_shares = relationship(
-        "Room_Signature_Shares_Data", back_populates="wallet"
+        "WalletSignatureSharesData", back_populates="wallet"
     )
 
     def set_room_secret_user_data(self, data: user_secret_signature_share):
@@ -61,23 +61,23 @@ class Wallet(Base):
 
 
 class Transaction(Base):
-    __tablename__ = "transactions"
+    __tablename__ = "Transaction"
     transaction_id = Column(String, primary_key=True, nullable=False)
     details = Column(Text, nullable=True)
     approvers = Column(Text, nullable=True)
     approvals_counter = Column(Integer, nullable=True)
     status = Column(Integer, nullable=True)
-    wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
+    wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
     shrunken_secret_share = Column(Integer, nullable=True)
 
 
 # check every transaction user changes - should we change simething in this table?
 class TransactionUserData(Base):
-    __tablename__ = "transaction_user_data"
+    __tablename__ = "TransactionUserData"
     # id with uuid default val
     id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
-    transaction_id = Column(String, ForeignKey("transactions.transaction_id"), nullable=False)
+    transaction_id = Column(String, ForeignKey("Transactions.transaction_id"), nullable=False)
     user_matrix_id = Column(String, primary_key=True, nullable=False)
     user_index = Column(Integer, primary_key=True, nullable=False)
     mta_data = Column(JSON, nullable=True) 
@@ -111,33 +111,33 @@ class WalletUserData(Base):
     One per user X Wallet
     """
 
-    __tablename__ = "wallet_user_data"
+    __tablename__ = "WalletUserData"
 
     user_index = Column(Integer, primary_key=True, nullable=False)
     user_matrix_id = Column(String, primary_key=True, nullable=False)
     user_public_keys_data = Column(JSON, nullable=False, default={})  # Paillier Public key and Modulus data - that is the user_public_share
-    wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
+    wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="users_data")
 
 
-class Wallet_Signature_Shares_Data(Base):
-    __tablename__ = "room_signature_shares_data"
+class WalletSignatureSharesData(Base):
+    __tablename__ = "WalletSignatureSharesData"
     share_id = Column(String, primary_key=True, nullable=False)
     share_index = Column(Integer, primary_key=False, nullable=False)
     user_matrix_id = Column(String,primary_key=False, nullable=True)
     share_data = Column(
         JSON, nullable=False, default={}
     )  # data of to dict/from_dict of key_generation_share.
-    wallet_id = Column(String, ForeignKey("wallets.wallet_id"), nullable=False)
+    wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="signature_shares")
 
     def get_signature_share(self, user_index: int) -> wallet_key_generation_share:
         return wallet_key_generation_share.from_dict(self.share_data)
 
 class TransactionResponse(Base):
-    __tablename__ = "transaction_responses"
+    __tablename__ = "TransactionResponse"
     id = Column(Integer, primary_key=True, nullable=False)
-    transaction_id = Column(String, ForeignKey("transactions.transaction_id"), nullable=False)
+    transaction_id = Column(String, ForeignKey("Transaction.transaction_id"), nullable=False)
     stage = Column(Integer, nullable=False)
     response = Column(Boolean, nullable=False)
     approvers_counter = Column(Integer, nullable=False)
