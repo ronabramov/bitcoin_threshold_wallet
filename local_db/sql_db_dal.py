@@ -155,8 +155,8 @@ def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
 def insert_my_wallet_user_data(wallet_id : str,  user_public_keys : user_public_share):
     insert_new_wallet_user_data(wallet_id=wallet_id, user_index=user_public_keys.user_index, user_matrix_id=Context.matrix_user_id(), user_public_keys=user_public_keys)
 
-def get_my_wallet_user_data(wallet_id : str) -> sql_db.Room_User_Data:
-    return DB.session().query(sql_db.Room_User_Data).filter(sql_db.Room_User_Data.wallet_id == wallet_id, sql_db.Room_User_Data.user_matrix_id == Context.matrix_user_id()).first()
+def get_my_wallet_user_data(wallet_id : str) -> sql_db.WalletUserData:
+    return DB.session().query(sql_db.WalletUserData).filter(sql_db.WalletUserData.wallet_id == wallet_id, sql_db.WalletUserData.user_matrix_id == Context.matrix_user_id()).first()
 
 
 # TODO: maybe remove matrix id and index as parameters since we get them from the user_public_keys
