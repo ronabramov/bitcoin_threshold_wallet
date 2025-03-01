@@ -152,14 +152,14 @@ def insert_new_wallet(wallet : sql_db.Wallet) -> bool:
         return False
 
 def insert_my_wallet_user_data(wallet_id : str,  user_public_keys : user_public_share):
-    insert_new_room_user(wallet_id=wallet_id, user_index=user_public_keys.user_index, user_matrix_id=Context.matrix_user_id(), user_public_keys=user_public_keys)
+    insert_new_wallet_user_data(wallet_id=wallet_id, user_index=user_public_keys.user_index, user_matrix_id=Context.matrix_user_id(), user_public_keys=user_public_keys)
 
 def get_my_wallet_user_data(wallet_id : str) -> sql_db.Room_User_Data:
     return DB.session().query(sql_db.Room_User_Data).filter(sql_db.Room_User_Data.wallet_id == wallet_id, sql_db.Room_User_Data.user_matrix_id == Context.matrix_user_id()).first()
 
 
 # TODO: maybe remove matrix id and index as parameters since we get them from the user_public_keys
-def insert_new_room_user(wallet_id : str, user_index : int, user_matrix_id : str, user_public_share : user_public_share):
+def insert_new_wallet_user_data(wallet_id : str, user_index : int, user_matrix_id : str, user_public_share : user_public_share):
     try:
         # TODO: add a check if the user share already exists in the db
         room_user_data = sql_db.WalletUserData(user_index = user_index, user_matrix_id=user_matrix_id,

@@ -1,36 +1,27 @@
 from local_db import sql_db_dal
 from APIs import UserToUserAPI
-
-from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
-from APIs.Algorithm_Steps_Implementation.StepOne import StepOne
-from models.models import user_public_share
 from Services.UserShareUtils import filter_shares_by_user_index
+from models.models import user_public_share, wallet_key_generation_share
+from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
 
-# TODO: RON - check if this is the correct way to handle the incoming public share
+
 def handle_incoming_public_share(incoming_user_public_share : user_public_share, wallet_id : str):
     sql_db_dal.get_wallet_by_id(wallet_id)
-    # 2 we need to save this user data locally (room user data)
-    sql_db_dal.insert_new_room_user(wallet_id, incoming_user_public_share.user_index, incoming_user_public_share.user_id, incoming_user_public_share)
-    # 3 get signature by wallet
+    sql_db_dal.insert_new_wallet_user_data(wallet_id, incoming_user_public_share.user_index, incoming_user_public_share.user_id, incoming_user_public_share)
     users_signature_shares = sql_db_dal.get_signature_shares_by_wallet(wallet_id)
-    # 4 find share of user by its index
-    user_share = filter_shares_by_user_index(users_signature_shares, incoming_user_public_share.user_index)
-    if not user_share:
-        print(f"No share found for user index {incoming_user_public_share.user_index}")
-        return
-    else:
-        # 5 upsert user index to this share
-        user_share.target_user_matrix_id = incoming_user_public_share.user_id
-        # 6 update share in db
-    sql_db_dal.update_signature_share(wallet_id, user_share)
-    # 7 send key share for participating user
-    UserToUserAPI.send_key_share(user_share)
+    user_key_generation_share = filter_shares_by_user_index(users_signature_shares, incoming_user_public_share.user_index)
+    if not user_key_generation_share:
+        print(f"ERROR : No share found for user index {incoming_user_public_share.user_index}")
+        raise FileNotFoundError(f'ERROR : No share found for user index {incoming_user_public_share.user_index}')
+    
+    user_key_generation_share.target_user_matrix_id = incoming_user_public_share.user_id
+    sql_db_dal.update_signature_share(wallet_id, user_key_generation_share)
+    UserToUserAPI.send_key_share(user_key_generation_share)
+
 
 def handle_incoming_key_generation_share(key_generation_share_obj : wallet_key_generation_share, wallet_id : str):
-
     print(f"Key generation share received: {key_generation_share_obj}")
-    wallet = sql_db_dal.get_wallet_by_id(key_generation_share_obj.wallet_id)
-    # add key_generation_share_obj to new table
+    wallet = sql_db_dal.get_wallet_by_id(wallet_id)
     user_secret = wallet.get_room_secret_user_data()
     if not user_secret:
         print(f"User share not found in the wallet")
@@ -42,17 +33,16 @@ def handle_incoming_key_generation_share(key_generation_share_obj : wallet_key_g
         print(f"Failed applying received share")
     else:
         print(f"User share applied successfully")
-        sql_db_dal.update_signature_share(key_generation_share_obj.wallet_id, user_secret)
+        sql_db_dal.update_signature_share(wallet_id, user_secret)
     
-    # num_of_updates will be deprecated - use new approvals table
     if user_secret.num_of_updates == wallet.threshold:
         # update full secret share (RON - how?)
         print(f"Threshold reached, generating secret and shares for other users")
         # generate shrunken secret share
         user_shrunken_secret = signature_generator.shrink_user_secret(user_secret=user_secret)
-        # save shrunken secret share in db (must not be broadcasted)
-        # TODO:- get wallet id
-        sql_db_dal.insert_transaction_secret(wallet_id, user_shrunken_secret)
+        # TODO: add space to save shrunken secret share in db (must not be broadcasted)
+                
         # trigger algorithm step 1
-        StepOne.execute(wallet_id)
+        
+        
     return

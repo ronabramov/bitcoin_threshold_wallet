@@ -37,10 +37,10 @@ def generate_user_room_keys(user_index : int, user_matrix_id : str, wallet :  Wa
     #TODO : Add the key generation shares to that object?
     user_modulus = generate_user_modulus_parameters()
     paillier_public_key, paillier_private_key = generate_paillier_keypair()
-    room_public_user_data = user_public_share(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key, user_modulus=user_modulus)
     room_secret_user_share = user_secret_signature_share(threshold=wallet.threshold, user_index=user_index, user_id=user_matrix_id,
                                                    user_modulus=user_modulus, paillier_secret_key = paillier_private_key, paillier_public_key=paillier_public_key,
                                                      group=wallet.curve_name)
+    room_public_user_data = user_public_share(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key, user_modulus=user_modulus)
     
     return room_secret_user_share, room_public_user_data
     

@@ -81,7 +81,7 @@ def get_wallet_from_generating_wallet_message(wallet_id : str, wallet_participan
 def save_room_users_data_to_db(wallet_id: str, rest_users_messages: list[user_public_share]) -> bool:
     success = True
     for user_message in rest_users_messages:
-        result = db_dal.insert_new_room_user(
+        result = db_dal.insert_new_wallet_user_data(
             wallet_id=wallet_id,
             user_index=user_message.user_index,
             user_matrix_id=user_message.user_id,
