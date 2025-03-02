@@ -92,7 +92,6 @@ class MatrixRoomListener:
 
     def _handle_message_DTO(self, message_dto: MessageDTO, wallet_id: str):
         """ Handles a message DTO. """
-        print(f"Message received: {message_dto}")
         try:
             if message_dto.type == MessageType.TransactionRequest:
                 print(f"Transaction request received: {message_dto.data}")

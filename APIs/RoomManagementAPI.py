@@ -109,7 +109,7 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
                                                                          max_number_of_participants=max_participants)).model_dump_json()
     
     users_ids : list[Friend] = [db_dal.get_friend_by_email(email=email).matrix_id for email in invited_users_emails]
-    room_id = MatrixService.instance().create_new_room_and_invite_users(room_name=wallet_name, users_Ids=users_ids, first_message=wallet_generation_message)
+    room_id = MatrixService.instance().create_new_room_and_invite_users(wallet_name=wallet_name, users_Ids=users_ids, first_message=wallet_generation_message)
     if not room_id:
         print('Failure in room creation - Matrix service failed to create room')
         return False, None

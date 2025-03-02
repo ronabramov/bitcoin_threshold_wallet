@@ -163,7 +163,11 @@ def get_all_wallet_user_data(wallet_id : str) -> List[sql_db.WalletUserData]:
 def insert_new_wallet_user_data(wallet_id : str, user_index : int, user_matrix_id : str, user_public_share : user_public_share):
     with DB.session() as session:
         try:
-            # TODO: add a check if the user share already exists in the db
+            #  check if the user share already exists in the db
+            user_share = session.query(sql_db.WalletUserData).filter(sql_db.WalletUserData.user_matrix_id == user_matrix_id, sql_db.WalletUserData.wallet_id == wallet_id).first()
+            if user_share:
+                print(f"User share for user {user_matrix_id} already exists in the db")
+                return True
             room_user_data = sql_db.WalletUserData(user_index = user_index, user_matrix_id=user_matrix_id,
                                                     user_public_keys_data = user_public_share.to_dict(), wallet_id=wallet_id)
             session.add(room_user_data)
@@ -175,14 +179,13 @@ def insert_new_wallet_user_data(wallet_id : str, user_index : int, user_matrix_i
             return False
 
 def insert_new_friend(user_email : str, user_matrix_id : str) -> bool:
-    friend_db_object = sql_db.Friend(email=user_email, matrix_id = user_matrix_id)
-    # check if the friend already exists~
     with DB.session() as session:
         friend = session.query(sql_db.Friend).filter(sql_db.Friend.matrix_id == user_matrix_id).first()
         if friend is not None:
             print(f"Friend {user_matrix_id} already exists")
             return True
         try:
+            friend_db_object = sql_db.Friend(email=user_email, matrix_id = user_matrix_id)
             session.add(friend_db_object)
             session.commit()
             return True

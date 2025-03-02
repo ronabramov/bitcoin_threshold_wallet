@@ -5,27 +5,31 @@ from local_db import sql_db_dal
 from APIs.RoomManagementAPI import create_new_wallet, respond_to_room_invitation
 from Services.MatrixService import MatrixService
 from Services.MatrixListenerService import MatrixRoomListener
-import time
 
 # Given user1, user2
 user1 = Test.User1()
 user2 = Test.User2()
 
-# User1 add user2
-set_context(user1.matrix_id, user1.password)
-sql_db_dal.insert_new_friend(user2.email, user2.matrix_id)
 # user2, add user1
 set_context(user2.matrix_id, user2.password)
+MatrixService.instance().leave_all_rooms()
+MatrixService.instance().reject_all_invitations()
 sql_db_dal.insert_new_friend(user1.email, user1.matrix_id)
+
+# User1 add user2
+set_context(user1.matrix_id, user1.password)
+
+MatrixService.instance().leave_all_rooms()
+MatrixService.instance().reject_all_invitations()
+sql_db_dal.insert_new_friend(user2.email, user2.matrix_id)
 
 
 # User1 Create New Rooms with threshold = 2  Users = 1,2
-set_context(user1.matrix_id, user1.password)
+# set_context(user1.matrix_id, user1.password)
 success, wallet = create_new_wallet(invited_users_emails=[user2.email],wallet_name="new_test_wallet",wallet_threshold=2,max_participants=2)
 # User 2: accept Room Invitation
 set_context(user2.matrix_id, user2.password)
 respond_to_room_invitation(wallet.wallet_id, True)
-
 
 listener = MatrixRoomListener(MatrixService.instance().client)
 listener.listen_for_seconds(7)
@@ -61,12 +65,13 @@ def assert_test_for_user(user: User, other_user: User,wallet_id: str):
     other_user_index = [share.user_index for share in user_public_shares if share.user_matrix_id == other_user.matrix_id][0]
     # get my index
     my_index = [share.user_index for share in user_public_shares if share.user_matrix_id == user.matrix_id][0]
-    user_shares = sql_db_dal.get_signature_shares_by_wallet(wallet.wallet_id)
-    assert len(user_shares) == 2
+    user_generation_shares = sql_db_dal.get_signature_shares_by_wallet(wallet.wallet_id)
+    assert len(user_generation_shares) == 2
     # other user index should be in the list
-    assert other_user_index in [share.target_user_index for share in user_shares]
+    assert other_user_index in [share.target_user_index for share in user_generation_shares]
     # my index should be in the list
-    assert my_index in [share.target_user_index for share in user_shares]
+    assert my_index in [share.target_user_index for share in user_generation_shares]
+    
 
 assert_test_for_user(user1, user2, wallet.wallet_id)
 assert_test_for_user(user2, user1, wallet.wallet_id)
