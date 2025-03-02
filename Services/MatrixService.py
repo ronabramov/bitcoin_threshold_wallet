@@ -107,7 +107,7 @@ class MatrixService:
         try:
             room = self.client.join_room(room_id)
             room.send_text(message)
-            print(f"Message sent to room {room_id}: {message}")
+            print(f"Message sent to room {room_id}")
             return True
         except Exception as e:
             print(f"Error sending message to room: {e}")

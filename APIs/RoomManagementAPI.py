@@ -29,6 +29,7 @@ def respond_to_room_invitation(room_id : str, user_accepted_invitation : bool):
         MatrixService.instance().reject_room_invitation_by_id(room_id=room_id)
         # RON - should we handle the case where the user rejected the invitation?
     
+    MatrixService.instance().join_room_invitation(room_id=room_id)
     if MatrixService.instance().is_wallet_room(room_id):
         result = _handle_joining_new_wallet(room_id=room_id)
         return result
