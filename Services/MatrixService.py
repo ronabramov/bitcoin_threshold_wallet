@@ -167,6 +167,11 @@ class MatrixService:
     def __user_matrix_id_to_room_name(self, user_matrix_id: str):
         return user_matrix_id.replace(":", "_")
 
+    def is_wallet_room(self, room_id: str) -> bool:
+        res = self.client.api.get_room_name(room_id)
+        return res["name"].startswith("wallet_room_")
+    
+    
     def _is_private_room(self, room: Room, target_user_matrix_id: str) -> bool:
         res = self.client.api.get_room_name(room.room_id)
         optional_names = [
