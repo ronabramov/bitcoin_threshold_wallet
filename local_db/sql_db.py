@@ -111,6 +111,7 @@ class WalletUserData(Base):
     user_index = Column(Integer, primary_key=True, nullable=False)
     user_matrix_id = Column(String, primary_key=True, nullable=False)
     user_public_keys_data = Column(JSON, nullable=False, default={})  # Paillier Public key and Modulus data - that is the user_public_share
+    g_power_x = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="users_data")
 

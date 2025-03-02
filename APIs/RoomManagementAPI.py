@@ -5,9 +5,9 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import local_db.sql_db_dal as db_dal
-from local_db.sql_db import User, Wallet, Friend, WalletUserData
+from local_db.sql_db import  Wallet, Friend
 from Services.MatrixService import MatrixService
-from typing import Dict, Optional, List
+from typing import List
 from models.DTOs.message_dto import MessageDTO, MessageType
 from models.models import user_public_share, WalletGenerationMessage, user_secret_signature_share
 import common_utils as Utils
@@ -29,8 +29,7 @@ def respond_to_room_invitation(room_id : str, user_accepted_invitation : bool):
         MatrixService.instance().reject_room_invitation_by_id(room_id=room_id)
         # RON - should we handle the case where the user rejected the invitation?
     
-    room_name = MatrixService.instance().join_room_invitation(room_id=room_id)
-    if is_wallet_room(room_name):
+    if MatrixService.instance().is_wallet_room(room_id):
         result = _handle_joining_new_wallet(room_id=room_id)
         return result
 
@@ -141,14 +140,10 @@ def handle_wallet_signature(wallet : Wallet, user_secret_data : user_secret_sign
     wallet.set_room_secret_user_data(user_secret_data)
     signature_generator = UserSignatureGenerator(wallet=wallet,  user_public_keys=user_public_data)
     signature_flow_is_valid, user_public_X = signature_generator.handle_key_generation_for_user() # RON - why we need to return user_public_X?
+
     if signature_flow_is_valid and existing_users_share_in_wallet is not None and len(existing_users_share_in_wallet) != 0:
         signature_flow_is_valid = signature_generator.handle_existing_users_signatures(existing_users_keys=existing_users_share_in_wallet)
     return signature_flow_is_valid
-
-def is_wallet_room(room_name : str):
-    #TODO:implement. 
-    # should set room name to include 'wallet' in alias
-    return True
 
 def send_private_message_to_every_user_in_Wallet(message : MessageDTO, wallet_id : str) -> bool:
     """

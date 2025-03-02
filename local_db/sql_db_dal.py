@@ -3,7 +3,7 @@ from local_db.sql_db import DB, Transaction
 from typing import List
 from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
-from models.models import  user_public_share, wallet_key_generation_share
+from models.models import  user_public_share, wallet_key_generation_share, GPowerX
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
 from Services.Context import Context
 
@@ -288,3 +288,17 @@ def get_transaction_user_data_by_matrix_id(transaction_id : str, user_matrix_id 
 def get_all_transaction_user_data(transaction_id : str) -> List[sql_db.TransactionUserData]:
     with DB.session() as session:
         return session.query(sql_db.TransactionUserData).filter(sql_db.TransactionUserData.transaction_id == transaction_id).all()
+    
+def insert_g_power_x(g_power_x : GPowerX):
+    with DB.session() as session:
+        try:
+            user_data = session.query(sql_db.WalletUserData).filter(sql_db.WalletUserData.user_matrix_id == g_power_x.user_matrix_id, sql_db.WalletUserData.wallet_id == g_power_x.wallet_id).first()
+            if not user_data:
+                print(f"User data for user {g_power_x.user_matrix_id} in wallet {g_power_x.wallet_id} not found")
+                return False
+            user_data.g_power_x = g_power_x.g_power_x
+            session.commit()
+            return True
+        except Exception as e:
+            print(f"Failed to insert g_power_x {g_power_x}", e)
+            return False

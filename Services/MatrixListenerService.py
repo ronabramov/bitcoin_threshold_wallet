@@ -8,6 +8,9 @@ from models.DTOs.MessageType import MessageType
 import Services.TransactionService as TransactionService
 import Services.UserShareService as UserShareService
 import time
+from Services.MatrixService import MatrixService
+from Services.WalletService import send_g_power_x_message_to_wallet_room, save_g_power_x_to_db
+
 class MatrixRoomListener:
     """
     Listens to messages in all rooms the user participates in and handles new invitations.
@@ -53,10 +56,14 @@ class MatrixRoomListener:
             print(f"New message in room {room_id}: {event['content']['body']}")
             self._handle_room_message(room_id, event)
 
-        elif event_type == "m.room.member" and event.get("content", {}).get("membership") == "invite":
-            room_id = event["room_id"]
-            print(f"New room invitation detected: {room_id}")
-            self._handle_room_invitation(room_id)
+        elif event_type == "m.room.member":
+            if event.get("content", {}).get("membership") == "invite":
+                room_id = event["room_id"]
+                print(f"New room invitation detected: {room_id}")
+                self._handle_room_invitation(room_id)
+            elif event.get("content",{}).get("membership",{}) == "join":
+                print(f"User {event['sender']} joined room {event['room_id']}")
+                self._handle_room_member_join(event["room_id"], event["sender"])
 
     def _handle_room_message(self, room_id: str, event: dict):
         """ Handles messages from existing rooms (to be implemented later). """
@@ -79,6 +86,20 @@ class MatrixRoomListener:
             print(f"Successfully joined room {joined_room.room_id}")
         except Exception as e:
             print(f"Failed to join room {room_id}: {e}")
+    
+    def _handle_room_member_join(self, room_id: str, user_matrix_id: str):
+        """ Handles room member joins. """
+        # check if amount of users in room equals to the invitees amount
+        # if so - send g^x to all users and save to db
+        is_wallet_room = MatrixService.instance().is_wallet_room(room_id)
+        if not is_wallet_room:
+            print(f"Room {room_id} is not a wallet room")
+            return
+        all_users = MatrixService.instance().get_all_users_in_room(room_id)
+        existing_users = MatrixService.instance().get_existing_users_in_room(room_id)
+        if len(all_users) == len(existing_users):
+            send_g_power_x_message_to_wallet_room(room_id)
+            pass
 
     def _handle_error(self, exception: Exception):
         """ Handles exceptions that occur during event listening. """
