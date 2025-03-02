@@ -66,7 +66,7 @@ class MatrixService:
         token = client.login(
             username=Context.matrix_user_id(), password=Context.matrix_user_password(), sync=True
         )
-        print(f"Admin logged in successfully. Token: {token}")
+        print(f"Matrix service logged in with user: {Context.matrix_user_id()} Token: {token[:7]}...")
         self._client = client
         return client
 

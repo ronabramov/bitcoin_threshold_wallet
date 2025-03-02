@@ -7,7 +7,7 @@ from models.DTOs.transaction_response_dto import TransactionResponseDTO
 from models.DTOs.MessageType import MessageType
 import Services.TransactionService as TransactionService
 import Services.UserShareService as UserShareService
-
+import time
 class MatrixRoomListener:
     """
     Listens to messages in all rooms the user participates in and handles new invitations.
@@ -18,13 +18,25 @@ class MatrixRoomListener:
         self.client.add_listener(self._handle_event)  # Register global event listener
         self.running = False
 
+    def listen_for_seconds(self, seconds : int):
+        print(f"Listening for {seconds} seconds")
+        self.start_listener()
+        time.sleep(seconds)
+        print("Stopping listen")
+        self.stop_listener()
+    
+    def stop_listener(self):
+        self.running = False
+        self.client.stop_listener_thread()
+        print("MatrixRoomListener stopped.")
+
     def start_listener(self):
         """ Starts the listener using `listen_forever` to handle incoming messages and room invitations. """
         self.running = True
+        # stop the listener after listen_timeout_ms
         print("MatrixRoomListener started and listening for messages...")
-
-        try:
-            self.client.listen_forever(timeout_ms=30000, exception_handler=self._handle_error)
+        try:    
+            self.client.start_listener_thread(timeout_ms=5000, exception_handler=self._handle_error)
         except Exception as e:
             print(f"Listener encountered an error: {e}")
 

@@ -74,7 +74,7 @@ class TransactionUserData(Base):
     __tablename__ = "TransactionUserData"
     # id with uuid default val
     id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
-    transaction_id = Column(String, ForeignKey("Transactions.transaction_id"), nullable=False)
+    transaction_id = Column(String, ForeignKey("Transaction.transaction_id"), nullable=False)
     user_matrix_id = Column(String, primary_key=True, nullable=False)
     user_index = Column(Integer, primary_key=True, nullable=False)
     mta_data = Column(JSON, nullable=True) 
@@ -126,8 +126,12 @@ class WalletSignatureSharesData(Base):
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="signature_shares")
 
+    
     def get_signature_share(self, user_index: int) -> wallet_key_generation_share:
-        return wallet_key_generation_share.from_dict(self.share_data)
+        """
+        this is not is use - need to check if works
+        """
+        return wallet_key_generation_share.from_dict(self)
 
 class TransactionResponse(Base):
     __tablename__ = "TransactionResponse"
@@ -148,14 +152,16 @@ def create_db_if_not_exists(db_file_name):
             os.path.abspath(__file__)
         )
     abs_path = os.path.join(current_path, db_file_name)
+    
+    if os.path.exists(abs_path) and Config.is_test:
+        os.remove(abs_path)
+    
     engine = create_engine(f"sqlite:///{abs_path}")
     if not os.path.exists(abs_path):    
         Base.metadata.create_all(engine)
     # Session maker
     Session = sessionmaker(bind=engine)
-    # this is the session that will be used to interact with the database
-    session = Session()
-    return session
+    return Session
 
 
 class DB():
@@ -165,6 +171,6 @@ class DB():
     } if Config.is_test else { 'default': create_db_if_not_exists(Config.DB_FILE1)}
     def session():
         if Config.is_test:
-            return DB.sessions[Context.matrix_user_id()]
+            return DB.sessions[Context.matrix_user_id()]()
         else:
-            return list(DB.sessions.values())[0]
+            return list(DB.sessions.values())[0]()

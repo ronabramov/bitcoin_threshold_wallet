@@ -29,7 +29,7 @@ class Feldman_VSS_Protocol:
     def evaluate_polynomial(self, x, coeffs):
         return sum(coeff * (x ** i) for i, coeff in enumerate(coeffs))
 
-    def generate_shares(self, secret) -> list[wallet_key_generation_share]:
+    def generate_shares(self, secret,wallet_id : str) -> list[wallet_key_generation_share]:
 
         # Using the notation from the paper, v_i := g^a_i. 
         # In the Feldman VSS, in addition to a share, every player gets {v_i}_i=1 ^t.
@@ -39,7 +39,7 @@ class Feldman_VSS_Protocol:
         v_i = self.compute_v_i(coeffs)
         g_secret = v_i[0]
         shares = [
-            wallet_key_generation_share(generating_user_index=self.generating_user_index,curve=self.curve.name, target_user_index=i, v_i = v_i,
+            wallet_key_generation_share(wallet_id=wallet_id, generating_user_index=self.generating_user_index,curve=self.curve.name, target_user_index=i, v_i = v_i,
                                          target_user_evaluation=self.evaluate_polynomial(i, coeffs), v_0=g_secret)
         # TODO: check if we should start from 1 or 0
          for i in range(0, self.n)]

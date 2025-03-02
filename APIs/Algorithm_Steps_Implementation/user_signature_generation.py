@@ -6,7 +6,7 @@ from local_db.sql_db import Wallet
 import local_db.sql_db_dal as DB_DAL
 from models.models import user_secret_signature_share, wallet_key_generation_share, user_public_share
 import APIs.UserToUserAPI 
-import Services.UserShareService as UserShareService
+import Services.UserShareUtils as UserShareUtils
 import local_db.sql_db_dal as sql_dal
 
 class UserSignatureGenerator:
@@ -34,14 +34,12 @@ class UserSignatureGenerator:
     def _enrich_user_secret_data_with_signature_details(self, secret : int, share : wallet_key_generation_share):
         wallet_secret = self.wallet.get_room_secret_user_data()
         wallet_secret.original_secret_share = secret
-        wallet_secret.original_secret_share = share.target_user_evaluation
-        wallet_secret.num_of_updates = 0
         self.wallet.set_room_secret_user_data(wallet_secret)
-        return self.curve.generator * wallet_secret # X = g^x - public key
+        return self.curve.generator * secret # X = g^x - public key
 
     def _generate_secret_and_shares_for_other_users(self):
         secret = random.randint(1, self.q - 1)
-        shares = self.key_gen_protocol.generate_shares(secret=secret)
+        shares = self.key_gen_protocol.generate_shares(secret=secret,wallet_id=self.wallet_id)
         shares_dict = {share.target_user_index: share for share in shares}
         return shares_dict, secret
     
@@ -51,7 +49,7 @@ class UserSignatureGenerator:
         for user in existing_users_keys:
             if user.user_index == self.user_index:
                 continue # Send Messages only for other users
-            user_share = UserShareService.filter_shares_by_user_index(users_signature_shares, user.user_index)
+            user_share = UserShareUtils.filter_shares_by_user_index(users_signature_shares, user.user_index)
             user_share.target_user_matrix_id = user.user_id
             sql_dal.update_signature_share(self.wallet_id, user_share)
             shares_dict[user.user_index] = user_share
@@ -76,13 +74,3 @@ class UserSignatureGenerator:
                                                    generating_user_Index=peer_share.generating_user_index, curve=peer_share.curve)
         is_valid = peer_user_protocol.verify_share(peer_share)
         return is_valid
-    
-    def shrink_user_secret(self, user_secret : user_secret_signature_share):
-        """
-        After all users passed their shares, we generate from the user_evaluation
-        a shrunken (t,t+1) share of x.
-        """
-        secret_shrinker = ShareShrinker(q=self.q, i=self.user_index, x_i=user_secret.user_evaluation, S = self.participating_users_indecis)
-        shrunken_share = secret_shrinker.compute_new_share()
-        user_secret.shrunken_secret_share = shrunken_share
-        return user_secret

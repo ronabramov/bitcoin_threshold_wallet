@@ -123,7 +123,8 @@ class wallet_key_generation_share(BaseModel):
         return value
     
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, share):
+        data = share.share_data
         """Deserialize and reconstruct elliptic curve points inside the object."""
         def deserialize_point(p):
             """ Convert dictionary back to PointJacobi using public methods. """
@@ -147,7 +148,8 @@ class wallet_key_generation_share(BaseModel):
             target_user_evaluation=data["target_user_evaluation"],
             v_i=v_i,
             v_0=v_0,
-            curve=curve_data["name"]
+            curve=curve_data["name"],
+            wallet_id=share.wallet_id
         )
     
     def model_dump(self, *args, **kwargs):
@@ -224,9 +226,7 @@ class user_secret_signature_share(BaseModel):
     paillier_public_key: paillier.PaillierPublicKey
     paillier_secret_key: paillier.PaillierPrivateKey
     user_modulus: user_modulus
-    num_of_updates: int = 0 # remove
     original_secret_share: Optional[int] = None 
-    shrunken_secret_share: Optional[int] = None # remove
     model_config = ConfigDict(arbitrary_types_allowed=True) 
     
     @field_serializer("paillier_public_key")

@@ -51,9 +51,9 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
     
     user_room_secret_data, users_public_data = Utils.generate_user_room_keys(user_index=user_index_in_wallet, user_matrix_id=Context.matrix_user_id(), wallet=wallet)
     signature_created = handle_wallet_signature(wallet=wallet, user_secret_data=user_room_secret_data, user_public_data=users_public_data,
-                                                 existing_users_in_wallet=existing_users_shares_messages)
+                                                 existing_users_share_in_wallet=existing_users_shares_messages)
     
-    db_dal.insert_my_wallet_user_data(wallet_id=room_id, user_index=user_index_in_wallet, user_public_keys=users_public_data)
+    db_dal.insert_my_wallet_user_data(wallet_id=room_id, user_public_keys=users_public_data)
     
     if not signature_created:
         print (f"Failed generating wallet's signature")
@@ -101,6 +101,9 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
     In addition, sharing Public keys of the generating user.
     """
     user_id = Context.matrix_user_id()
+    if (max_participants < len(invited_users_emails)):
+        print(f"Max participants {max_participants} is less than the number of invited users {len(invited_users_emails)}")
+        return False, None
     wallet_generation_message = MessageDTO(type = MessageType.WalletGenerationMessage, 
                                            data=WalletGenerationMessage(threshold=wallet_threshold, curve_name=curve_name,
                                                                          max_number_of_participants=max_participants)).model_dump_json()
@@ -134,12 +137,12 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
     return insertion_succeeded and message_sent, wallet
 
 def handle_wallet_signature(wallet : Wallet, user_secret_data : user_secret_signature_share, user_public_data : user_public_share,
-                             existing_users_in_wallet : list[user_public_share] = None) -> bool:
+                             existing_users_share_in_wallet : list[user_public_share] = None) -> bool:
     wallet.set_room_secret_user_data(user_secret_data)
     signature_generator = UserSignatureGenerator(wallet=wallet,  user_public_keys=user_public_data)
-    signature_flow_is_valid, user_public_X = signature_generator.handle_key_generation_for_user()
-    if signature_flow_is_valid and existing_users_in_wallet is not None :
-        signature_flow_is_valid = signature_generator.handle_existing_users_signatures(existing_users_keys=existing_users_in_wallet)
+    signature_flow_is_valid, user_public_X = signature_generator.handle_key_generation_for_user() # RON - why we need to return user_public_X?
+    if signature_flow_is_valid and existing_users_share_in_wallet is not None and len(existing_users_share_in_wallet) != 0:
+        signature_flow_is_valid = signature_generator.handle_existing_users_signatures(existing_users_keys=existing_users_share_in_wallet)
     return signature_flow_is_valid
 
 def is_wallet_room(room_name : str):

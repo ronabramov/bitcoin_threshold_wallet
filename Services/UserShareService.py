@@ -1,11 +1,8 @@
 from local_db import sql_db_dal
 from APIs import UserToUserAPI
-
 from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
 from models.models import user_public_share, wallet_key_generation_share
 from Services.UserShareUtils import filter_shares_by_user_index
-from models.models import user_public_share, wallet_key_generation_share
-from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
 
 
 def handle_incoming_public_share(incoming_user_public_share : user_public_share, wallet_id : str):
