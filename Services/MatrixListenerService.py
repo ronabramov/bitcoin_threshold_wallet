@@ -71,7 +71,7 @@ class MatrixRoomListener:
         except (ValueError, KeyError, ValidationError) as e:
             print(f"Failed to validate message {event['content']['body']}")
             print(f"Error: {e}")
-            pass
+            return
         self._handle_message_DTO(message_obj, room_id)
         # Forward to a message handler (to be implemented later)
         print(f"Message received in room {room_id}: {event['content']['body']}")
