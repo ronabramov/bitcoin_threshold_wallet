@@ -141,7 +141,7 @@ def handle_wallet_signature(wallet : Wallet, user_secret_data : user_secret_sign
                              existing_users_share_in_wallet : list[user_public_share] = None) -> bool:
     wallet.set_room_secret_user_data(user_secret_data)
     signature_generator = UserSignatureGenerator(wallet=wallet,  user_public_keys=user_public_data)
-    signature_flow_is_valid, user_public_X = signature_generator.handle_key_generation_for_user() # RON - why we need to return user_public_X?
+    signature_flow_is_valid, _ = signature_generator.handle_key_generation_for_user() # RON - why we need to return user_public_X?
 
     if signature_flow_is_valid and existing_users_share_in_wallet is not None and len(existing_users_share_in_wallet) != 0:
         signature_flow_is_valid = signature_generator.handle_existing_users_signatures(existing_users_keys=existing_users_share_in_wallet)

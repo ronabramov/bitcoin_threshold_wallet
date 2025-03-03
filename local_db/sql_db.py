@@ -65,8 +65,18 @@ class Transaction(Base):
     details = Column(Text, nullable=True)
     status = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
-    wallet = relationship("Wallet", back_populates="transactions")
     shrunken_secret_share = Column(Integer, nullable=True)
+    wallet = relationship("Wallet", back_populates="transactions")
+    
+    @classmethod
+    def from_dto(cls, transaction_dto: "TransactionDTO"):
+        return cls(
+            transaction_id=transaction_dto.id,
+            details=transaction_dto.details,
+            wallet_id=transaction_dto.wallet_id,
+            status=transaction_dto.stage.value,
+            shrunken_secret_share=transaction_dto.shrunken_secret_share
+        )
 
 
 # check every transaction user changes - should we change simething in this table?
@@ -141,6 +151,7 @@ class TransactionResponse(Base):
     stage = Column(Integer, nullable=False)
     response = Column(Boolean, nullable=False)
     
+    @classmethod
     def from_dto(cls, transaction_response_dto: TransactionResponseDTO):
         return cls(
             transaction_id=transaction_response_dto.transaction_id,

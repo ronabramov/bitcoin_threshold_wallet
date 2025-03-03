@@ -31,7 +31,7 @@ def generate_transaction_and_send_to_wallet( wallet_id, transaction_details, nam
         return False
     
     transaction_id = generate_unique_transaction_id()
-    transaction = TransactionDTO(id= transaction_id, name=name, details=transaction_details, wallet_id=wallet_id)
+    transaction = TransactionDTO(id= transaction_id, name=name, details=transaction_details, wallet_id=wallet_id, shrunken_secret_share=None)
     # add my data to the transaction
     my_wallet_user_data = sql_db_dal.get_my_wallet_user_data(wallet_id=wallet_id)
     
@@ -55,13 +55,12 @@ def respond_to_new_transaction(transaction : TransactionDTO, user_response : boo
         print (f"user {user_id} rejects transaction {transaction.id}")
         return True
     else:
-        transaction_response = TransactionResponseDTO(transaction_id=transaction.id, stage=transaction.stage, response=user_response)
+        my_wallet_user_data = sql_db_dal.get_my_wallet_user_data(wallet_id=transaction.wallet_id)
+        transaction_response = TransactionResponseDTO(transaction_id=transaction.id, stage=transaction.stage, response=user_response, approving_user_index=my_wallet_user_data.user_index, approving_user_matrix_id=user_id )
         insertion_succeeded = sql_db_dal.insert_new_transaction(transaction)
         
         # add my data to the transaction
-        my_wallet_user_data = sql_db_dal.get_my_wallet_user_data(wallet_id=transaction.wallet_id)
         sql_db_dal.insert_transaction_user_data(transaction_id=transaction.id,user_matrix_id=user_id,user_index=my_wallet_user_data.user_index)
-        
         if not insertion_succeeded:
             return False
         

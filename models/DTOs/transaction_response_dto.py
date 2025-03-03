@@ -4,7 +4,7 @@ from models.DTOs.MessageType import MessageType
 from typing import Optional
 
 class TransactionResponseDTO(BaseModel):
-    appoving_user_index : int
+    approving_user_index : int
     approving_user_matrix_id : str
     transaction_id : str
     stage : TransactionStatus

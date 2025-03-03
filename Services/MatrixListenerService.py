@@ -8,8 +8,8 @@ from models.DTOs.MessageType import MessageType
 import Services.TransactionService as TransactionService
 import Services.UserShareService as UserShareService
 import time
-from Services.MatrixService import MatrixService
-from Services.WalletService import send_g_power_x_message_to_wallet_room, save_g_power_x_to_db
+from Services.WalletService import save_incoming_g_power_x_to_db
+from models.models import GPowerX
 
 class MatrixRoomListener:
     """
@@ -61,9 +61,6 @@ class MatrixRoomListener:
                 room_id = event["room_id"]
                 print(f"New room invitation detected: {room_id}")
                 self._handle_room_invitation(room_id)
-            elif event.get("content",{}).get("membership",{}) == "join":
-                print(f"User {event['sender']} joined room {event['room_id']}")
-                self._handle_room_member_join(event["room_id"], event["sender"])
 
     def _handle_room_message(self, room_id: str, event: dict):
         """ Handles messages from existing rooms (to be implemented later). """
@@ -82,24 +79,11 @@ class MatrixRoomListener:
     def _handle_room_invitation(self, room_id: str):
         """ Handles new room invitations and joins automatically. """
         try:
+            # should save room details to db and this data should be fetched by the frontend
             joined_room = self.client.join_room(room_id)
             print(f"Successfully joined room {joined_room.room_id}")
         except Exception as e:
             print(f"Failed to join room {room_id}: {e}")
-    
-    def _handle_room_member_join(self, room_id: str, user_matrix_id: str):
-        """ Handles room member joins. """
-        # check if amount of users in room equals to the invitees amount
-        # if so - send g^x to all users and save to db
-        is_wallet_room = MatrixService.instance().is_wallet_room(room_id)
-        if not is_wallet_room:
-            print(f"Room {room_id} is not a wallet room")
-            return
-        all_users = MatrixService.instance().get_all_users_in_room(room_id)
-        existing_users = MatrixService.instance().get_existing_users_in_room(room_id)
-        if len(all_users) == len(existing_users):
-            send_g_power_x_message_to_wallet_room(room_id)
-            pass
 
     def _handle_error(self, exception: Exception):
         """ Handles exceptions that occur during event listening. """
@@ -174,9 +158,9 @@ class MatrixRoomListener:
                 print(f"MTA WC commitment Bob received")
             
             elif message_dto.type == MessageType.GPowerX:
-                g_power_x_obj = message_dto.data
-                print(f"GPowerX received")
-                return save_g_power_x_to_db(g_power_x_obj)
+                g_power_x_obj: GPowerX = message_dto.data
+                print(f"GPowerX received from {g_power_x_obj.user_matrix_id}")
+                return save_incoming_g_power_x_to_db(g_power_x_obj)
             else:
                 print(f"Unknown message type: {message_dto.type}")
                 return

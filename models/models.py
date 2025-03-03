@@ -308,7 +308,7 @@ class user_index_to_user_id_message(BaseModel):
         return cls(index_to_user_id=data["index_to_user_id"])
 
 class GPowerX(BaseModel):
-    g_power_x: int
+    value: int
     user_matrix_id: str
     wallet_id: str
 

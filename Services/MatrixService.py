@@ -232,9 +232,8 @@ class MatrixService:
         return room.leave()
     
     def get_next_available_index(self, room_id: str) -> bool:
-        #NEEDS FIX - NOT loading , Gilad already solved similiar case
-        room : Room = self.client.join_room(room_id)
-        return len(room.members_displaynames)
+        existing_users = self.get_existing_users_in_room(room_id=room_id)
+        return len(existing_users) # the joining user is already in the room
     
     def get_valid_json_messages(self, room_id, limit=100) -> List[MessageDTO]:
         valid_messages = []

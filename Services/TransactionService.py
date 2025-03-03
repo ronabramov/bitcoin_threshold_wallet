@@ -36,7 +36,7 @@ def handle_incoming_transaction_response(transaction_response: TransactionRespon
         return
     
     sql_db_dal.insert_transaction_user_data(transaction_id=transaction_response.transaction_id, 
-                                            user_index=transaction_response.appoving_user_index,
+                                            user_index=transaction_response.approving_user_index,
                                             user_matrix_id=transaction_response.approving_user_matrix_id)
     
     sql_db_dal.update_transaction(local_transaction)

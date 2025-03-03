@@ -54,6 +54,10 @@ class UserSignatureGenerator:
             sql_dal.update_signature_share(self.wallet_id, user_share)
             shares_dict[user.user_index] = user_share
 
+        # add my user id 
+        user_share = UserShareUtils.filter_shares_by_user_index(users_signature_shares, self.user_index)
+        user_share.target_user_matrix_id = self.user_public_keys.user_id
+        sql_dal.update_signature_share(self.wallet_id, user_share)
         return self._send_share_for_every_participating_user(shares_dict=shares_dict)
 
     

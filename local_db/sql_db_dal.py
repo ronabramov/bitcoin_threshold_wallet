@@ -63,7 +63,6 @@ def get_transactions_by_wallet_id(wallet_id : str, should_convert_to_dto = False
             transactions = session.query(sql_db.Transaction).filter(sql_db.Transaction.wallet_id == wallet_id).all()
             if not transactions :
                 print (f"Couldn't find transaction for wallet  : {wallet_id}")
-                raise FileNotFoundError(f"Transaction with wallet id  {wallet_id} couldn't be found")
             if should_convert_to_dto:
                 dto_list =  [map_transaction_to_dto(transaction) for transaction in transactions]
                 return dto_list
@@ -296,7 +295,7 @@ def insert_g_power_x(g_power_x : GPowerX):
             if not user_data:
                 print(f"User data for user {g_power_x.user_matrix_id} in wallet {g_power_x.wallet_id} not found")
                 return False
-            user_data.g_power_x = g_power_x.g_power_x
+            user_data.g_power_x = g_power_x.value
             session.commit()
             return True
         except Exception as e:
