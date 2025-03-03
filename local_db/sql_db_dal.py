@@ -301,3 +301,16 @@ def insert_g_power_x(g_power_x : GPowerX):
         except Exception as e:
             print(f"Failed to insert g_power_x {g_power_x}", e)
             return False
+        
+        
+def get_user_by_email(email : str) -> sql_db.User:
+    with DB.session() as session:
+        return session.query(sql_db.User).filter(sql_db.User.email == email).first()
+
+
+def add_user(email : str, hashed_password : str, matrix_user_id : str) -> bool:
+    with DB.session() as session:
+        user = sql_db.User(email=email, hashed_password=hashed_password, matrix_user_id=matrix_user_id)
+        session.add(user)
+        session.commit()
+        return True

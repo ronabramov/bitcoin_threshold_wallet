@@ -1,6 +1,6 @@
 import webbrowser
 from fastapi import FastAPI
-from routers import transactions, messages, wallets
+from routers import transactions, messages, wallets, authentications
 import os
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -22,6 +22,7 @@ async def read_root():
 # Include API routes
 app.include_router(transactions.router, prefix="/transactions")
 app.include_router(wallets.router, prefix="/wallets")
+app.include_router(authentications.router)
 
 @app.on_event("startup")
 async def open_swagger_ui():

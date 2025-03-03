@@ -22,8 +22,7 @@ class User(Base):
     email = Column(String, primary_key=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     homeserver_url = Column(String, nullable=True)
-    homeserver_login = Column(String, nullable=True)
-    homeserver_password = Column(String, nullable=True)
+    matrix_user_id = Column(String, nullable=True)
 
 class Friend(Base):
     __tablename__ = "Friend"

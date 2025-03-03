@@ -1,34 +1,44 @@
-
 import common_utils
 from  local_db.sql_db import DB, User
+import bcrypt
+from local_db.sql_db_dal import get_user_by_email, add_user
+from fastapi import HTTPException
+from Services.Context import Context
+from Services.MatrixService import MatrixService
+from Services.MatrixListenerService import MatrixRoomListener
 
-def save_user_data(email: str, password: str, homeserver):
-    hashed_password = common_utils.hash_password(password)
-    # check if user already exists
-    if DB.session().query(User).filter(User.email == email).first():
-        print("User already exists")
-        return
+def hash_password(password: str) -> str:
+    """Hash the password using bcrypt."""
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-    DB.session().add(
-        User(
-            email=email,
-            hashed_password=hashed_password,
-            homeserver_url=homeserver["url"],
-            homeserver_login=homeserver["login"],
-            homeserver_password=homeserver["password"],
-        )
-    )
-    DB.session().commit()
+def verify_password(password: str, hashed: str) -> bool:
+    """Verify a password against its hash."""
+    return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
 
-def retrieve_users():  # Testing users retival.
-    """Retrieve and display all users from the local database."""
-    users = DB.session().query(User).all()
-    for user in users:
-        print("Email:", user.email)
-        print("Hashed Password:", user.hashed_password)
-        print("Homeserver URL:", user.homeserver_url)
-        print("Homeserver Login:", user.homeserver_login)
-        print("Homeserver Password:", user.homeserver_password)
-        print("---------------------")
+def login_user(email: str, matrix_user_id: str, password: str) -> bool:
+    """Verify user credentials against the database."""
+    
+    # maybe user is not registered in the database
+    user = get_user_by_email(email)
+    
+    if user is None:
+        register_new_user(email=email, matrix_user_id=matrix_user_id, password=password)
+    elif not verify_password(password, user.hashed_password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    try:
+        Context.set(matrix_user_id, password)
+        matrix_client = MatrixService.instance().client
+        listener = MatrixRoomListener(matrix_client)
+        listener.start_listener()
+        return {"message": "Login successful"}
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=str(e))
+    
+
+def register_new_user(email: str, matrix_user_id: str, password: str) -> bool:
+    """Register a new user in the database."""
+    hashed_password = hash_password(password)
+    return add_user(email, hashed_password, matrix_user_id)
 
