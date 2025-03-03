@@ -1,27 +1,25 @@
 from fastapi import APIRouter, HTTPException
-from Depracted.db_DEPRECATED import wallets_collection, users_collection
 import logging
-
+from local_db.sql_db_dal import get_my_wallets, get_friend_by_matrix_id
 logger = logging.getLogger("uvicorn")
 
 router = APIRouter()
 
-@router.get("/{user_id}")
+@router.get("/")
 async def get_user_wallets(user_id: str):
     # Find wallets containing the user
-    wallets_cursor = wallets_collection.find({"users": user_id})
+    
+    db_wallets = get_my_wallets()
     wallets = []
-    for wallet in wallets_cursor:
+    for wallet in db_wallets:
         # Fetch user details for each user in the wallet
-        user_details = list(users_collection.find({ "users": user_id }))
-        for user in user_details:
-            user["_id"] = str(user["_id"])  # Serialize ObjectId
+        users = wallet.users.split(',')
+        users_data = [{"email": get_friend_by_matrix_id(user).email, "matrix_id": user} for user in users]
         wallets.append({
-            "wallet_id": wallet["wallet_id"],
-            "wallet_name": wallet.get("wallet_name"),
-            "threshold": wallet.get("threshold"),
-            "metadata": wallet.get("metadata", {}),
-            "users": user_details
+            "wallet_id": wallet.wallet_id,
+            "wallet_name": wallet.name,
+            "threshold": wallet.threshold,
+            "users": users_data
         })
     return wallets
 

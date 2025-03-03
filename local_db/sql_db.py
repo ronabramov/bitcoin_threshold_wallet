@@ -36,6 +36,7 @@ class Wallet(Base):
         String, primary_key=True, nullable=False
     )  # This will be the room Id.
     threshold = Column(Integer, nullable=False)
+    name = Column(String, nullable=True)
     max_num_of_users = Column(Integer, nullable=False)
     users = Column(
         Text, nullable=True

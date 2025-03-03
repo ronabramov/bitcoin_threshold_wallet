@@ -78,7 +78,8 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
     return True
 
 def get_wallet_from_generating_wallet_message(wallet_id : str, wallet_participants : str, generation_message : WalletGenerationMessage) -> Wallet:
-    return Wallet(wallet_id=wallet_id, threshold = generation_message.threshold, users=wallet_participants,
+    # TODO: get wallet name
+    return Wallet(wallet_id=wallet_id,name='placeholder',threshold = generation_message.threshold, users=wallet_participants,
                   curve_name = generation_message.curve_name, max_num_of_users = generation_message.max_number_of_participants)
 
 def save_room_users_data_to_db(wallet_id: str, rest_users_messages: list[user_public_share]) -> bool:
@@ -117,7 +118,7 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
     
     #Every user will add user to his wallet only when user has been joined
     users = ",".join(users_ids)
-    wallet = Wallet(wallet_id=room_id,threshold=wallet_threshold,users=users, curve_name = curve_name, max_num_of_users = max_participants) 
+    wallet = Wallet(wallet_id=room_id,threshold=wallet_threshold,users=users, name=wallet_name,curve_name = curve_name, max_num_of_users = max_participants) 
     user_room_secret_data, user_room_public_data = Utils.generate_user_room_keys(user_index=GENERATING_USER_INDEX,
                                                                                              user_matrix_id=user_id, wallet=wallet)
 

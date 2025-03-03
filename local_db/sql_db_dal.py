@@ -7,17 +7,6 @@ from models.models import  user_public_share, wallet_key_generation_share, GPowe
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
 from Services.Context import Context
 
-def get_user_by_email(user_email : str) -> sql_db.User :
-    with DB.session() as session:
-        try:
-            user = session.query(sql_db.User).filter(sql_db.User.email == user_email).first()
-            if not user :
-               print (f"Couldn't find user with email {user_email}")
-            raise FileNotFoundError(f"User with email {user_email} couldn't be found")
-            return user
-        except Exception as e:
-            print(f"There was and error while trying to retrieve user {user_email}", e)
-
 def get_friend_by_email(email : str) -> sql_db.Friend:
     with DB.session() as session:
         try:
@@ -29,6 +18,10 @@ def get_friend_by_email(email : str) -> sql_db.Friend:
         except Exception as e:
             print(f"There was and error while trying to retrieve friend with email :  {email}", e)
 
+def get_friend_by_matrix_id(matrix_id : str) -> sql_db.Friend:
+    with DB.session() as session:
+        friend = session.query(sql_db.Friend).filter(sql_db.Friend.matrix_id == matrix_id).first()
+        return friend
 
 def get_all_user_friends() -> List[sql_db.User]:
     with DB.session() as session:
@@ -45,6 +38,11 @@ def get_wallet_by_id(wallet_id : str) -> sql_db.Wallet:
             return wallet
         except Exception as e:
             print(f"There was and error while trying to retrieve wallet {wallet_id}", e)
+
+def get_my_wallets() -> List[sql_db.Wallet]:
+    with DB.session() as session:
+        wallets = session.query(sql_db.Wallet).all()
+        return wallets
 
 def get_transaction_by_id(transaction_id : str) -> sql_db.Transaction:
     with DB.session() as session:

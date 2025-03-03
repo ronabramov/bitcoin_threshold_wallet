@@ -4,7 +4,7 @@ const API_URL = "https://bitcoin-threshold-wallet.onrender.com"; // render-url
 const LOCAL_HOST_URL = "http://127.0.0.1:8000";
 
 export const getWallets = async (userId) => {
-    const response = await axios.get(`${LOCAL_HOST_URL}/wallets/${userId}`);
+    const response = await axios.get(`${LOCAL_HOST_URL}/wallets`);
     return response.data;
 };
 
