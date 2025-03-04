@@ -107,3 +107,4 @@ bcrypt==4.2.1
 phe==1.5.0
 dotenv==0.9.9
 gmpy2==2.2.1
+pyjwt==2.8.0

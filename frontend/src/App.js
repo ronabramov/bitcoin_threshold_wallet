@@ -8,23 +8,15 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import { AuthProvider, useAuth } from "./components/AuthContext";
 
-const App = () => {
+const AppContent = () => {
     const [selectedWallet, setSelectedWallet] = useState(null);
-    const [user, setUser] = useState(null);
+    const { user, logout } = useAuth();
     const transactionListRef = useRef();
 
-    const handleLogout = () => {
-        setUser(null);
-        setSelectedWallet(null);
-    };
-
-    const handleAuthSuccess = (userData) => {
-        setUser(userData);
-    };
-
     if (!user) {
-        return <Auth onAuthSuccess={handleAuthSuccess} />;
+        return <Auth />;
     }
 
     return (
@@ -38,7 +30,7 @@ const App = () => {
                         <Typography color="#d2e3eb">
                             Welcome, {user.user_name || user.email}
                         </Typography>
-                        <Button color="inherit" onClick={handleLogout}>
+                        <Button color="inherit" onClick={logout}>
                             Logout
                         </Button>
                     </Box>
@@ -90,6 +82,14 @@ const App = () => {
                 </Typography>
             </Box>
         </div>
+    );
+};
+
+const App = () => {
+    return (
+        <AuthProvider>
+            <AppContent />
+        </AuthProvider>
     );
 };
 

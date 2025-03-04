@@ -1,8 +1,9 @@
 import webbrowser
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from routers import transactions, messages, wallets, authentications
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from jwt_utils import get_current_user
 
 FRONT_END_LOCALHOST_URL = "http://localhost:3000"
 
@@ -19,16 +20,16 @@ app.add_middleware(
 async def read_root():
     return {"message": "Welcome to the Bitcoin Threshold Wallet"}
 
-# Include API routes
-app.include_router(transactions.router, prefix="/transactions")
-app.include_router(wallets.router, prefix="/wallets")
-app.include_router(authentications.router)
+# Include API routes with authentication
+# app.include_router(transactions.router, prefix="/transactions")
+app.include_router(wallets.router, prefix="/wallets", dependencies=[Depends(get_current_user)])
+app.include_router(authentications.router)  # No authentication for login routes
 
 @app.on_event("startup")
 async def open_swagger_ui():
     import asyncio
     await asyncio.sleep(1)  # Small delay to ensure server starts
-    webbrowser.open("http://127.0.0.1:8000/docs")  # Adjust URL if needed
+    # webbrowser.open("http://127.0.0.1:8000/docs")  # Adjust URL if needed
 
 if __name__ == "__main__":
     import uvicorn

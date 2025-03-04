@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { login } from '../api/api';
 import { Box, TextField, Button, Typography, Container, Paper } from '@mui/material';
+import { useAuth } from './AuthContext';
 
-const Auth = ({ onAuthSuccess }) => {
+const Auth = () => {
     const [formData, setFormData] = useState({
         email: '',
         matrix_user_id: '',
         password: ''
     });
     const [error, setError] = useState('');
+    const { login } = useAuth();
 
     const handleChange = (e) => {
         setFormData({
@@ -22,10 +23,7 @@ const Auth = ({ onAuthSuccess }) => {
         setError('');
         
         try {
-            const response = await login(formData);
-            if (response.message === "Login successful") {
-                onAuthSuccess(formData);
-            }
+            await login(formData.email, formData.matrix_user_id, formData.password);
         } catch (error) {
             setError(error.response?.data?.detail || 'An error occurred');
         }

@@ -6,6 +6,7 @@ from models.DTOs.message_dto import MessageDTO
 from Services.Context import Context
 from ecdsa import curves
 from local_db.sql_db import Wallet
+from local_db.sql_db_dal import get_friend_by_matrix_id
 
 def send_g_power_x_message_to_wallet_room(x : int, wallet : Wallet):
     """
@@ -23,3 +24,8 @@ def save_incoming_g_power_x_to_db(g_power_x : GPowerX):
     """
     return sql_db_dal.insert_g_power_x(g_power_x)
     
+
+def get_wallet_users_data(wallet : Wallet):
+    users = wallet.users.split(',')
+    users_data = [{"email": get_friend_by_matrix_id(user).email, "matrix_id": user} for user in users]
+    return users_data

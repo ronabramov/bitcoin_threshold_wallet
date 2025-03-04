@@ -16,7 +16,7 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
 
-def login_user(email: str, matrix_user_id: str, password: str) -> bool:
+def login_user(email: str, matrix_user_id: str, password: str) :
     """Verify user credentials against the database."""
     
     # maybe user is not registered in the database
@@ -32,7 +32,7 @@ def login_user(email: str, matrix_user_id: str, password: str) -> bool:
         matrix_client = MatrixService.instance().client
         listener = MatrixRoomListener(matrix_client)
         listener.start_listener()
-        return {"message": "Login successful"}
+        return user
     except Exception as e:
         raise HTTPException(status_code=401, detail=str(e))
     
