@@ -31,7 +31,10 @@ const AppContent = () => {
     }
 
     return (
-        <div>
+        <div style={{
+            background: 'linear-gradient(160deg, rgba(103, 58, 183, 0.25) 0%, rgba(0, 0, 0, 1) 100%)',
+            minHeight: '100vh',
+        }}>
             <AppBar 
                 position="static" 
                 sx={{ 
@@ -72,19 +75,7 @@ const AppContent = () => {
                 position: 'relative'
             }}>
                 <WalletList userId={user.email} onSelectWallet={setSelectedWallet} />
-                {selectedWallet && (
-                    <Box sx={{ 
-                        flexGrow: 1,
-                        ml: '300px', // Width of WalletList
-                        mr: '300px', // Width of FriendsList
-                        p: 3,
-                    }}>
-                        <WalletDetails 
-                            wallet={selectedWallet} 
-                            onClose={() => setSelectedWallet(null)}
-                        />
-                    </Box>
-                )}
+                {selectedWallet && <WalletDetails wallet={selectedWallet} onClose={() => setSelectedWallet(null)} />}
                 <FriendsList />
             </Box>
 
