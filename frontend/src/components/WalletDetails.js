@@ -59,7 +59,7 @@ const TransactionsPanel = ({ wallet, isOpen }) => {
                 }}
             >
                 <Box sx={{ 
-                    p: 3,
+                    p: 2,
                     borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -199,23 +199,16 @@ const WalletDetails = ({ wallet, onClose }) => {
                 }}
             >
                 <Box sx={{ 
-                    p: 3,
+                    p: 2,
                     borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                     display: 'flex',
                     justifyContent: 'space-between',
-                    alignItems: 'flex-start'
+                    alignItems: 'center',
+                    height: '70px'
                 }}>
-                    <Box>
-                        <Typography variant="h5" color="#e0e0e0" gutterBottom>
+                        <Typography variant="h6" color="#e0e0e0" >
                             {wallet.name || `Wallet ${wallet.wallet_id}`}
                         </Typography>
-                        <Typography variant="body1" color="rgba(224, 224, 224, 0.7)">
-                            Wallet ID: {wallet.wallet_id}
-                        </Typography>
-                        <Typography variant="body1" color="rgba(224, 224, 224, 0.7)" sx={{ mt: 1 }}>
-                            Threshold: {wallet.threshold}
-                        </Typography>
-                    </Box>
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <IconButton
                             onClick={() => setShowTransactions(!showTransactions)}
@@ -241,7 +234,16 @@ const WalletDetails = ({ wallet, onClose }) => {
                         </IconButton>
                     </Box>
                 </Box>
-
+                <Box sx={{ p: 3, 
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)' ,
+                    }}>
+                <Typography variant="body1" color="rgba(224, 224, 224, 0.7)">
+                            Wallet ID: {wallet.wallet_id}
+                        </Typography>
+                        <Typography variant="body1" color="rgba(224, 224, 224, 0.7)" sx={{ mt: 1 }}>
+                            Threshold: {wallet.threshold}
+                        </Typography>
+                </Box>
                 <Box sx={{ p: 3 }}>
                     <Typography variant="h6" color="#e0e0e0" gutterBottom>
                         Invited Users

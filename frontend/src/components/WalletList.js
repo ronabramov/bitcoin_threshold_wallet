@@ -97,7 +97,7 @@ const WalletList = ({ userId, onSelectWallet }) => {
                 alignItems: 'center',
                 justifyContent: 'space-between'
             }}>
-                <Typography variant="h6" color="#e0e0e0" sx={{ mb: 1 }}>
+                <Typography variant="h6" color="#e0e0e0">
                     Wallets
                 </Typography>
                 <Button
