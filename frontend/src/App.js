@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import WalletList from "./components/WalletList";
-import TransactionForm from "./components/TransactionForm";
-import TransactionList from "./components/TransactionList";
+import WalletDetails from "./components/WalletDetails";
 import Auth from "./components/Auth";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
@@ -16,7 +15,7 @@ import Avatar from "@mui/material/Avatar";
 const AppContent = () => {
     const [selectedWallet, setSelectedWallet] = useState(null);
     const { user, logout } = useAuth();
-    const transactionListRef = useRef();
+    
     const { showNotification } = useNotification();
 
     useEffect(() => {
@@ -67,36 +66,28 @@ const AppContent = () => {
                 </Toolbar>
             </AppBar>
             
-            <Box sx={{ paddingRight: '300px' }}>
-                {!selectedWallet ? (
-                    <WalletList userId={user.email} onSelectWallet={setSelectedWallet} />
-                ) : (
-                    <div style={{ display: "flex" }}>
-                        <div style={{ flex: 1, padding: "10px", borderRight: "none" }}>
-                            <TransactionList
-                                ref={transactionListRef}
-                                walletId={selectedWallet.wallet_id}
-                                onBackToWallets={() => setSelectedWallet(null)}
-                            />
-                        </div>
-
-                        <div style={{ flex: 1, padding: "10px" }}>
-                            <TransactionForm
-                                wallet={selectedWallet}
-                                userId={user.email}
-                                refreshTransactions={() => {
-                                    if (transactionListRef.current) {
-                                        transactionListRef.current.fetchTransactions();
-                                    }
-                                }}
-                            />
-                        </div>
-                    </div>
+            <Box sx={{ 
+                display: 'flex',
+                height: 'calc(100vh - 68px - 40px)', // Subtract AppBar and footer height
+                position: 'relative'
+            }}>
+                <WalletList userId={user.email} onSelectWallet={setSelectedWallet} />
+                {selectedWallet && (
+                    <Box sx={{ 
+                        flexGrow: 1,
+                        ml: '300px', // Width of WalletList
+                        mr: '300px', // Width of FriendsList
+                        p: 3,
+                    }}>
+                        <WalletDetails 
+                            wallet={selectedWallet} 
+                            onClose={() => setSelectedWallet(null)}
+                        />
+                    </Box>
                 )}
+                <FriendsList />
             </Box>
 
-            <FriendsList />
-            
             <Box
                 component="footer"
                 sx={{
@@ -109,6 +100,7 @@ const AppContent = () => {
                     position: "fixed",
                     bottom: 0,
                     width: "100%",
+                    height: '40px',
                     backdropFilter: "blur(8px)",
                 }}
             >
