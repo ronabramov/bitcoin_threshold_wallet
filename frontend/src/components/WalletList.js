@@ -13,6 +13,7 @@ import {
 import { getWallets, createWallet } from '../api/api';
 import CreateWalletDialog from './CreateWalletDialog';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import { useNotification } from './NotificationContext';
 
 const EmptyWalletList = ({ onCreateWallet }) => (
     <Box
@@ -40,6 +41,7 @@ const WalletList = ({ userId, onSelectWallet }) => {
     const [wallets, setWallets] = useState([]);
     const [loading, setLoading] = useState(true);
     const [openDialog, setOpenDialog] = useState(false);
+    const { showNotification } = useNotification();
 
     const fetchWallets = async () => {
         try {
@@ -62,6 +64,7 @@ const WalletList = ({ userId, onSelectWallet }) => {
             const newWallet = await createWallet(walletData);
             setWallets([...wallets, newWallet]);
             setOpenDialog(false);
+            showNotification('Wallet created successfully!', 'success');
         } catch (err) {
             // Error will be handled by the error handler decorator
         }

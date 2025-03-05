@@ -26,8 +26,7 @@ async def get_user_wallets():
             "wallet_id": wallet.wallet_id,
             "name": wallet.name,
             "threshold": wallet.threshold,
-            "users": users_data,
-            "description": wallet.description
+            "users": users_data
         })
     return wallets
 
@@ -43,12 +42,12 @@ async def create_wallet(wallet_payload: Wallet):
     if success:
         wallet_response = {
             "wallet_id": wallet.wallet_id,
-            "wallet_name": wallet.name,
+            "name": wallet.name,
             "threshold": wallet.threshold,
             "users": users_data,
         }
     else:
         raise HTTPException(status_code=400, detail="Failed to create wallet")
     
-    return {"wallet": wallet_response}
+    return wallet_response
 
