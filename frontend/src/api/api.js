@@ -41,3 +41,18 @@ export const login = async ({ email, matrix_user_id, password }) => {
     });
     return response.data;
 };
+
+
+export const getFriends = async () => {
+    const response = await api.get(`${LOCAL_HOST_URL}/friends`);
+    return response.data;
+};
+
+
+export const addFriend = async ({ email, matrix_id }) => {
+    const response = await api.post(`${LOCAL_HOST_URL}/friends`, {
+        email,
+        matrix_id,
+    });
+    return response.data;
+};

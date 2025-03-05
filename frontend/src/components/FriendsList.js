@@ -44,7 +44,7 @@ const EmptyFriendsList = ({ onAddFriend }) => (
 );
 
 const FriendsList = () => {
-    const [friends, setFriends] = useState([]); // In real app, this would be fetched from backend
+    const [friends, setFriends] = useState([]); 
     const [openDialog, setOpenDialog] = useState(false);
     const [newFriend, setNewFriend] = useState({
         email: '',
@@ -53,20 +53,25 @@ const FriendsList = () => {
     const [error, setError] = useState('');
     const [isCollapsed, setIsCollapsed] = useState(false);
 
-    const handleAddFriend = () => {
+    const handleAddFriend = async () => {
         // Validate inputs
         if (!newFriend.email || !newFriend.matrixId) {
             setError('Please fill in all fields');
             return;
         }
+
+        try {
+            const response = await addFriend({ email: newFriend.email, matrix_id: newFriend.matrixId });
+            setFriends([...friends, response]);
+        } catch (error) {
+            setError('Failed to add friend');
+        }
         
         // Here you would typically make an API call to add the friend
         // For now, we'll just add to local state
         setFriends([...friends, {
-            id: Date.now(),
             email: newFriend.email,
             matrixId: newFriend.matrixId,
-            status: 'pending' // Could be 'pending', 'accepted', etc.
         }]);
         
         setNewFriend({ email: '', matrixId: '' });

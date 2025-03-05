@@ -1,7 +1,6 @@
-import webbrowser
 from fastapi import FastAPI, Depends
-from routers import transactions, messages, wallets, authentications
-import os
+from routers import transactions, messages, wallets, authentications, friends
+
 from fastapi.middleware.cors import CORSMiddleware
 from jwt_utils import get_current_user
 
@@ -22,8 +21,9 @@ async def read_root():
 
 # Include API routes with authentication
 # app.include_router(transactions.router, prefix="/transactions")
-app.include_router(wallets.router, prefix="/wallets", dependencies=[Depends(get_current_user)])
 app.include_router(authentications.router)  # No authentication for login routes
+app.include_router(wallets.router, dependencies=[Depends(get_current_user)])
+app.include_router(friends.router, dependencies=[Depends(get_current_user)])
 
 @app.on_event("startup")
 async def open_swagger_ui():

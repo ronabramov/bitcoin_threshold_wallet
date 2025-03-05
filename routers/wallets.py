@@ -4,7 +4,7 @@ from local_db.sql_db_dal import get_my_wallets, get_friend_by_matrix_id
 from APIs.RoomManagementAPI import create_new_wallet #respond_to_room_invitation
 from Services.WalletService import get_wallet_users_data
 logger = logging.getLogger("uvicorn")
-router = APIRouter()
+router = APIRouter(prefix="/wallets", tags=["wallets"])
 
 @router.get("/")
 async def get_user_wallets():
