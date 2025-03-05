@@ -16,6 +16,15 @@ const theme = createTheme({
     typography: {
         fontFamily: "Roboto, Arial, sans-serif",
     },
+    components: {
+        MuiButton: {
+            styleOverrides: {
+                root: {
+                    textTransform: 'none',
+                },
+            },
+        },
+    },
 });
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
