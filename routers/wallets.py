@@ -24,9 +24,10 @@ async def get_user_wallets():
         users_data = get_wallet_users_data(wallet)
         wallets.append({
             "wallet_id": wallet.wallet_id,
-            "wallet_name": wallet.name,
+            "name": wallet.name,
             "threshold": wallet.threshold,
-            "users": users_data
+            "users": users_data,
+            "description": wallet.description
         })
     return wallets
 

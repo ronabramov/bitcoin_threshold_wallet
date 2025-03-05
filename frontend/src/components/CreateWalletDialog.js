@@ -20,7 +20,6 @@ import { getFriends } from '../api/api';
 const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
     const [formData, setFormData] = useState({
         name: '',
-        description: '',
         threshold: 2,
         total_signers: 2,
         selectedFriends: []
@@ -103,16 +102,6 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
                             onChange={handleChange}
                             fullWidth
                             required
-                        />
-                        <TextField
-                            label="Description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            fullWidth
-                            multiline
-                            required
-                            rows={2}
                         />
                         <Box sx={{ display: 'flex', gap: 2 }}>
                             <TextField

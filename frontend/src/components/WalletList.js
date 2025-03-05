@@ -114,6 +114,7 @@ const WalletList = ({ userId, onSelectWallet }) => {
                     {wallets.map((wallet) => (
                         <ListItem key={wallet.wallet_id} disablePadding>
                             <ListItemButton 
+                                key={`button-${wallet.wallet_id}`}
                                 onClick={() => onSelectWallet(wallet)}
                                 sx={{
                                     '&:hover': {
@@ -123,7 +124,7 @@ const WalletList = ({ userId, onSelectWallet }) => {
                             >
                                 <ListItemText
                                     primary={wallet.name || `Wallet ${wallet.wallet_id}`}
-                                    secondary={`Balance: ${wallet.balance || '0'} BTC`}
+                                    secondary={`Threshold: ${wallet.threshold}`}
                                     primaryTypographyProps={{ color: '#e0e0e0' }}
                                     secondaryTypographyProps={{ color: 'rgba(224, 224, 224, 0.7)' }}
                                 />
