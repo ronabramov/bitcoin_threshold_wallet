@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Container, Paper } from '@mui/material';
+import { Box, TextField, Button, Typography, Container, Paper, CircularProgress } from '@mui/material';
 import { useAuth } from './AuthContext';
 
 const Auth = () => {
@@ -10,6 +10,7 @@ const Auth = () => {
     });
     const [error, setError] = useState('');
     const { login } = useAuth();
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleChange = (e) => {
         setFormData({
@@ -21,6 +22,7 @@ const Auth = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setIsLoading(true);
         
         try {
             await login(formData.email, formData.matrix_user_id, formData.password);
@@ -38,6 +40,8 @@ const Auth = () => {
             } else {
                 setError(errorDetail || 'An error occurred during login');
             }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -109,8 +113,10 @@ const Auth = () => {
                             fullWidth
                             variant="contained"
                             sx={{ mt: 3, mb: 2 }}
+                            disabled={isLoading}
+                            startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : null}
                         >
-                            Sign In
+                            {isLoading ? 'Signing in...' : 'Sign In'}
                         </Button>
                     </Box>
                 </Paper>

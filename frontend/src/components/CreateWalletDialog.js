@@ -13,7 +13,8 @@ import {
     Select,
     MenuItem,
     Chip,
-    OutlinedInput
+    OutlinedInput,
+    CircularProgress
 } from '@mui/material';
 import { getFriends } from '../api/api';
 
@@ -26,6 +27,7 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
     });
     const [error, setError] = useState('');
     const [friends, setFriends] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         const loadFriends = async () => {
@@ -53,28 +55,33 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setIsLoading(true);
 
         // Validate inputs
         if (!formData.name.trim()) {
             setError('Wallet name is required');
+            setIsLoading(false);
             return;
         }
 
         if (formData.threshold > formData.total_signers) {
             setError('Threshold cannot be greater than total signers');
+            setIsLoading(false);
             return;
         }
 
         if (formData.selectedFriends.length === 0) {
             setError('Please select at least one friend');
+            setIsLoading(false);
             return;
         }
 
         if (formData.selectedFriends.length > formData.total_signers - 1) {
             setError(`You can only select up to ${formData.total_signers - 1} friends`);
+            setIsLoading(false);
             return;
         }
 
@@ -86,7 +93,13 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
             max_participants: formData.total_signers
         };
 
-        onSubmit(submitData);
+        try {
+            await onSubmit(submitData);
+        } catch (error) {
+            setError('Failed to create wallet');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -165,9 +178,15 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={onClose}>Cancel</Button>
-                    <Button type="submit" variant="contained" color="primary">
-                        Create Wallet
+                    <Button onClick={onClose} disabled={isLoading}>Cancel</Button>
+                    <Button 
+                        type="submit" 
+                        variant="contained" 
+                        color="primary"
+                        disabled={isLoading}
+                        startIcon={isLoading ? <CircularProgress size={20} /> : null}
+                    >
+                        {isLoading ? 'Creating...' : 'Create Wallet'}
                     </Button>
                 </DialogActions>
             </form>
