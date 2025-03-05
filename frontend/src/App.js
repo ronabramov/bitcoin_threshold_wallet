@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { AuthProvider, useAuth } from "./components/AuthContext";
+import FriendsList from './components/FriendsList';
 
 const AppContent = () => {
     const [selectedWallet, setSelectedWallet] = useState(null);
@@ -64,31 +65,35 @@ const AppContent = () => {
                 </Toolbar>
             </AppBar>
             
-            {!selectedWallet ? (
-                <WalletList userId={user.email} onSelectWallet={setSelectedWallet} />
-            ) : (
-                <div style={{ display: "flex" }}>
-                    <div style={{ flex: 1, padding: "10px", borderRight: "none" }}>
-                        <TransactionList
-                            ref={transactionListRef}
-                            walletId={selectedWallet.wallet_id}
-                            onBackToWallets={() => setSelectedWallet(null)}
-                        />
-                    </div>
+            <Box sx={{ paddingRight: '300px' }}>
+                {!selectedWallet ? (
+                    <WalletList userId={user.email} onSelectWallet={setSelectedWallet} />
+                ) : (
+                    <div style={{ display: "flex" }}>
+                        <div style={{ flex: 1, padding: "10px", borderRight: "none" }}>
+                            <TransactionList
+                                ref={transactionListRef}
+                                walletId={selectedWallet.wallet_id}
+                                onBackToWallets={() => setSelectedWallet(null)}
+                            />
+                        </div>
 
-                    <div style={{ flex: 1, padding: "10px" }}>
-                        <TransactionForm
-                            wallet={selectedWallet}
-                            userId={user.email}
-                            refreshTransactions={() => {
-                                if (transactionListRef.current) {
-                                    transactionListRef.current.fetchTransactions();
-                                }
-                            }}
-                        />
+                        <div style={{ flex: 1, padding: "10px" }}>
+                            <TransactionForm
+                                wallet={selectedWallet}
+                                userId={user.email}
+                                refreshTransactions={() => {
+                                    if (transactionListRef.current) {
+                                        transactionListRef.current.fetchTransactions();
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Box>
+
+            <FriendsList />
             
             <Box
                 component="footer"
