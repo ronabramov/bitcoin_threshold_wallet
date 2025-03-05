@@ -11,15 +11,14 @@ router = APIRouter(prefix="/{wallet_id}/transactions")
 
 @router.get("/")
 async def get_transactions(wallet_id : int):
-    transactions = get_transactions_by_wallet_id(wallet_id)
-    if not transactions:
-        raise_not_found_exception(f"Wallet {wallet_id} has no previous transactions")
+    transactions = get_transactions_by_wallet_id(wallet_id)        
     return [
         {
-            "id": str(tx["_id"]),
-            "wallet_id": tx["wallet_id"],
-            "description": tx["description"],
-            "status": tx["status"],
+            "id": tx.id,
+            "wallet_id": tx.wallet_id,
+            "details": tx.details,
+            "status": tx.status,
+            "name": tx.name
         }
         for tx in transactions
     ]

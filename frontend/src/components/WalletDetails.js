@@ -76,19 +76,19 @@ const WalletDetails = ({ wallet, onClose }) => {
 
             <Box sx={{ p: 3 }}>
                 <Typography variant="h6" color="#e0e0e0" gutterBottom>
-                    Approved Users
+                    Invited Users
                 </Typography>
                 <List>
-                    {wallet.approved_users?.map((user, index) => (
-                        <ListItem key={index}>
+                    {wallet.users.map((user, index) => (
+                        <ListItem key={user.matrix_id}>
                             <ListItemAvatar>
                                 <Avatar sx={{ bgcolor: 'rgba(103, 58, 183, 0.5)' }}>
-                                    <PersonIcon />
+                                    {user.email[0].toUpperCase()}
                                 </Avatar>
                             </ListItemAvatar>
-                            <ListItemText 
-                                primary={user}
-                                primaryTypographyProps={{ color: '#e0e0e0' }}
+                            <ListItemText
+                                primary={<Typography color="#e0e0e0">{user.email}</Typography>}
+                                secondary={<Typography color="rgba(224, 224, 224, 0.7)" variant="body2">{user.matrix_id}</Typography>}
                             />
                         </ListItem>
                     ))}

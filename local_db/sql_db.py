@@ -64,8 +64,9 @@ class Transaction(Base):
     transaction_id = Column(String, primary_key=True, nullable=False)
     details = Column(Text, nullable=True)
     status = Column(Integer, nullable=True)
-    wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     shrunken_secret_share = Column(Integer, nullable=True)
+    name = Column(String, nullable=True)
+    wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
     
     @classmethod
@@ -75,7 +76,8 @@ class Transaction(Base):
             details=transaction_dto.details,
             wallet_id=transaction_dto.wallet_id,
             status=transaction_dto.stage.value,
-            shrunken_secret_share=transaction_dto.shrunken_secret_share
+            shrunken_secret_share=transaction_dto.shrunken_secret_share,
+            name=transaction_dto.name
         )
 
 
