@@ -1,7 +1,6 @@
 import axios from "axios";
 import { api } from "./authService";
 
-const API_URL = "https://bitcoin-threshold-wallet.onrender.com"; // render-url
 const LOCAL_HOST_URL = "http://127.0.0.1:8000";
 
 export const getWallets = async (userId) => {
@@ -20,7 +19,7 @@ export const createWallet = async ({ wallet_name, threshold, users, max_particip
 };
 
 export const createTransaction = async ({ wallet_id, user_id, description }) => {
-    const response = await axios.post(
+    const response = await api.post(
         `${LOCAL_HOST_URL}/transactions/request`,
         null,
         {

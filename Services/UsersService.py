@@ -16,7 +16,7 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
 
-def login_user(email: str, matrix_user_id: str, password: str) :
+def login_user(email: str, matrix_user_id: str, password: str):
     """Verify user credentials against the database."""
     
     # maybe user is not registered in the database
@@ -25,7 +25,13 @@ def login_user(email: str, matrix_user_id: str, password: str) :
     if user is None:
         register_new_user(email=email, matrix_user_id=matrix_user_id, password=password)
     elif not verify_password(password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(
+            status_code=401, 
+            detail={
+                "message": "Incorrect email or password",
+                "code": "INVALID_CREDENTIALS"
+            }
+        )
     
     try:
         Context.set(matrix_user_id, password)
@@ -34,7 +40,13 @@ def login_user(email: str, matrix_user_id: str, password: str) :
         listener.start_listener()
         return user
     except Exception as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        raise HTTPException(
+            status_code=401, 
+            detail={
+                "message": str(e),
+                "code": "MATRIX_AUTH_ERROR"
+            }
+        )
     
 
 def register_new_user(email: str, matrix_user_id: str, password: str) -> bool:

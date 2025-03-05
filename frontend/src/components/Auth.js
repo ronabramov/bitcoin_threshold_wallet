@@ -25,7 +25,18 @@ const Auth = () => {
         try {
             await login(formData.email, formData.matrix_user_id, formData.password);
         } catch (error) {
-            setError(error.response?.data?.detail || 'An error occurred');
+            const errorDetail = error.response?.data?.detail;
+            if (typeof errorDetail === 'object' && errorDetail.code) {
+                switch (errorDetail.code) {
+                    case 'INVALID_CREDENTIALS':
+                        setError('Incorrect credentials. Please try again.');
+                        break;
+                    default:
+                        setError(errorDetail.message || 'An error occurred during login');
+                }
+            } else {
+                setError(errorDetail || 'An error occurred during login');
+            }
         }
     };
 

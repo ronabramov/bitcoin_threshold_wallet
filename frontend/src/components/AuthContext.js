@@ -7,20 +7,35 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    const decodeToken = (token) => {
+        try {
+            // Decode the JWT token (split by dots and decode middle part)
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return {
+                token,
+                email: payload.email // assuming email is in the token payload
+            };
+        } catch (error) {
+            console.error('Error decoding token:', error);
+            return null;
+        }
+    };
+
     useEffect(() => {
         // Check if user is logged in on mount
-        const user = authService.getAccessToken();
-        if (user) {
-            setUser(user);
+        const token = authService.getAccessToken();
+        if (token) {
+            setUser(decodeToken(token));
         }
         setLoading(false);
     }, []);
 
     const login = async (email, matrixUserId, password) => {
         try {
-            const user = await authService.login(email, matrixUserId, password);
-            setUser(user);
-            return user;
+            const token = await authService.login(email, matrixUserId, password);
+            const decodedUser = decodeToken(token);
+            setUser(decodedUser);
+            return decodedUser;
         } catch (error) {
             throw error;
         }
@@ -47,6 +62,7 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => {
+    debugger;
     const context = useContext(AuthContext);
     if (!context) {
         throw new Error('useAuth must be used within an AuthProvider');

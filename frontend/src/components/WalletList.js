@@ -71,7 +71,7 @@ const WalletList = ({ userId, onSelectWallet }) => {
                     variant="contained"
                     onClick={() => setOpenDialog(true)}
                 >
-                    + Create New Wallet
+                    Create New Wallet
                 </Button>
             </Box>
             <Paper elevation={0} sx={{ backgroundColor: 'rgba(255, 255, 255, 0.9)' }}>

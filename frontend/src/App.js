@@ -28,7 +28,7 @@ const AppContent = () => {
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Typography color="#d2e3eb">
-                            Welcome, {user.user_name || user.email}
+                            Welcome, {user.email.split('@')[0]}
                         </Typography>
                         <Button color="inherit" onClick={logout}>
                             Logout

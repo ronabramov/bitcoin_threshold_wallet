@@ -22,6 +22,24 @@ api.interceptors.request.use(
     }
 );
 
+// Add response interceptor to handle 401 responses
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            // Don't redirect if we're already handling login errors
+            const isLoginRequest = error.config.url.includes('/login');
+            if (!isLoginRequest) {
+                // Clear the access token
+                localStorage.removeItem('access_token');
+                // Redirect to login page
+                window.location.href = '/';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export const authService = {
     async login(email, matrixUserId, password) {
         try {

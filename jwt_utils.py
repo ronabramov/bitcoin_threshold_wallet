@@ -31,12 +31,12 @@ def verify_token(token: str) -> Optional[dict]:
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired"
+            detail={"message": "Token has expired", "code": "TOKEN_EXPIRED"}
         )
     except jwt.JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            detail={"message": "Invalid token", "code": "INVALID_TOKEN"}
         )
 
 async def get_current_user(request: Request):
@@ -60,7 +60,7 @@ async def get_current_user(request: Request):
         # If no token found in either place, raise unauthorized
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated"
+            detail={"message": "Not authenticated", "code": "NOT_AUTHENTICATED"}
         )
 
     except HTTPException as e:
@@ -68,5 +68,5 @@ async def get_current_user(request: Request):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            detail={"message": "Invalid token", "code": "INVALID_TOKEN"}
         ) 
