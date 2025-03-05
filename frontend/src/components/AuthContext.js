@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     const login = async (email, matrixUserId, password) => {
         try {
             const token = await authService.login(email, matrixUserId, password);
-            const decodedUser = decodeToken(token);
+            const decodedUser = decodeToken(token.access_token);
             setUser(decodedUser);
             return decodedUser;
         } catch (error) {

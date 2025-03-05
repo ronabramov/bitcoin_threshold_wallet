@@ -25,6 +25,7 @@ const Auth = () => {
         try {
             await login(formData.email, formData.matrix_user_id, formData.password);
         } catch (error) {
+            
             const errorDetail = error.response?.data?.detail;
             if (typeof errorDetail === 'object' && errorDetail.code) {
                 switch (errorDetail.code) {

@@ -1,3 +1,5 @@
+import { apiClient } from "./baseClient";
+
 export const authService = {
     async login(email, matrixUserId, password) {
         try {
