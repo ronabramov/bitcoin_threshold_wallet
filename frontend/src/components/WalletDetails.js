@@ -20,11 +20,15 @@ const WalletDetails = ({ wallet, onClose }) => {
                 sx={{
                     backgroundColor: 'rgba(103, 58, 183, 0.25)',
                     backdropFilter: 'blur(8px)',
-                    padding: 3,
-                    height: '100%',
+                    width: '300px',
+                    position: 'fixed',
+                    left: '300px',
+                    top: '64px',
+                    bottom: '20px',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    borderRight: '1px solid rgba(255, 255, 255, 0.1)'
                 }}
             >
                 <Typography color="#e0e0e0">Select a wallet to view details</Typography>
@@ -37,10 +41,15 @@ const WalletDetails = ({ wallet, onClose }) => {
             sx={{
                 backgroundColor: 'rgba(103, 58, 183, 0.25)',
                 backdropFilter: 'blur(8px)',
-                height: '100%',
+                width: '340px',
+                position: 'fixed',
+                left: '300px',
+                top: '64px',
+                bottom: '20px',
                 overflow: 'hidden',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                borderRight: '1px solid rgba(255, 255, 255, 0.1)'
             }}
         >
             <Box sx={{ 
