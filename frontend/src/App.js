@@ -11,6 +11,7 @@ import Button from "@mui/material/Button";
 import { AuthProvider, useAuth } from "./components/AuthContext";
 import FriendsList from './components/FriendsList';
 import { NotificationProvider, useNotification } from './components/NotificationContext';
+import Avatar from "@mui/material/Avatar";
 
 const AppContent = () => {
     const [selectedWallet, setSelectedWallet] = useState(null);
@@ -41,20 +42,11 @@ const AppContent = () => {
                     backdropFilter: "blur(8px)",
                 }}
             >
-                <Toolbar>
-                    <Typography 
-                        variant="h6" 
-                        component="div" 
-                        sx={{ 
-                            flexGrow: 1, 
-                            color: '#e0e0e0',
-                            fontSize: "24px",
-                            fontWeight: "bold",
-                        }}
-                    >
-                        Threshold Wallet
-                    </Typography>
+                <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ bgcolor: 'rgba(103, 58, 183, 0.5)' }}>
+                            {user.email[0].toUpperCase()}
+                        </Avatar>
                         <Typography 
                             sx={{ 
                                 fontSize: "24px", 
@@ -64,14 +56,14 @@ const AppContent = () => {
                         >
                             Welcome, {user.email.split('@')[0]}
                         </Typography>
-                        <Button 
-                            color="inherit" 
-                            onClick={logout}
-                            sx={{ color: '#e0e0e0' }}
-                        >
-                            Logout
-                        </Button>
                     </Box>
+                    <Button 
+                        color="inherit" 
+                        onClick={logout}
+                        sx={{ color: '#e0e0e0' }}
+                    >
+                        Logout
+                    </Button>
                 </Toolbar>
             </AppBar>
             

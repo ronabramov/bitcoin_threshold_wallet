@@ -1,17 +1,17 @@
 from fastapi import APIRouter, HTTPException
-from Depracted.db_DEPRECATED import wallets_collection, transactions_collection, users_collection
 from datetime import datetime, timezone
 from bson import ObjectId
-
+from local_db.sql_db_dal import get_transactions_by_wallet_id   
 
 WAITING = "waiting"
 ACCEPTED = "accepted"
 DECLINED = "declined"
-router = APIRouter()
 
-@router.get("/{wallet_id}")
+router = APIRouter(prefix="/{wallet_id}/transactions")
+
+@router.get("/")
 async def get_transactions(wallet_id : int):
-    transactions = transactions_collection.find({"wallet_id" : wallet_id})
+    transactions = get_transactions_by_wallet_id(wallet_id)
     if not transactions:
         raise_not_found_exception(f"Wallet {wallet_id} has no previous transactions")
     return [

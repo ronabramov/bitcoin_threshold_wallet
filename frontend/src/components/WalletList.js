@@ -11,7 +11,6 @@ import {
     IconButton
 } from '@mui/material';
 import { getWallets, createWallet } from '../api/api';
-import EmptyState from './EmptyState';
 import CreateWalletDialog from './CreateWalletDialog';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 
@@ -32,7 +31,7 @@ const EmptyWalletList = ({ onCreateWallet }) => (
             No Wallets Created Yet
         </Typography>
         <Typography variant="body2" color="#e0e0e0" sx={{ mb: 2 }}>
-            Create your first wallet to get started!
+            Create your first wallet to get started
         </Typography>
     </Box>
 );
@@ -45,7 +44,7 @@ const WalletList = ({ userId, onSelectWallet }) => {
     const fetchWallets = async () => {
         try {
             setLoading(true);
-            const response = await getWallets(userId);
+            const response = await getWallets();
             setWallets(response);
         } catch (err) {
             // Error will be handled by the error handler decorator

@@ -74,7 +74,7 @@ class MatrixService:
         """
         Create new room and invite users
         """
-        room_name = "wallet_room_" + wallet_name
+        room_name = "wallet_room_" + wallet_name.replace(" ", "_")
         new_room : Room = self.create_room(room_name) 
         self.client.join_room(new_room.room_id)
         room_id = new_room.room_id

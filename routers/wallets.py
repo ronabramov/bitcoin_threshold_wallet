@@ -10,7 +10,7 @@ router = APIRouter(prefix="/wallets", tags=["wallets"])
 class Wallet(BaseModel):
     wallet_name: str
     threshold: int
-    users: list
+    users: list[str]
     max_participants: int
 
 @router.get("/")
@@ -34,12 +34,13 @@ async def get_user_wallets():
 @router.post("/")
 async def create_wallet(wallet_payload: Wallet):
     # Validate the threshold
-    
     success, wallet = create_new_wallet(invited_users_emails=wallet_payload.users,wallet_name=wallet_payload.wallet_name,wallet_threshold=wallet_payload.threshold,max_participants=wallet_payload.max_participants)
-    users_data = get_wallet_users_data(wallet_payload)
+    # set users to a comma separated string
+    
+    users_data = get_wallet_users_data(wallet)
     # Insert the wallet into the database
     if success:
-        wallet_payload = {
+        wallet_response = {
             "wallet_id": wallet.wallet_id,
             "wallet_name": wallet.name,
             "threshold": wallet.threshold,
@@ -48,5 +49,5 @@ async def create_wallet(wallet_payload: Wallet):
     else:
         raise HTTPException(status_code=400, detail="Failed to create wallet")
     
-    return {"wallet": wallet_payload}
+    return {"wallet": wallet_response}
 

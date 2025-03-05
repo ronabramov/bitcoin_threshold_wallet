@@ -22,7 +22,7 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
         name: '',
         description: '',
         threshold: 2,
-        total_signers: 3,
+        total_signers: 2,
         selectedFriends: []
     });
     const [error, setError] = useState('');
