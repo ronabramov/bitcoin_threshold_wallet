@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Typography,
@@ -6,6 +6,7 @@ import {
     ListItem,
     ListItemText,
     ListItemAvatar,
+    ListItemSecondaryAction,
     Avatar,
     Button,
     Dialog,
@@ -13,12 +14,15 @@ import {
     DialogContent,
     DialogActions,
     TextField,
+    IconButton,
     Paper
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import PersonIcon from '@mui/icons-material/Person';
+import DeleteIcon from '@mui/icons-material/Delete';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import { addFriend, getFriends, removeFriend } from '../api/api';
 
 const EmptyFriendsList = ({ onAddFriend }) => (
     <Box
@@ -53,30 +57,64 @@ const FriendsList = () => {
     const [error, setError] = useState('');
     const [isCollapsed, setIsCollapsed] = useState(false);
 
+    useEffect(() => {
+        const loadFriends = async () => {
+            try {
+                const response = await getFriends();
+                if (response) {
+                    setFriends(response.map(friend => ({
+                        email: friend.email,
+                        matrixId: friend.matrix_id
+                    })));
+                }
+            } catch (error) {
+                console.error('Error loading friends:', error);
+                setError('Failed to load friends list');
+            }
+        };
+
+        loadFriends();
+    }, []);
+
     const handleAddFriend = async () => {
         // Validate inputs
         if (!newFriend.email || !newFriend.matrixId) {
             setError('Please fill in all fields');
             return;
         }
+        
 
         try {
-            const response = await addFriend({ email: newFriend.email, matrix_id: newFriend.matrixId });
-            setFriends([...friends, response]);
+            const response = await addFriend({ 
+                email: newFriend.email, 
+                matrix_id: newFriend.matrixId 
+            });
+            
+            if (response) {
+                setFriends([...friends, {
+                    email: newFriend.email,
+                    matrixId: newFriend.matrixId,
+                }]);
+                setNewFriend({ email: '', matrixId: '' });
+                setError('');
+                setOpenDialog(false);
+            }
         } catch (error) {
-            setError('Failed to add friend');
+            setError('Failed to add friend. Please try again.');
+            console.error('Error adding friend:', error);
         }
-        
-        // Here you would typically make an API call to add the friend
-        // For now, we'll just add to local state
-        setFriends([...friends, {
-            email: newFriend.email,
-            matrixId: newFriend.matrixId,
-        }]);
-        
-        setNewFriend({ email: '', matrixId: '' });
-        setError('');
-        setOpenDialog(false);
+    };
+
+    const handleDeleteFriend = async (email) => {
+        try {
+            const response = await removeFriend({ email });
+            if (response) {
+                setFriends(friends.filter(friend => friend.email !== email));
+            }
+        } catch (error) {
+            console.error('Error deleting friend:', error);
+            setError('Failed to delete friend');
+        }
     };
 
     return (
@@ -140,7 +178,7 @@ const FriendsList = () => {
                     ) : (
                         <List sx={{ flexGrow: 1, overflow: 'auto' }}>
                             {friends.map((friend) => (
-                                <ListItem key={friend.id}>
+                                <ListItem key={friend.email}>
                                     <ListItemAvatar>
                                         <Avatar sx={{ bgcolor: 'rgba(103, 58, 183, 0.5)' }}>
                                             {friend.email[0].toUpperCase()}
@@ -152,6 +190,16 @@ const FriendsList = () => {
                                         primaryTypographyProps={{ color: '#e0e0e0' }}
                                         secondaryTypographyProps={{ color: 'rgba(224, 224, 224, 0.7)' }}
                                     />
+                                    <ListItemSecondaryAction>
+                                        <IconButton
+                                            edge="end"
+                                            aria-label="delete"
+                                            onClick={() => handleDeleteFriend(friend.email)}
+                                            sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+                                        >
+                                            <DeleteIcon />
+                                        </IconButton>
+                                    </ListItemSecondaryAction>
                                 </ListItem>
                             ))}
                         </List>

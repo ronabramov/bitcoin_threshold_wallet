@@ -1,15 +1,12 @@
-import axios from "axios";
-import { api } from "./authService";
+import { apiClient } from "./baseClient";
 
-const LOCAL_HOST_URL = "http://127.0.0.1:8000";
-
-export const getWallets = async (userId) => {
-    const response = await api.get(`${LOCAL_HOST_URL}/wallets`);
+export const getWallets = async () => {
+    const response = await apiClient.get(`/wallets`);
     return response.data;
 };
 
 export const createWallet = async ({ wallet_name, threshold, users, max_participants }) => {
-    const response = await api.post(`${LOCAL_HOST_URL}/wallets`, {
+    const response = await apiClient.post(`/wallets`, {
         wallet_name,
         threshold,
         users,
@@ -19,8 +16,8 @@ export const createWallet = async ({ wallet_name, threshold, users, max_particip
 };
 
 export const createTransaction = async ({ wallet_id, user_id, description }) => {
-    const response = await api.post(
-        `${LOCAL_HOST_URL}/transactions/request`,
+    const response = await apiClient.post(
+        `/transactions`,
         null,
         {
             params: {
@@ -33,26 +30,25 @@ export const createTransaction = async ({ wallet_id, user_id, description }) => 
     return response.data;
 };
 
-export const login = async ({ email, matrix_user_id, password }) => {
-    const response = await api.post(`${LOCAL_HOST_URL}/login`, {
-        email,
-        matrix_user_id,
-        password,
-    });
-    return response.data;
-};
-
-
 export const getFriends = async () => {
-    const response = await api.get(`${LOCAL_HOST_URL}/friends`);
+    const response = await apiClient.get(`/friends`);
     return response.data;
 };
 
 
 export const addFriend = async ({ email, matrix_id }) => {
-    const response = await api.post(`${LOCAL_HOST_URL}/friends`, {
+    const response = await apiClient.post(`/friends`, {
         email,
         matrix_id,
+    });
+    return response.data;
+};
+
+export const removeFriend = async ({ email }) => {
+    const response = await apiClient.delete(`/friends`, {
+        params: {
+            email,
+        },
     });
     return response.data;
 };

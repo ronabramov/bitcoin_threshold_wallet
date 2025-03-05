@@ -191,6 +191,21 @@ def insert_new_friend(user_email : str, user_matrix_id : str) -> bool:
             session.rollback()
             return False
 
+def remove_friend(email : str) -> bool:
+    with DB.session() as session:
+        try:
+            friend = session.query(sql_db.Friend).filter(sql_db.Friend.email == email).first()
+            if not friend:
+                print(f"Friend {email} not found")
+                return True
+            session.delete(friend)
+            session.commit()
+            return True
+        except Exception as e:
+            print(f"Failed to remove friend {email}", e)
+            session.rollback()
+            return False
+            
 def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO:
     transaction_dto = transaction_dto = TransactionDTO(
     id=transaction.transaction_id,  
