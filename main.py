@@ -20,8 +20,8 @@ async def read_root():
     return {"message": "Welcome to the Bitcoin Threshold Wallet"}
 
 # Include API routes with authentication
-# app.include_router(transactions.router, prefix="/transactions")
 app.include_router(authentications.router)  # No authentication for login routes
+app.include_router(transactions.router, dependencies=[Depends(get_current_user)])
 app.include_router(wallets.router, dependencies=[Depends(get_current_user)])
 app.include_router(friends.router, dependencies=[Depends(get_current_user)])
 

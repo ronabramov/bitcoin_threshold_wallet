@@ -52,3 +52,9 @@ export const removeFriend = withErrorHandler(async ({ email }) => {
     });
     return response.data;
 });
+
+
+export const getTransactions = withErrorHandler(async (wallet_id) => {
+    const response = await apiClient.get(`/wallets/${wallet_id}/transactions`);
+    return response.data;
+});

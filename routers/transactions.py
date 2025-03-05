@@ -7,10 +7,10 @@ WAITING = "waiting"
 ACCEPTED = "accepted"
 DECLINED = "declined"
 
-router = APIRouter(prefix="/{wallet_id}/transactions")
+router = APIRouter(prefix="/wallets/{wallet_id}/transactions")
 
 @router.get("/")
-async def get_transactions(wallet_id : int):
+async def get_transactions(wallet_id : str):
     transactions = get_transactions_by_wallet_id(wallet_id)        
     return [
         {
