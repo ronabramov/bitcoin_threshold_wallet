@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -7,17 +7,44 @@ import {
     Button,
     TextField,
     Box,
-    Typography
+    Typography,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem,
+    Chip,
+    OutlinedInput
 } from '@mui/material';
+import { getFriends } from '../api/api';
 
 const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
         threshold: 2,
-        total_signers: 3
+        total_signers: 3,
+        selectedFriends: []
     });
     const [error, setError] = useState('');
+    const [friends, setFriends] = useState([]);
+
+    useEffect(() => {
+        const loadFriends = async () => {
+            try {
+                const response = await getFriends();
+                if (response) {
+                    setFriends(response);
+                }
+            } catch (error) {
+                console.error('Error loading friends:', error);
+                setError('Failed to load friends list');
+            }
+        };
+
+        if (open) {
+            loadFriends();
+        }
+    }, [open]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -42,7 +69,25 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
             return;
         }
 
-        onSubmit(formData);
+        if (formData.selectedFriends.length === 0) {
+            setError('Please select at least one friend');
+            return;
+        }
+
+        if (formData.selectedFriends.length > formData.total_signers - 1) {
+            setError(`You can only select up to ${formData.total_signers - 1} friends`);
+            return;
+        }
+
+        // Transform the data to match API requirements
+        const submitData = {
+            wallet_name: formData.name,
+            threshold: formData.threshold,
+            users: formData.selectedFriends.map(friend => friend.email),
+            max_participants: formData.total_signers
+        };
+
+        onSubmit(submitData);
     };
 
     return (
@@ -66,6 +111,7 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
                             onChange={handleChange}
                             fullWidth
                             multiline
+                            required
                             rows={2}
                         />
                         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -90,6 +136,38 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
                                 inputProps={{ min: 1 }}
                             />
                         </Box>
+                        <FormControl fullWidth>
+                            <InputLabel id="friends-select-label">Select Friends</InputLabel>
+                            <Select
+                                labelId="friends-select-label"
+                                multiple
+                                value={formData.selectedFriends}
+                                onChange={(e) => handleChange({
+                                    target: {
+                                        name: 'selectedFriends',
+                                        value: e.target.value
+                                    }
+                                })}
+                                input={<OutlinedInput label="Select Friends" />}
+                                renderValue={(selected) => (
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                        {selected.map((friend) => (
+                                            <Chip 
+                                                key={friend.email} 
+                                                label={friend.email} 
+                                                sx={{ backgroundColor: 'rgba(103, 58, 183, 0.1)' }}
+                                            />
+                                        ))}
+                                    </Box>
+                                )}
+                            >
+                                {friends.map((friend) => (
+                                    <MenuItem key={friend.email} value={friend}>
+                                        {friend.email}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                         {error && (
                             <Typography color="error" variant="body2">
                                 {error}

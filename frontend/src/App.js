@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import WalletList from "./components/WalletList";
 import TransactionForm from "./components/TransactionForm";
 import TransactionList from "./components/TransactionList";
@@ -10,11 +10,21 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { AuthProvider, useAuth } from "./components/AuthContext";
 import FriendsList from './components/FriendsList';
+import { NotificationProvider, useNotification } from './components/NotificationContext';
 
 const AppContent = () => {
     const [selectedWallet, setSelectedWallet] = useState(null);
     const { user, logout } = useAuth();
     const transactionListRef = useRef();
+    const { showNotification } = useNotification();
+
+    useEffect(() => {
+        // Make the notification function globally available for the error handler
+        window.__showNotification = showNotification;
+        return () => {
+            delete window.__showNotification;
+        };
+    }, [showNotification]);
 
     if (!user) {
         return <Auth />;
@@ -121,7 +131,9 @@ const AppContent = () => {
 const App = () => {
     return (
         <AuthProvider>
-            <AppContent />
+            <NotificationProvider>
+                <AppContent />
+            </NotificationProvider>
         </AuthProvider>
     );
 };

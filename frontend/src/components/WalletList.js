@@ -7,7 +7,6 @@ import CreateWalletDialog from './CreateWalletDialog';
 const WalletList = ({ userId, onSelectWallet }) => {
     const [wallets, setWallets] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [openDialog, setOpenDialog] = useState(false);
 
     const fetchWallets = async () => {
@@ -16,7 +15,7 @@ const WalletList = ({ userId, onSelectWallet }) => {
             const response = await getWallets(userId);
             setWallets(response);
         } catch (err) {
-            setError(err.message);
+            // Error will be handled by the error handler decorator
         } finally {
             setLoading(false);
         }
@@ -28,20 +27,17 @@ const WalletList = ({ userId, onSelectWallet }) => {
 
     const handleCreateWallet = async (walletData) => {
         try {
-            const newWallet = await createWallet(userId, walletData);
+            const newWallet = await createWallet(walletData);
             setWallets([...wallets, newWallet]);
-            setOpenDialog(false);
+            setOpenDialog(false); // Only close dialog on success
         } catch (err) {
-            setError(err.message);
+            // Error will be handled by the error handler decorator
+            // Don't close the dialog or update state here
         }
     };
 
     if (loading) {
         return <Typography>Loading wallets...</Typography>;
-    }
-
-    if (error) {
-        return <Typography color="error">{error}</Typography>;
     }
 
     if (wallets.length === 0) {

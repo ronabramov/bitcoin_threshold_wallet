@@ -1,11 +1,12 @@
 import { apiClient } from "./baseClient";
+import { withErrorHandler } from "./decorators";
 
-export const getWallets = async () => {
+export const getWallets = withErrorHandler(async () => {
     const response = await apiClient.get(`/wallets`);
     return response.data;
-};
+});
 
-export const createWallet = async ({ wallet_name, threshold, users, max_participants }) => {
+export const createWallet = withErrorHandler(async ({ wallet_name, threshold, users, max_participants }) => {
     const response = await apiClient.post(`/wallets`, {
         wallet_name,
         threshold,
@@ -13,9 +14,9 @@ export const createWallet = async ({ wallet_name, threshold, users, max_particip
         max_participants,
     });
     return response.data;
-};
+});
 
-export const createTransaction = async ({ wallet_id, user_id, description }) => {
+export const createTransaction = withErrorHandler(async ({ wallet_id, user_id, description }) => {
     const response = await apiClient.post(
         `/transactions`,
         null,
@@ -28,27 +29,26 @@ export const createTransaction = async ({ wallet_id, user_id, description }) => 
         }
     );
     return response.data;
-};
+});
 
-export const getFriends = async () => {
+export const getFriends = withErrorHandler(async () => {
     const response = await apiClient.get(`/friends`);
     return response.data;
-};
+});
 
-
-export const addFriend = async ({ email, matrix_id }) => {
+export const addFriend = withErrorHandler(async ({ email, matrix_id }) => {
     const response = await apiClient.post(`/friends`, {
         email,
         matrix_id,
     });
     return response.data;
-};
+});
 
-export const removeFriend = async ({ email }) => {
+export const removeFriend = withErrorHandler(async ({ email }) => {
     const response = await apiClient.delete(`/friends`, {
         params: {
             email,
         },
     });
     return response.data;
-};
+});
