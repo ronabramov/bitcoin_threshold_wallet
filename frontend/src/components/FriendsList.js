@@ -176,7 +176,23 @@ const FriendsList = () => {
                     {friends.length === 0 ? (
                         <EmptyFriendsList onAddFriend={() => setOpenDialog(true)} />
                     ) : (
-                        <List sx={{ flexGrow: 1, overflow: 'auto' }}>
+                        <List sx={{ 
+                            flexGrow: 1, 
+                            overflow: 'auto',
+                            '&::-webkit-scrollbar': {
+                                width: '8px',
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                background: 'rgba(255, 255, 255, 0.05)',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                background: 'rgba(103, 58, 183, 0.5)',
+                                borderRadius: '4px',
+                            },
+                            '&::-webkit-scrollbar-thumb:hover': {
+                                background: 'rgba(103, 58, 183, 0.7)',
+                            },
+                        }}>
                             {friends.map((friend) => (
                                 <ListItem key={friend.email}>
                                     <ListItemAvatar>

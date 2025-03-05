@@ -113,7 +113,23 @@ const WalletList = ({ userId, onSelectWallet }) => {
             {wallets.length === 0 ? (
                 <EmptyWalletList onCreateWallet={() => setOpenDialog(true)} />
             ) : (
-                <List sx={{ flexGrow: 1, overflow: 'auto' }}>
+                <List sx={{ 
+                    flexGrow: 1, 
+                    overflow: 'auto',
+                    '&::-webkit-scrollbar': {
+                        width: '8px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                        background: 'rgba(255, 255, 255, 0.05)',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        background: 'rgba(103, 58, 183, 0.5)',
+                        borderRadius: '4px',
+                    },
+                    '&::-webkit-scrollbar-thumb:hover': {
+                        background: 'rgba(103, 58, 183, 0.7)',
+                    },
+                }}>
                     {wallets.map((wallet) => (
                         <ListItem key={wallet.wallet_id} disablePadding>
                             <ListItemButton 
