@@ -1,9 +1,14 @@
 body {
-    background-image: url('background.jpg');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center center;
-    color: #d2e3ebe7;
+    background-color: #121212;
+    background-image: 
+        linear-gradient(30deg, #1e1e1e 12%, transparent 12.5%, transparent 87%, #1e1e1e 87.5%, #1e1e1e),
+        linear-gradient(150deg, #1e1e1e 12%, transparent 12.5%, transparent 87%, #1e1e1e 87.5%, #1e1e1e),
+        linear-gradient(30deg, #1e1e1e 12%, transparent 12.5%, transparent 87%, #1e1e1e 87.5%, #1e1e1e),
+        linear-gradient(150deg, #1e1e1e 12%, transparent 12.5%, transparent 87%, #1e1e1e 87.5%, #1e1e1e),
+        linear-gradient(60deg, #1e1e1e77 25%, transparent 25.5%, transparent 75%, #1e1e1e77 75%, #1e1e1e77);
+    background-size: 80px 140px;
+    background-position: 0 0, 0 0, 40px 70px, 40px 70px, 0 0;
+    color: #e0e0e0;
     min-height: 100vh;
     margin: 0;
     padding: 0;
@@ -11,8 +16,8 @@ body {
 }
 
 header {
-    background-color: rgba(0, 0, 50, 0.8); /* Translucent navy blue */
-    color: #d2e3eb; /* Light blue for text */
+    background-color: rgba(24, 24, 24, 0.95);
+    color: #e0e0e0;
     padding: 15px;
     text-align: center;
     font-size: 24px;

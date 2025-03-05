@@ -21,16 +21,43 @@ const AppContent = () => {
 
     return (
         <div>
-            <AppBar position="static">
+            <AppBar 
+                position="static" 
+                sx={{ 
+                    backgroundColor: "rgba(103, 58, 183, 0.25)",
+                    boxShadow: 'none',
+                    padding: "2px",
+                    backdropFilter: "blur(8px)",
+                }}
+            >
                 <Toolbar>
-                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }} color="#d2e3eb">
+                    <Typography 
+                        variant="h6" 
+                        component="div" 
+                        sx={{ 
+                            flexGrow: 1, 
+                            color: '#e0e0e0',
+                            fontSize: "24px",
+                            fontWeight: "bold",
+                        }}
+                    >
                         Threshold Wallet
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Typography color="#d2e3eb">
+                        <Typography 
+                            sx={{ 
+                                fontSize: "24px", 
+                                fontWeight: "bold",
+                                color: '#e0e0e0'
+                            }}
+                        >
                             Welcome, {user.email.split('@')[0]}
                         </Typography>
-                        <Button color="inherit" onClick={logout}>
+                        <Button 
+                            color="inherit" 
+                            onClick={logout}
+                            sx={{ color: '#e0e0e0' }}
+                        >
                             Logout
                         </Button>
                     </Box>
@@ -66,8 +93,8 @@ const AppContent = () => {
             <Box
                 component="footer"
                 sx={{
-                    backgroundColor: "rgba(186, 186, 227, 0.46)",
-                    color: "#d2e3eb",
+                    backgroundColor: "rgba(103, 58, 183, 0.25)",
+                    color: '#e0e0e0',
                     padding: "2px",
                     textAlign: "center",
                     fontSize: "24px",
@@ -75,9 +102,10 @@ const AppContent = () => {
                     position: "fixed",
                     bottom: 0,
                     width: "100%",
+                    backdropFilter: "blur(8px)",
                 }}
             >
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" sx={{ color: '#e0e0e0' }}>
                     © 2025 Crypto Wallet. All rights reserved.
                 </Typography>
             </Box>
