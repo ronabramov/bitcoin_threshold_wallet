@@ -139,11 +139,11 @@ const FriendsList = () => {
                 borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: isCollapsed ? 'center' : 'space-between'
+                justifyContent: 'space-between'
             }}>
                 {!isCollapsed && (
                     <>
-                        <Typography variant="h6" color="#e0e0e0" sx={{ mb: 1 }}>
+                        <Typography variant="h6" color="#e0e0e0">
                             Friends
                         </Typography>
                         <Button
@@ -156,19 +156,6 @@ const FriendsList = () => {
                         </Button>
                     </>
                 )}
-                <Button
-                    onClick={() => setIsCollapsed(!isCollapsed)}
-                    sx={{ 
-                        minWidth: '40px',
-                        color: '#e0e0e0',
-                        position: isCollapsed ? 'static' : 'absolute',
-                        left: 0,
-                        top: '50%',
-                        transform: isCollapsed ? 'none' : 'translateY(-50%)'
-                    }}
-                >
-                    {isCollapsed ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-                </Button>
             </Box>
 
             {!isCollapsed && (
