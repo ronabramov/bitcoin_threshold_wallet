@@ -248,21 +248,36 @@ const WalletDetails = ({ wallet, onClose }) => {
                     <Typography variant="h6" color="#e0e0e0" gutterBottom>
                         Invited Users
                     </Typography>
-                    <List>
-                        {wallet.users.map((user, index) => (
-                            <ListItem key={user.matrix_id}>
-                                <ListItemAvatar>
-                                    <Avatar sx={{ bgcolor: 'rgba(103, 58, 183, 0.5)' }}>
-                                        {user.email[0].toUpperCase()}
-                                    </Avatar>
-                                </ListItemAvatar>
-                                <ListItemText
-                                    primary={<Typography color="#e0e0e0">{user.email}</Typography>}
-                                    secondary={<Typography color="rgba(224, 224, 224, 0.7)" variant="body2">{user.matrix_id}</Typography>}
-                                />
-                            </ListItem>
-                        ))}
-                    </List>
+                    <Box sx={{ 
+                        maxHeight: 'calc(100vh - 300px)',
+                        overflowY: 'auto',
+                        '&::-webkit-scrollbar': {
+                            width: '8px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                            background: 'rgba(255, 255, 255, 0.05)',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            background: 'rgba(103, 58, 183, 0.5)',
+                            borderRadius: '4px',
+                        },
+                    }}>
+                        <List>
+                            {wallet.users.map((user, index) => (
+                                <ListItem key={user.matrix_id}>
+                                    <ListItemAvatar>
+                                        <Avatar sx={{ bgcolor: 'rgba(103, 58, 183, 0.5)' }}>
+                                            {user.email[0].toUpperCase()}
+                                        </Avatar>
+                                    </ListItemAvatar>
+                                    <ListItemText
+                                        primary={<Typography color="#e0e0e0">{user.email}</Typography>}
+                                        secondary={<Typography color="rgba(224, 224, 224, 0.7)" variant="body2">{user.matrix_id}</Typography>}
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    </Box>
                 </Box>
             </Paper>
             <TransactionsPanel wallet={wallet} isOpen={showTransactions} />
