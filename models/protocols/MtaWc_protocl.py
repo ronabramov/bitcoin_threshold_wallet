@@ -25,13 +25,13 @@ from ecdsa.ellipticcurve import PointJacobi
 
 class MtaWcProtocolWithZKP:
 
-    def __init__(self, q, alice_public_share : user_public_share, 
+    def __init__(self, alice_public_share : user_public_share, 
                  bob_public_share : user_public_share,
                  curve : curves.Curve ,
                  bob_public_g_power_secret : PointJacobi,
                  b_value = None ,
                  alice_paillier_private_key : PaillierPrivateKey = None):
-        self.q = q
+        self.q = curve.order
         self.Alice_Alg_Verifier_Modulus = bob_public_share.user_modulus
         self.Alice_Alg_public_key, self.Alice_Alg_private_key = alice_public_share.paillier_public_key, alice_paillier_private_key
         self.Alice_Alg_prover_paillier_N = self.Alice_Alg_public_key.n
@@ -116,14 +116,19 @@ class MtaWcProtocolWithZKP:
 
     def bob_finalize(self, beta_prime):
         """Bob computes β = his additive share of ab """
-        beta = (-beta_prime) % self.Bob_Alg_verifier_Settings.Modulus_N  # Mod q assumption
+        beta = (-beta_prime) % self.Bob_Alg_verifier_Settings.verifier_modulus.N  # Mod q assumption
         return beta  # Bob holds β only
 
 
 curve = NIST256p
 q = curve.order
-bob_x = random.randint(1,q-1)
-bob_X = curve.generator * bob_x
+# Alice's secret
+a = 11
+
+# Bob's secret
+b = 5
+
+bob_X = curve.generator * b #bob_x = b
 alice_paillier_public_key, allice_paillier_secret_key = paillier.generate_paillier_keypair()
 bob_paillier_public_key, _ = paillier.generate_paillier_keypair()
 h1 = 13
@@ -132,14 +137,9 @@ modulus_N = int(q ** 8)  #Modulus
 alice_modulus = bob_modulus = user_modulus(N=modulus_N, h1=h1,h2=h2)
 alice_share = user_public_share(user_index=1,user_id='123', paillier_public_key=alice_paillier_public_key, user_modulus=alice_modulus)
 bob_share = user_public_share(user_index=2, user_id = '345', paillier_public_key=alice_paillier_public_key, user_modulus=bob_modulus)
-# Alice's secret
-a = 11
-
-# Bob's secret
-b = 5
 
 # Example run
-mta = MtaWcProtocolWithZKP(q=q, alice_public_share=alice_share, bob_public_share=bob_share, curve=curve, bob_public_g_power_secret=bob_X, b_value=b, alice_paillier_private_key=allice_paillier_secret_key)  #For example both Alice and Bob having the same Paillier Keys and
+mta = MtaWcProtocolWithZKP(alice_public_share=alice_share, bob_public_share=bob_share, curve=curve, bob_public_g_power_secret=bob_X, b_value=b, alice_paillier_private_key=allice_paillier_secret_key)  #For example both Alice and Bob having the same Paillier Keys and
 
 
 # Protocol execution
@@ -155,5 +155,6 @@ alpha = mta.alice_finalize(proof_for_challenge= bob_proof_for_alice_challenge, c
 beta = mta.bob_finalize(beta_prime)
 
 # Verify correctness
-assert (alpha + beta) % N == (a * b) % N
+assert (alpha + beta) % modulus_N == (a * b) % modulus_N
 print(f"Alice's share: {alpha}, Bob's share: {beta}")
+
