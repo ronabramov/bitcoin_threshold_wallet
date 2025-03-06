@@ -14,6 +14,7 @@ import { createTransaction } from '../api/api';
 const CreateTransactionDialog = ({ open, onClose, walletId, onTransactionCreated }) => {
     const [description, setDescription] = useState('');
     const [name, setName] = useState('');
+    const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -22,8 +23,15 @@ const CreateTransactionDialog = ({ open, onClose, walletId, onTransactionCreated
         setError('');
         setLoading(true);
 
-        if (!description.trim()) {
-            setError('Description is required');
+        if (!description.trim() || !amount.trim()) {
+            setError('Description and amount are required');
+            setLoading(false);
+            return;
+        }
+
+        const amountNum = parseFloat(amount);
+        if (isNaN(amountNum) || amountNum <= 0) {
+            setError('Please enter a valid positive amount');
             setLoading(false);
             return;
         }
@@ -32,11 +40,14 @@ const CreateTransactionDialog = ({ open, onClose, walletId, onTransactionCreated
             await createTransaction({
                 wallet_id: walletId,
                 name: name.trim(),
-                description: description.trim()
+                description: description.trim(),
+                amount: amountNum
             });
             onTransactionCreated();
             onClose();
             setDescription('');
+            setAmount('');
+            setName('');
         } catch (error) {
             setError('Failed to create transaction');
         } finally {
@@ -61,6 +72,19 @@ const CreateTransactionDialog = ({ open, onClose, walletId, onTransactionCreated
                             onChange={(e) => setName(e.target.value)}
                             fullWidth
                             required
+                            sx={{ mb: 2 }}
+                        />
+                        <TextField
+                            label="Amount (BTC)"
+                            type="number"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                            fullWidth
+                            required
+                            inputProps={{ 
+                                min: "0",
+                                step: "0.00000001"
+                            }}
                             sx={{ mb: 2 }}
                         />
                         <TextField

@@ -11,6 +11,7 @@ from models.DTOs.transaction_response_dto import TransactionResponseDTO
 import json
 import Config
 import uuid
+import sqlalchemy
 
 from Services.Context import Context
 
@@ -66,6 +67,7 @@ class Transaction(Base):
     status = Column(Integer, nullable=True)
     shrunken_secret_share = Column(Integer, nullable=True)
     name = Column(String, nullable=True)
+    amount = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
     
@@ -75,8 +77,9 @@ class Transaction(Base):
             transaction_id=transaction_dto.id,
             details=transaction_dto.details,
             wallet_id=transaction_dto.wallet_id,
-            status=transaction_dto.stage.value,
+            status=transaction_dto.status.value,
             shrunken_secret_share=transaction_dto.shrunken_secret_share,
+            amount=transaction_dto.amount,
             name=transaction_dto.name
         )
 
@@ -108,7 +111,7 @@ class TransactionUserData(Base):
             transaction_id=transaction_dto.id,
             details=transaction_dto.details,
             wallet_id=transaction_dto.wallet_id,
-            status=transaction_dto.stage.value,
+            status=transaction_dto.status.value,
         )
         return transaction
 
@@ -119,13 +122,17 @@ class WalletUserData(Base):
     """
 
     __tablename__ = "WalletUserData"
-
-    user_index = Column(Integer, primary_key=True, nullable=False)
-    user_matrix_id = Column(String, primary_key=True, nullable=False)
+    id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    user_index = Column(Integer, nullable=False)
+    user_matrix_id = Column(String, nullable=False)
     user_public_keys_data = Column(JSON, nullable=False, default={})  # Paillier Public key and Modulus data - that is the user_public_share
     g_power_x = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="users_data")
+
+    __table_args__ = (
+        sqlalchemy.UniqueConstraint('user_matrix_id', 'wallet_id', name='unique_user_wallet'),
+    )
 
 
 class WalletSignatureSharesData(Base):

@@ -172,8 +172,8 @@ class MatrixService:
         return res["name"].startswith("wallet_room_")
     
     
-    def _is_private_room(self, room: Room, target_user_matrix_id: str) -> bool:
-        res = self.client.api.get_room_name(room.room_id)
+    def _is_private_room(self, room_id: str, target_user_matrix_id: str) -> bool:
+        res = self.client.api.get_room_name(room_id)
         optional_names = [
             self._get_private_room_name(Context.matrix_user_id(), target_user_matrix_id),
             self._get_private_room_name(target_user_matrix_id, Context.matrix_user_id()),
@@ -183,14 +183,14 @@ class MatrixService:
     def __get_private_room_with_user(self, target_user_matrix_id: str) -> Room:
         rooms = self.client.rooms
         target_room: Room = None
-        invited_rooms = self.get_pending_invitations_rooms()
-        # TODO - change to handle room ids!
+        invited_rooms = self.get_all_room_invitations()
         all_rooms = list(rooms.values()) + invited_rooms
         for room in all_rooms:
-            if self._is_private_room(room, target_user_matrix_id):
+            room_id = room["id"] if isinstance(room, dict) else room.room_id
+            if self._is_private_room(room_id, target_user_matrix_id):
                 target_room = room
                 print(
-                    f"Found private room with user {target_user_matrix_id} in room {room.room_id}"
+                    f"Found private room with user {target_user_matrix_id} in room {room_id}"
                 )
                 break
 
@@ -302,9 +302,9 @@ class MatrixService:
         return []
     
     def reject_all_invitations(self) -> bool:
-        room_ids = self.get_all_room_invitations()
-        for room_id in room_ids:
-            self.client.api.leave_room(room_id)
+        rooms = self.get_all_room_invitations()
+        for room in rooms:
+            self.client.api.leave_room(room["id"])
         return True
         
     

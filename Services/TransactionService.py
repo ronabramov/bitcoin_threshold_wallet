@@ -70,7 +70,7 @@ def handler_new_transaction(transaction: TransactionDTO):
     return
 
 def handle_reached_threshold_transaction(transaction : TransactionDTO, user_index) -> bool: 
-    transaction.stage = TransactionStatus.THRESHOLD_ACHIEVED
+    transaction.status = TransactionStatus.STAGE_ONE
     wallet = sql_db_dal.get_wallet_by_id(transaction.wallet_id)
     user_secret_signature_data = wallet.get_room_secret_user_data()
     approvers_indecis = [participating_user.user_index for participating_user in sql_db_dal.get_all_transaction_user_data(transaction_id=transaction.id)]

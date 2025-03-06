@@ -9,7 +9,8 @@ class TransactionDTO(BaseModel):
     details: str
     wallet_id: str
     shrunken_secret_share : int | None
-    stage: TransactionStatus = TransactionStatus.WAITING  # Default enum value
+    status: TransactionStatus = TransactionStatus.PENDING_YOUR_APPROVAL  # Default enum value
+    amount: int | None
     
     @property
     def type(self) -> MessageType:

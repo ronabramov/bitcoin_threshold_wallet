@@ -213,7 +213,7 @@ def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO:
     details=transaction.details, 
     wallet_id=transaction.wallet_id
     )
-    transaction_dto.stage = TransactionStatus[transaction.status]
+    transaction_dto.status = TransactionStatus[transaction.status]
     return transaction_dto
 
 def update_signature_share(wallet_id : str, share : wallet_key_generation_share) -> bool:
