@@ -24,13 +24,13 @@ class StepOne:
         # send commitment to all users
         n = json_wallet_configuration["paillier_public_key"]["n"]
         #TODO - check if this is the correct way to get my user data
-        my_user_data = sql_db_dal.get_my_wallet_user_data(wallet_id)
+        my_user_data = sql_db_dal.get_my_wallet_user_data(wallet.wallet_id)
         commitment_message = Commitment(algorithm_step=Algorithm_Step.SIGNATURE_PHASE_ONE, 
                                         committing_user_index=my_user_data.user_index, 
                                         committed_values=[encrypted_commitment], 
                                         committing_user_paillier_public_key= paillier.PaillierPublicKey(n= n))
-        send_private_message_to_every_user_in_Wallet(commitment_message, wallet_id)
-        StepTwo.execute(wallet_id, k_i, gamma_i)
+        send_private_message_to_every_user_in_Wallet(commitment_message, wallet.wallet_id)
+        StepTwo.execute(wallet.wallet_id, k_i, gamma_i)
         
 
         

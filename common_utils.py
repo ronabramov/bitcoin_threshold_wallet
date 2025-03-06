@@ -5,7 +5,7 @@ import sympy
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from Crypto.Util import number
-from phe import generate_paillier_keypair
+from phe import generate_paillier_keypair, EncryptedNumber
 from models.models import user_public_share, user_secret_signature_share
 from local_db.sql_db import Wallet
 from concurrent.futures import ThreadPoolExecutor
@@ -66,3 +66,13 @@ def generate_user_modulus_parameters(bits=1024):
     h1 = random.randint(2, N - 1)
     h2 = random.randint(2, N - 1)
     return {"N": N, "h1": h1, "h2": h2}
+
+def homomorphic_exponentiation(enc_a, b):
+    """Compute E(a^b) securely using Paillier's homomorphic properties."""
+    if not isinstance(b, int) or b < 0:
+        raise ValueError("Exponentiation only supports non-negative integers.")
+
+    # Use Paillier's homomorphic property: E(a^b) = E(a * b)
+    ciphertext = enc_a._raw_mul(b)  # Perform scalar multiplication in encrypted space
+
+    return EncryptedNumber(enc_a.public_key, ciphertext, enc_a.exponent)
