@@ -4,6 +4,7 @@ from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSi
 from models.models import user_public_share, wallet_key_generation_share
 from Services.UserShareUtils import filter_shares_by_user_index
 from Services.WalletService import send_g_power_x_message_to_wallet_room
+import time
 
 def handle_incoming_public_share(incoming_user_public_share : user_public_share, wallet_id : str):
     sql_db_dal.get_wallet_by_id(wallet_id)
@@ -11,8 +12,12 @@ def handle_incoming_public_share(incoming_user_public_share : user_public_share,
     users_signature_shares = sql_db_dal.get_signature_shares_by_wallet(wallet_id)
     user_key_generation_share = filter_shares_by_user_index(users_signature_shares, incoming_user_public_share.user_index)
     if not user_key_generation_share:
-        print(f"ERROR : No share found for user index {incoming_user_public_share.user_index}")
-        raise FileNotFoundError(f'ERROR : No share found for user index {incoming_user_public_share.user_index}')
+        # wait 10 seconds and try again
+        time.sleep(10)
+        user_key_generation_share = filter_shares_by_user_index(users_signature_shares, incoming_user_public_share.user_index)
+        if not user_key_generation_share:
+            print(f"ERROR : No share found for user index {incoming_user_public_share.user_index}")
+            raise FileNotFoundError(f'ERROR : No share found for user index {incoming_user_public_share.user_index}')
     
     user_key_generation_share.target_user_matrix_id = incoming_user_public_share.user_id
     sql_db_dal.update_signature_share(wallet_id, user_key_generation_share)
