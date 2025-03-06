@@ -51,10 +51,10 @@ class UserSignatureGenerator:
         for user in existing_users_keys:
             if user.user_index == self.user_index:
                 continue # Send Messages only for other users
-            user_share = UserShareService.filter_shares_by_user_index(users_signature_shares, user.user_index)
-            user_share.target_user_matrix_id = user.user_id
-            sql_dal.update_signature_share(self.wallet_id, user_share)
-            shares_dict[user.user_index] = user_share
+            key_generation_user_share = UserShareService.filter_shares_by_user_index(users_signature_shares, user.user_index)
+            key_generation_user_share.target_user_matrix_id = user.user_id
+            sql_dal.update_signature_share(self.wallet_id, key_generation_user_share)
+            shares_dict[user.user_index] = key_generation_user_share
 
         return self._send_share_for_every_participating_user(shares_dict=shares_dict)
 

@@ -1,7 +1,13 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../bitcoin_threshold_wallet')))
+
 import random
 import gmpy2
 from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
 from models.models import user_modulus
+from phe import paillier, PaillierPrivateKey, PaillierPublicKey, EncodedNumber, EncryptedNumber
+
 """
 Arguments : 
 user_modulus : N,h1,h2 are of the Verifier
@@ -16,8 +22,14 @@ def pick_element_from_Multiplicative_group(N):
         if gmpy2.gcd(a, N) == 1:
             return a
 
-def calculate_c(paillier_gamma, a, paillier_N, r):
-    return (gmpy2.powmod(paillier_gamma, a, paillier_N**2) * gmpy2.powmod(r, paillier_N, paillier_N**2)) % (paillier_N**2)
+def enc_x(x, r, paillier_pub_key : PaillierPublicKey):
+    """
+    return Enc_A(x)
+    """
+    return paillier_pub_key.encrypt(value=x, r_value=r)
+
+def dec_value(encrypted_value : EncryptedNumber, paillier_secret_key : PaillierPrivateKey):
+    return paillier_secret_key.decrypt(encrypted_number=encrypted_value)
 
 def pick_r(paillier_N):
     return pick_element_from_Multiplicative_group(paillier_N)
@@ -61,17 +73,19 @@ def prover_answers_challenge(alpha, beta, little_gamma, rho, r, e, a, paillier_N
     proof_for_challenge = AliceZKProof_Proof_For_Challenge(s=s, s1=s1, s2=s2)
     return proof_for_challenge
 
-def verifier_verify_result(z, u, w, s, s1, s2, e, c, q, user_modulus : user_modulus, paillier_N, paillier_g):
+def verifier_verify_result(z, u, w, s, s1, s2, e, enc_a: EncryptedNumber, q, user_modulus, paillier_N, paillier_g):
     q_third = q ** 3
     valid_s1 = s1 <= q_third
     Modulus_N = user_modulus.N
-    h1= user_modulus.h1
+    h1 = user_modulus.h1
     h2 = user_modulus.h2
-    # Calculate u to verify
+    # Use the raw (non-obfuscated) ciphertext
+    enc_a_ciphertext = enc_a.ciphertext(be_secure=False)
     paillier_g_s1 = gmpy2.powmod(paillier_g, s1, paillier_N**2)
     s_paillier_N = gmpy2.powmod(s, paillier_N, paillier_N**2)
-    c_inv_e = gmpy2.powmod(gmpy2.invert(c, paillier_N**2), e, paillier_N**2)
-    calculated_u = (paillier_g_s1 * s_paillier_N * c_inv_e) % (paillier_N**2)
+    enc_a_inv_e = gmpy2.invert(gmpy2.powmod(enc_a_ciphertext, e, paillier_N**2), paillier_N**2)
+    calculated_u = (paillier_g_s1 * s_paillier_N * enc_a_inv_e) % (paillier_N**2)
+    
     valid_u = calculated_u == u
 
     # Calculate w to verify
@@ -82,6 +96,7 @@ def verifier_verify_result(z, u, w, s, s1, s2, e, c, q, user_modulus : user_modu
     valid_w = calculated_w == w
 
     return valid_s1 and valid_u and valid_w
+
 
 
 ######
@@ -111,3 +126,9 @@ def verifier_verify_result(z, u, w, s, s1, s2, e, c, q, user_modulus : user_modu
 # proof_for_challenge = prover_answers_challenge(commitment.alpha, commitment.beta, commitment.gamma, commitment.rho, r, e, a, public_key.n)
 # result = verifier_verify_result(commitment.z,commitment.u,commitment.w,proof_for_challenge.s,proof_for_challenge.s1,proof_for_challenge.s2,e,c,q,h1,h2,N,public_key.n,public_key.g)
 # #######
+value_to_encrypt = 5
+public_key, secret_key = paillier.generate_paillier_keypair() 
+r = pick_r(public_key.n)
+x = enc_x(x=value_to_encrypt, r=r, paillier_pub_key=public_key)
+y = dec_value(encrypted_value=x, paillier_secret_key=secret_key)
+print(f'encrypted value : {x} , DecryptedValue = {y} of original value {value_to_encrypt}')

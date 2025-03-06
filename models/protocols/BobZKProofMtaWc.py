@@ -23,7 +23,7 @@ def pick_element_from_Multiplicative_group(N):
         if gmpy2.gcd(a, N) == 1:
             return a
 
-def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings ) -> Bob_ZKProof_RegMta_ProverCommitment:
+def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, enc_a ) -> Bob_ZKProof_RegMta_ProverCommitment:
     """
     :param q: Security parameter or order of the group
     :param paillier_N: Paillier modulus
@@ -36,7 +36,7 @@ def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings ) 
     paillier_N = settings.paillier_public_key.n
     h1 = settings.h1
     h2 = settings.h2
-    c1 = settings.c1
+    c1 = enc_a
 
     q_third = q ** 3
     q_seventh = q ** 7
@@ -83,7 +83,7 @@ def prover_answers_challenge(prover_commitment : Bob_ZKProof_RegMta_ProverCommit
     return proof_for_challenge
 
 def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitment, proof_for_challenge : Bob_ZKProof_RegMta_Proof_For_Challenge,
-                            e, settings : Bob_ZKProof_RegMta_Settings):
+                            e, settings : Bob_ZKProof_RegMta_Settings, enc_a, enc_ab_plus_beta_prime):
     
     q = settings.q
     paillier_N = settings.paillier_public_key.n
@@ -109,11 +109,11 @@ def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitme
     valid_t_power_e_times_w = calculated_t_power_e_times_w == value_from_commitment
 
     # Calculation to verify c2^e * v 
-    calculated_c2_power_e_times_v = (gmpy2.powmod(settings.c1, proof_for_challenge.s1, paillier_N_squared) 
+    calculated_c2_power_e_times_v = (gmpy2.powmod(enc_a, proof_for_challenge.s1, paillier_N_squared) 
                                      * gmpy2.powmod(proof_for_challenge.s, paillier_N, paillier_N_squared) 
                                      * gmpy2.powmod(paillier_g, proof_for_challenge.t1, paillier_N_squared)) % paillier_N_squared
     
-    value_from_commitment = (gmpy2.powmod(settings.c2, e, paillier_N_squared) * prover_commitment.v) % paillier_N_squared
+    value_from_commitment = (gmpy2.powmod(enc_ab_plus_beta_prime, e, paillier_N_squared) * prover_commitment.v) % paillier_N_squared
     valid_t_power_e_times_v = calculated_c2_power_e_times_v == value_from_commitment
 
     # Calculate if g = X^e *u

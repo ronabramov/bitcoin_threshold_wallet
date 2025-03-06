@@ -30,18 +30,16 @@ class MtaWcProtocolWithZKP:
         self.Alice_Alg_prover_paillier_N = self.Alice_Alg_public_key.n
         self.Alice_Alg_prover_paillier_Gamma = self.Alice_Alg_public_key.g
         self.Alice_Alg_r = AliceZKProof.pick_r(self.Alice_Alg_prover_paillier_N)
-        self.Alice_Alg_c = AliceZKProof.calculate_c(self.Alice_Alg_prover_paillier_Gamma, a_value, self.Alice_Alg_prover_paillier_N, self.Alice_Alg_r)
         Bob_Alg_verifier_Modulus_N = Bob_verifier_Modulus_N
         Bob_Alg_h1 = Bob_h1
         Bob_Alg_h2 = Bob_h2
         Bob_Alg_Beta_Prime = random.randint(1, self.q ** 5) # veta_prime in Z_q^5
         Bob_Alg_Public_key = paillier.generate_paillier_keypair()[0] # Should be passed as argument
         Bob_Alg_r = BobZKProofMtaWc.pick_r(Bob_Alg_Public_key.n)
-        Bob_Alg_c1, Bob_Alg_c2 = BobZKProofMtaWc.pick_c1_and_c2(r=Bob_Alg_r, x = b_value,y=Bob_Alg_Beta_Prime,public_key= Bob_Alg_Public_key)
         self.Bob_Alg_verifier_Settings = Bob_ZKProof_RegMta_Settings(public_key=Bob_Alg_Public_key, Modulus_N=Bob_Alg_verifier_Modulus_N,
-                                                             h1 = Bob_Alg_h1, h2=Bob_Alg_h2, c1=Bob_Alg_c1, c2=Bob_Alg_c2, curve=curve)
+                                                             h1 = Bob_Alg_h1, h2=Bob_Alg_h2, curve=curve)
         self.bob_alg_prover_settings = Bob_ZKProof_RegMta_Prover_Settings(Bob_Alg_Public_key, Modulus_N=Bob_Alg_verifier_Modulus_N, h1=Bob_Alg_h1,
-                                                    h2 = Bob_Alg_h2, r= Bob_Alg_r, c1= Bob_Alg_c1, c2= Bob_Alg_c2, b=b_value,
+                                                    h2 = Bob_Alg_h2, r= Bob_Alg_r, b=b_value,
                                                      curve=curve, beta_prime=Bob_Alg_Beta_Prime)
 
 
@@ -76,7 +74,7 @@ class MtaWcProtocolWithZKP:
         
         """Bob verifies Alice's proof, then computes E(ab + beta') and proves correctness"""
         verified_a_value = AliceZKProof.verifier_verify_result(commitment_of_a.z, commitment_of_a.u, commitment_of_a.w, proof_of_a.s, proof_of_a.s1, 
-                                                               proof_of_a.s2, challenge, self.Alice_Alg_c, self.q, self.Alice_Alg_h1, self.Alice_Alg_h2, 
+                                                               proof_of_a.s2, challenge, enc_a,self.q, self.Alice_Alg_h1, self.Alice_Alg_h2, 
                                                                self.Alice_Alg_verifier_modulus_N, self.Alice_Alg_prover_paillier_N, self.Alice_Alg_prover_paillier_Gamma)
         
         if not verified_a_value:
@@ -88,7 +86,7 @@ class MtaWcProtocolWithZKP:
 
         # Homomorphic computation
         enc_result = enc_a * b + enc_beta_prime  # E(ab + β')
-        b_and_beta_prime_commitment = BobZKProofMtaWc.prover_generates_commitment(settings=prover_settings)
+        b_and_beta_prime_commitment = BobZKProofMtaWc.prover_generates_commitment(settings=prover_settings, enc_a=enc_a)
         return enc_result, beta_prime, b_and_beta_prime_commitment  # Send commitment to Alice
     
 
@@ -100,10 +98,10 @@ class MtaWcProtocolWithZKP:
         """Given Alice's challenge, Bob provides a proof"""
         return BobZKProofMtaWc.prover_answers_challenge(commitment_of_b_and_beta_prime, challenge, settings)
 
-    def alice_finalize(self, proof_for_challenge : Bob_ZKProof_RegMta_Proof_For_Challenge, commitment : Bob_ZKProof_RegMta_ProverCommitment,
+    def alice_finalize(self, proof_for_challenge : Bob_ZKProof_RegMta_Proof_For_Challenge, commitment : Bob_ZKProof_RegMta_ProverCommitment, enc_a,
                         enc_result, settings : Bob_ZKProof_RegMta_Settings, challenge):
         """Alice verifies Bob's proof, decrypts and computes her additive share of ab"""
-        alice_approves_bob_proof_result = BobZKProofMtaWc.verifier_verify_result(commitment, proof_for_challenge, challenge, settings)
+        alice_approves_bob_proof_result = BobZKProofMtaWc.verifier_verify_result(commitment, proof_for_challenge, challenge, settings, enc_a, enc_result)
         
         if not alice_approves_bob_proof_result:
             raise ValueError("Bob failed ZK proof!")

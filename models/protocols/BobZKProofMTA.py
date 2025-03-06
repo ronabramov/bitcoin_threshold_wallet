@@ -1,4 +1,4 @@
-from phe import paillier
+from phe import paillier, EncryptedNumber
 import random
 import gmpy2
 from models.protocols.BobZKProofMtAModels import Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
@@ -20,7 +20,7 @@ def pick_element_from_Multiplicative_group(N):
         if gmpy2.gcd(a, N) == 1:
             return a
 
-def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings ) -> Bob_ZKProof_RegMta_ProverCommitment:
+def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, enc_a) -> Bob_ZKProof_RegMta_ProverCommitment:
     """
     :param q: Security parameter or order of the group
     :param paillier_N: Paillier modulus
@@ -33,7 +33,7 @@ def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings ) 
     paillier_N = settings.paillier_public_key.n
     h1 = settings.verifier_modulus.h1
     h2 = settings.verifier_modulus.h2
-    c1 = settings.c1
+    c1 = enc_a
 
     q_third = q ** 3
     q_seventh = q ** 7
@@ -79,8 +79,10 @@ def prover_answers_challenge(prover_commitment : Bob_ZKProof_RegMta_ProverCommit
     return proof_for_challenge
 
 def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitment, proof_for_challenge : Bob_ZKProof_RegMta_Proof_For_Challenge,
-                            e, settings : Bob_ZKProof_RegMta_Settings):
+                            e, settings : Bob_ZKProof_RegMta_Settings, enc_a : EncryptedNumber, enc_ab_plus_beta_prime: EncryptedNumber):
     
+    enc_a_cipher = enc_a.ciphertext(be_secure=False)
+    enc_ab_plus_beta_prime_cipher = enc_ab_plus_beta_prime.ciphertext(be_secure=False)
     q = settings.q
     paillier_N = settings.paillier_public_key.n
     Modulus_N = settings.verifier_modulus.N
@@ -105,11 +107,11 @@ def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitme
     valid_t_power_e_times_w = calculated_t_power_e_times_w == value_from_commitment
 
     # Calculation to verify c2^e * v 
-    calculated_c2_power_e_times_v = (gmpy2.powmod(settings.c1, proof_for_challenge.s1, paillier_N_squared) 
+    calculated_c2_power_e_times_v = (gmpy2.powmod(enc_a_cipher, proof_for_challenge.s1, paillier_N_squared) 
                                      * gmpy2.powmod(proof_for_challenge.s, paillier_N, paillier_N_squared) 
                                      * gmpy2.powmod(paillier_g, proof_for_challenge.t1, paillier_N_squared)) % paillier_N_squared
     
-    value_from_commitment = (gmpy2.powmod(settings.c2, e, paillier_N_squared) * prover_commitment.v) % paillier_N_squared
+    value_from_commitment = (gmpy2.powmod(enc_ab_plus_beta_prime_cipher, e, paillier_N_squared) * prover_commitment.v) % paillier_N_squared
     valid_t_power_e_times_v = calculated_c2_power_e_times_v == value_from_commitment
 
     return valid_s1 and valid_t1 and valid_z_power_e_times_z_prime and valid_t_power_e_times_w and valid_t_power_e_times_v
@@ -117,12 +119,11 @@ def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitme
 def pick_r(paillier_N):
     return pick_element_from_Multiplicative_group(paillier_N)
 
-def pick_c1_and_c2(r, x, y, public_key : paillier.PaillierPublicKey):
-    c1 = random.randint(0 , public_key.nsquare)
-    c2 = ( gmpy2.powmod(c1, x, public_key.nsquare) * gmpy2.powmod(public_key.g, y, public_key.nsquare) * 
+def caculate_c2(r, x, y, public_key : paillier.PaillierPublicKey, enc_a):
+    c2 = ( gmpy2.powmod(enc_a, x, public_key.nsquare) * gmpy2.powmod(public_key.g, y, public_key.nsquare) * 
           gmpy2.powmod(r, public_key.n, public_key.nsquare)) % public_key.nsquare    
     
-    return c1,c2
+    return enc_a,c2
 
 
 

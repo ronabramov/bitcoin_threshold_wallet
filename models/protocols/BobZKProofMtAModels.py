@@ -1,6 +1,5 @@
 from phe import paillier
 from ecdsa import NIST256p, curves
-from pydantic import BaseModel
 from models.models import user_modulus
 
 class Bob_ZKProof_RegMta_ProverCommitment:
@@ -32,10 +31,8 @@ class Bob_ZKProof_RegMta_Proof_For_Challenge:
 class Bob_ZKProof_RegMta_Settings:
     # Eliptic curve NIST256p as the default curve.
     # This is data shared between prover and verifier
-    def __init__(self, public_key : paillier.PaillierPublicKey, verifier_modulus : user_modulus, c1, c2, X, curve : curves.Curve = NIST256p):
+    def __init__(self, public_key : paillier.PaillierPublicKey, verifier_modulus : user_modulus, X, curve : curves.Curve = NIST256p):
         self.q = curve.order
-        self.c1 = c1
-        self.c2 = c2
         self.paillier_public_key = public_key
         self.verifier_modulus = verifier_modulus
         self.curve = curve
@@ -45,8 +42,8 @@ class Bob_ZKProof_RegMta_Settings:
 
 class Bob_ZKProof_RegMta_Prover_Settings(Bob_ZKProof_RegMta_Settings):
     # Additional data - kept only for the Prover
-    def __init__(self, public_key, verifier_modulus, b, beta_prime, r, c1, c2, X, curve : curves.Curve = NIST256p):
-        super().__init__(public_key, verifier_modulus, c1, c2, X, curve)
+    def __init__(self, public_key, verifier_modulus, b, beta_prime, r, X, curve : curves.Curve = NIST256p):
+        super().__init__(public_key, verifier_modulus, X, curve)
         self.r = r
         self.beta_prime = beta_prime
         self.b = b
