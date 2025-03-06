@@ -29,13 +29,13 @@ from ecdsa.ellipticcurve import PointJacobi
 class MTAProtocolWithZKP:
 
 
-    def __init__(self, q, alice_public_share : user_public_share, 
+    def __init__(self, alice_public_share : user_public_share, 
                  bob_public_share : user_public_share,
                  curve : curves.Curve ,
                  bob_public_g_power_secret : PointJacobi,
                  b_value = None ,
                  alice_paillier_private_key : paillier.PaillierPrivateKey = None):
-        self.q = q
+        self.q = curve.order
         self.Alice_Alg_Verifier_Modulus = bob_public_share.user_modulus
         self.Alice_Alg_public_key, self.Alice_Alg_private_key = alice_public_share.paillier_public_key, alice_paillier_private_key
         self.Alice_Alg_prover_paillier_N = self.Alice_Alg_public_key.n
@@ -146,7 +146,7 @@ a = 11
 b = 5
 
 # Example run
-mta = MTAProtocolWithZKP(q=q, alice_public_share=alice_share, bob_public_share=bob_share, curve=curve, bob_public_g_power_secret=bob_X, b_value=b, alice_paillier_private_key=allice_paillier_secret_key)  #For example both Alice and Bob having the same Paillier Keys and
+mta = MTAProtocolWithZKP(alice_public_share=alice_share, bob_public_share=bob_share, curve=curve, bob_public_g_power_secret=bob_X, b_value=b, alice_paillier_private_key=allice_paillier_secret_key)  #For example both Alice and Bob having the same Paillier Keys and
 
 
 #Protocol execution

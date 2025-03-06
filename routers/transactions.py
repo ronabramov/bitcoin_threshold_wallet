@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-
 from local_db.sql_db_dal import get_transactions_by_wallet_id   
 from APIs.TransactionsAPI import generate_transaction_and_send_to_wallet, respond_to_new_transaction
 

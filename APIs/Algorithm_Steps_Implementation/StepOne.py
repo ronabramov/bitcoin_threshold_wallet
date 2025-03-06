@@ -4,14 +4,18 @@ import random
 from ecdsa import curves
 from models.protocols.Commitment import commit_x
 import json
-from APIs.Algorithm_Steps_Implementation.StepTwo import StepTwo
+from APIs.Algorithm_Steps_Implementation.StepTwo import StepTwo_SendAliceMtaMessages
 from models.commitment import Commitment
 from models.algorithm_step import Algorithm_Step
 from APIs.RoomManagementAPI import send_private_message_to_every_user_in_Wallet
 from phe import paillier
 
-class StepOne:
+class StepOne_PrepareDataForMta:
     def execute(self, wallet : Wallet) -> bool:
+        """
+        Choose u.a.r k_i, gamma_i. 
+        Share g^{gamma_i} for every participating user.
+        """
         curve = curves.curve_by_name(wallet.curve_name)
         q = curve.order
         gamma_i = random.randint(0, q)
@@ -30,7 +34,7 @@ class StepOne:
                                         committed_values=[encrypted_commitment], 
                                         committing_user_paillier_public_key= paillier.PaillierPublicKey(n= n))
         send_private_message_to_every_user_in_Wallet(commitment_message, wallet.wallet_id)
-        StepTwo.execute(wallet.wallet_id, k_i, gamma_i)
+        StepTwo_SendAliceMtaMessages.execute(wallet, k_i, gamma_i, my_user_data, curve)
         
 
         
