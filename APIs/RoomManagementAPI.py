@@ -81,7 +81,8 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
 
 def get_wallet_from_generating_wallet_message(wallet_id : str, wallet_participants : str, generation_message : WalletGenerationMessage) -> Wallet:
     # TODO: get wallet name
-    return Wallet(wallet_id=wallet_id,name='placeholder',threshold = generation_message.threshold, users=wallet_participants,
+    wallet_name = MatrixService.instance().get_pretty_room_name(wallet_id)
+    return Wallet(wallet_id=wallet_id,name=wallet_name,threshold = generation_message.threshold, users=wallet_participants,
                   curve_name = generation_message.curve_name, max_num_of_users = generation_message.max_number_of_participants)
 
 def save_room_users_data_to_db(wallet_id: str, rest_users_messages: list[user_public_share]) -> bool:

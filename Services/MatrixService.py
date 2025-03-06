@@ -308,8 +308,13 @@ class MatrixService:
         return True
         
     
-
-
+    def get_pretty_room_name(self, room_id: str) -> str:
+        res = self.client.api.get_room_name(room_id)
+        return self.remove_prefix_from_room_name(res["name"])
+    
+    @classmethod
+    def remove_prefix_from_room_name(self, room_name: str) -> str:
+        return room_name.replace("wallet_room_", "").replace("_", " ")
 # # Example usage
 # if __name__ == "__main__":
 #     room_id = "!oSvtQooUmWSlmdjZkP:matrix.org"

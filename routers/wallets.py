@@ -20,7 +20,7 @@ class WalletResponse(BaseModel):
     accept: bool
 
 @router.get("/")
-async def get_user_wallets():
+def get_user_wallets():
     # Find wallets containing the user
     
     db_wallets = get_my_wallets()
@@ -41,7 +41,7 @@ async def get_user_wallets():
     for pending_invitation in pending_invitations_rooms:
         wallets.append({
             "wallet_id": pending_invitation["id"],
-            "name": pending_invitation["name"],
+            "name": MatrixService.remove_prefix_from_room_name(pending_invitation["name"]),
             "threshold": "?",
             "existing_users": [],
             "pending_users": [],

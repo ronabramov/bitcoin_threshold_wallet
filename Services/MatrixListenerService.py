@@ -67,8 +67,6 @@ class MatrixRoomListener:
             print(f"Error: {e}")
             return
         self._handle_message_DTO(message_obj, room_id)
-        # Forward to a message handler (to be implemented later)
-        print(f"Message received in room {room_id}: {event['content']['body']}")
 
     def _handle_error(self, exception: Exception):
         """ Handles exceptions that occur during event listening. """
