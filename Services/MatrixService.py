@@ -66,14 +66,15 @@ class MatrixService:
         token = client.login(
             username=Context.matrix_user_id(), password=Context.matrix_user_password(), sync=True
         )
-        print(f"Admin logged in successfully. Token: {token}")
+        print(f"Matrix service logged in with user: {Context.matrix_user_id()} Token: {token[:7]}...")
         self._client = client
         return client
 
-    def create_new_room_and_invite_users(self, room_name : str, users_Ids : List[str], first_message : str = None):
+    def create_new_room_and_invite_users(self, wallet_name : str, users_Ids : List[str], first_message : str = None):
         """
         Create new room and invite users
         """
+        room_name = "wallet_room_" + wallet_name.replace(" ", "_")
         new_room : Room = self.create_room(room_name) 
         self.client.join_room(new_room.room_id)
         room_id = new_room.room_id
@@ -85,7 +86,10 @@ class MatrixService:
         return room_id
 
     def create_room(self, room_name: str):
-        new_room = self.client.create_room(alias=f"{room_name}_{random.randint(1,100000)}")
+        new_room:Room = self.client.create_room(alias=f"{room_name}_{random.randint(1,100000)}")
+        new_room.set_room_name(room_name)
+        new_room.update_room_name()
+        
         return new_room
 
     def invite_users_to_room(self, room: Room, users: List[str]):
@@ -103,7 +107,7 @@ class MatrixService:
         try:
             room = self.client.join_room(room_id)
             room.send_text(message)
-            print(f"Message sent to room {room_id}: {message}")
+            print(f"Message sent to room {room_id}")
             return True
         except Exception as e:
             print(f"Error sending message to room: {e}")
@@ -115,6 +119,7 @@ class MatrixService:
         """
         room : Room = self.client.join_room(room_id_or_alias=room_id)
         return room.name
+
 
     def create_user_backup_room(self):
         try:
@@ -162,52 +167,52 @@ class MatrixService:
     def __user_matrix_id_to_room_name(self, user_matrix_id: str):
         return user_matrix_id.replace(":", "_")
 
+    def is_wallet_room(self, room_id: str) -> bool:
+        res = self.client.api.get_room_name(room_id)
+        return res["name"].startswith("wallet_room_")
+    
+    
+    def _is_private_room(self, room: Room, target_user_matrix_id: str) -> bool:
+        res = self.client.api.get_room_name(room.room_id)
+        optional_names = [
+            self._get_private_room_name(Context.matrix_user_id(), target_user_matrix_id),
+            self._get_private_room_name(target_user_matrix_id, Context.matrix_user_id()),
+        ]
+        return res["name"] in optional_names
+    
     def __get_private_room_with_user(self, target_user_matrix_id: str) -> Room:
         rooms = self.client.rooms
         target_room: Room = None
-        room: Room
-        for room in rooms.values():
-            members: List[User] = room.get_joined_members()
-            if (
-                members
-                and len(members) == 2
-                and target_user_matrix_id in [member.user_id for member in members]
-            ):
+        invited_rooms = self._get_pending_invitations_rooms()
+        all_rooms = list(rooms.values()) + invited_rooms
+        for room in all_rooms:
+            if self._is_private_room(room, target_user_matrix_id):
                 target_room = room
                 print(
                     f"Found private room with user {target_user_matrix_id} in room {room.room_id}"
                 )
                 break
-            
-            target_room = self.__get_private_room_with_user_from_events(target_user_matrix_id, room)    
 
         if not target_room:
-            unix_timestamp = int(time.time())
-            room_name = f"private_room_for_{self.__user_matrix_id_to_room_name(Context.matrix_user_id())}_and_{self.__user_matrix_id_to_room_name(target_user_matrix_id)}_{unix_timestamp}"
-            new_room: Room = self.client.create_room(
-                alias=room_name, invitees=[target_user_matrix_id]
-            )
+            room_name = self._get_private_room_name(Context.matrix_user_id(), target_user_matrix_id)
+            new_room: Room = self.create_room(room_name)
+            self.invite_users_to_room(new_room, [target_user_matrix_id])
             target_room = new_room
         return target_room
     
-    def __get_private_room_with_user_from_events(self, target_user_matrix_id: str, room: Room) -> Room:
-        for event in room.events:
-            if (
-                event['type'] == "m.room.invite"
-                and event['content']['membership'] == "invite"
-                and target_user_matrix_id == event['state_key']
-            ):
-                print(
-                    f"Found private room with user {target_user_matrix_id} in room {room.room_id}"
-                )
-                return room
-        return None
+    def _get_private_room_name(self, first_user_matrix_id: str, second_user_matrix_id: str) -> str:
+        return f"private_room_for_{self.__user_matrix_id_to_room_name(first_user_matrix_id)}_and_{self.__user_matrix_id_to_room_name(second_user_matrix_id)}"
+    
+    def _get_pending_invitations_rooms(self) -> List[Room]:
+        room_ids = self._get_all_room_invitations_ids()
+        return [self.client.join_room(room_id) for room_id in room_ids]
+    
     # TODO: private message is sent in a public room - should be fixed
     def send_private_message_to_user(self, target_user_matrix_id: str, message: str):
 
         target_room: Room = self.__get_private_room_with_user(target_user_matrix_id)
         target_room.send_text(message)
-        print(f"Successfuly sent private message in room {target_room.room_id}")
+        print(f"Successfully sent private message in room {target_room.room_id}")
     
     def fetch_pending_invited_rooms(self) -> List[Room]:
         rooms = self.client.invited_rooms
@@ -222,15 +227,13 @@ class MatrixService:
         rooms = self.client.invited_rooms
         for room  in rooms.values():
             self.reject_room_invitation(room=room) # Should be fixed
-
     
     def reject_room_invitation(self, room : Room) -> bool:
         return room.leave()
     
     def get_next_available_index(self, room_id: str) -> bool:
-        #NEEDS FIX - NOT loading , Gilad already solved similiar case
-        room : Room = self.client.join_room(room_id)
-        return len(room.members_displaynames)
+        existing_users = self.get_existing_users_in_room(room_id=room_id)
+        return len(existing_users) # the joining user is already in the room
     
     def get_valid_json_messages(self, room_id, limit=100) -> List[MessageDTO]:
         valid_messages = []
@@ -256,6 +259,66 @@ class MatrixService:
                 break
         
         return valid_messages
+
+    def _get_users_in_room(self, room_id: str, limit=100, membership: str = "invite") -> List[str]:
+        room : Room = self.client.join_room(room_id)
+        users = []
+        prev_batch = room.prev_batch
+        while True:
+            res = self.client.api.get_room_members (room.room_id)
+
+            # Extract only message events
+            chunk = res.get(MATRIX_MESSAGES_MAIN_NODE)
+
+            for event in chunk:
+                if event.get("content").get("membership") == membership or membership == "all":
+                    users.append(event["state_key"])
+                    
+
+            prev_batch = res.get(MATRIX_PROPERTY_FOR_MESSAGES_TRACKING) if MATRIX_PROPERTY_FOR_MESSAGES_TRACKING in res else None
+            if not chunk or not prev_batch:
+                break
+        
+        return users
+
+    def get_existing_users_in_room(self, room_id: str) -> List[str]:
+        return self._get_users_in_room(room_id, membership="join")
+    
+    def get_invited_users_in_room(self, room_id: str) -> List[str]:
+        return self._get_users_in_room(room_id, membership="invite")
+    
+    def get_all_users_in_room(self, room_id: str) -> List[str]:
+        return self._get_users_in_room(room_id, membership="all")
+    
+    def leave_room(self, room_id: str) -> bool:
+        room : Room = self.client.join_room(room_id)
+        return room.leave()
+
+    def leave_all_rooms(self) -> bool:
+        rooms = list(self.client.rooms.values())
+        for room in rooms:
+            room.leave()
+        return True
+    
+    def _get_all_room_invitations_ids(self) -> List[str]:
+        token = self.client.token
+        url = f"{Config.HOMESERVER_URL}/_matrix/client/v3/sync"
+        params = {
+        }
+        headers = {"Authorization": f"Bearer {token}"}
+
+        response = requests.get(url, params=params, headers=headers).json()
+        if "rooms" in response and "invite" in response["rooms"]:
+            return list(response["rooms"]["invite"].keys())
+        return []
+    
+    def reject_all_invitations(self) -> bool:
+        room_ids = self._get_all_room_invitations_ids()
+        for room_id in room_ids:
+            self.client.api.leave_room(room_id)
+        return True
+        
+    
 
 
 # # Example usage

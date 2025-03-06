@@ -1,44 +1,55 @@
 from fastapi import APIRouter, HTTPException
-from Depracted.db_DEPRECATED import wallets_collection, users_collection
+from pydantic import BaseModel
 import logging
-
+from local_db.sql_db_dal import get_my_wallets, get_friend_by_matrix_id
+from APIs.RoomManagementAPI import create_new_wallet #respond_to_room_invitation
+from Services.WalletService import get_wallet_users_data
 logger = logging.getLogger("uvicorn")
+router = APIRouter(prefix="/wallets", tags=["wallets"])
 
-router = APIRouter()
+class Wallet(BaseModel):
+    wallet_name: str
+    threshold: int
+    users: list[str]
+    max_participants: int
 
-@router.get("/{user_id}")
-async def get_user_wallets(user_id: str):
+@router.get("/")
+async def get_user_wallets():
     # Find wallets containing the user
-    wallets_cursor = wallets_collection.find({"users": user_id})
+    
+    db_wallets = get_my_wallets()
     wallets = []
-    for wallet in wallets_cursor:
+    for wallet in db_wallets:
         # Fetch user details for each user in the wallet
-        user_details = list(users_collection.find({ "users": user_id }))
-        for user in user_details:
-            user["_id"] = str(user["_id"])  # Serialize ObjectId
+        pending_users_data, existing_users_data  = get_wallet_users_data(wallet)
         wallets.append({
-            "wallet_id": wallet["wallet_id"],
-            "wallet_name": wallet.get("wallet_name"),
-            "threshold": wallet.get("threshold"),
-            "metadata": wallet.get("metadata", {}),
-            "users": user_details
+            "wallet_id": wallet.wallet_id,
+            "name": wallet.name,
+            "threshold": wallet.threshold,
+            "existing_users": existing_users_data,
+            "pending_users": pending_users_data
         })
     return wallets
 
-@router.post("/create")
-async def create_wallet(wallet_id: str, wallet_name: str, threshold: int, users: list, metadata: dict):
+    # set params in the body:
+@router.post("/")
+async def create_wallet(wallet_payload: Wallet):
     # Validate the threshold
-    if threshold > len(users):
-        raise HTTPException(status_code=400, detail="Threshold cannot exceed the number of users")
-
+    success, wallet = create_new_wallet(invited_users_emails=wallet_payload.users,wallet_name=wallet_payload.wallet_name,wallet_threshold=wallet_payload.threshold,max_participants=wallet_payload.max_participants)
+    # set users to a comma separated string
+    
+    pending_users_data, existing_users_data = get_wallet_users_data(wallet)
     # Insert the wallet into the database
-    wallet = {
-        "wallet_id": wallet_id,
-        "wallet_name": wallet_name,
-        "threshold": threshold,
-        "users": users,
-        "metadata": metadata
-    }
-    wallets_collection.insert_one(wallet)
-    return {"message": "Wallet created successfully", "wallet_id": wallet_id}
+    if success:
+        wallet_response = {
+            "wallet_id": wallet.wallet_id,
+            "name": wallet.name,
+            "threshold": wallet.threshold,
+            "existing_users": existing_users_data,
+            "pending_users": pending_users_data
+        }
+    else:
+        raise HTTPException(status_code=400, detail="Failed to create wallet")
+    
+    return wallet_response
 

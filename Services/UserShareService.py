@@ -1,12 +1,9 @@
 from local_db import sql_db_dal
 from APIs import UserToUserAPI
-
 from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
 from models.models import user_public_share, wallet_key_generation_share
 from Services.UserShareUtils import filter_shares_by_user_index
-from models.models import user_public_share, wallet_key_generation_share
-from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
-
+from Services.WalletService import send_g_power_x_message_to_wallet_room
 
 def handle_incoming_public_share(incoming_user_public_share : user_public_share, wallet_id : str):
     sql_db_dal.get_wallet_by_id(wallet_id)
@@ -34,9 +31,12 @@ def handle_incoming_key_generation_share(key_generation_share_obj : wallet_key_g
     user_secret = signature_generator.aggregate_received_share(peer_share=key_generation_share_obj, user_secret=user_secret)
     if not user_secret:
         print(f"Failed applying received share")
+        return False
     else:
         print(f"User share applied successfully")
         sql_db_dal.update_signature_share(key_generation_share_obj.wallet_id, user_secret)
         
+    if user_secret.user_index == wallet.max_num_of_users:
+        send_g_power_x_message_to_wallet_room(x = user_secret.user_evaluation, wallet=wallet)
         
     return

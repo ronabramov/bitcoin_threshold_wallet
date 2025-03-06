@@ -14,3 +14,4 @@ class MessageType(Enum):
     MtaProofForChallengeBob = "mta_proof_for_challenge_bob"
     MtaWcCommitmentBob = "mta_wc_commitment_bob"
     WalletGenerationMessage = "wallet_generation_message"
+    GPowerX = "g_power_x"

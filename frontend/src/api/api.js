@@ -1,24 +1,57 @@
-import axios from "axios";
+import { apiClient } from "./baseClient";
+import { withErrorHandler } from "./decorators";
 
-const API_URL = "https://bitcoin-threshold-wallet.onrender.com"; // render-url
-const LOCAL_HOST_URL ="http://127.0.0.1:8000"
-
-export const getWallets = async (userId) => {
-    const response = await axios.get(`${LOCAL_HOST_URL}/wallets/${userId}`);
+export const getWallets = withErrorHandler(async () => {
+    const response = await apiClient.get(`/wallets`);
     return response.data;
-};
+});
 
-export const createTransaction = async ({ wallet_id, user_id, description }) => {
-    const response = await axios.post(
-        `${LOCAL_HOST_URL}/transactions/request`,
-        null,
+export const createWallet = withErrorHandler(async ({ wallet_name, threshold, users, max_participants }) => {
+    const response = await apiClient.post(`/wallets`, {
+        wallet_name,
+        threshold,
+        users,
+        max_participants,
+    });
+    return response.data;
+});
+
+export const createTransaction = withErrorHandler(async ({ wallet_id, description, name }) => {
+    const response = await apiClient.post(
+        `/wallets/${wallet_id}/transactions`,
         {
-            params: {
-                wallet_id,
-                user_id,
-                description,
-            },
+            description,
+            name,
         }
     );
     return response.data;
-};
+});
+
+export const getFriends = withErrorHandler(async () => {
+    const response = await apiClient.get(`/friends`);
+    return response.data;
+});
+
+export const addFriend = withErrorHandler(async ({ email, matrix_id }) => {
+    const response = await apiClient.post(`/friends`, {
+        email,
+        matrix_id,
+    });
+    return response.data;
+});
+
+export const removeFriend = withErrorHandler(async ({ email }) => {
+    const response = await apiClient.delete(`/friends`, {
+        params: {
+            email,
+        },
+    });
+    return response.data;
+});
+
+
+export const getTransactions = withErrorHandler(async (wallet_id) => {
+    const response = await apiClient.get(`/wallets/${wallet_id}/transactions`);
+    return response.data;
+});
+

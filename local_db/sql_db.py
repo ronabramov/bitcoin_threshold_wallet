@@ -22,8 +22,7 @@ class User(Base):
     email = Column(String, primary_key=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     homeserver_url = Column(String, nullable=True)
-    homeserver_login = Column(String, nullable=True)
-    homeserver_password = Column(String, nullable=True)
+    matrix_user_id = Column(String, nullable=True)
 
 class Friend(Base):
     __tablename__ = "Friend"
@@ -37,6 +36,7 @@ class Wallet(Base):
         String, primary_key=True, nullable=False
     )  # This will be the room Id.
     threshold = Column(Integer, nullable=False)
+    name = Column(String, nullable=True)
     max_num_of_users = Column(Integer, nullable=False)
     users = Column(
         Text, nullable=True
@@ -64,9 +64,21 @@ class Transaction(Base):
     transaction_id = Column(String, primary_key=True, nullable=False)
     details = Column(Text, nullable=True)
     status = Column(Integer, nullable=True)
+    shrunken_secret_share = Column(Integer, nullable=True)
+    name = Column(String, nullable=True)
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
-    shrunken_secret_share = Column(Integer, nullable=True)
+    
+    @classmethod
+    def from_dto(cls, transaction_dto: "TransactionDTO"):
+        return cls(
+            transaction_id=transaction_dto.id,
+            details=transaction_dto.details,
+            wallet_id=transaction_dto.wallet_id,
+            status=transaction_dto.stage.value,
+            shrunken_secret_share=transaction_dto.shrunken_secret_share,
+            name=transaction_dto.name
+        )
 
 
 # check every transaction user changes - should we change simething in this table?
@@ -74,7 +86,7 @@ class TransactionUserData(Base):
     __tablename__ = "TransactionUserData"
     # id with uuid default val
     id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
-    transaction_id = Column(String, ForeignKey("Transactions.transaction_id"), nullable=False)
+    transaction_id = Column(String, ForeignKey("Transaction.transaction_id"), nullable=False)
     user_matrix_id = Column(String, primary_key=True, nullable=False)
     user_index = Column(Integer, primary_key=True, nullable=False)
     mta_data = Column(JSON, nullable=True) 
@@ -111,6 +123,7 @@ class WalletUserData(Base):
     user_index = Column(Integer, primary_key=True, nullable=False)
     user_matrix_id = Column(String, primary_key=True, nullable=False)
     user_public_keys_data = Column(JSON, nullable=False, default={})  # Paillier Public key and Modulus data - that is the user_public_share
+    g_power_x = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="users_data")
 
@@ -126,8 +139,12 @@ class WalletSignatureSharesData(Base):
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="signature_shares")
 
+    
     def get_signature_share(self, user_index: int) -> wallet_key_generation_share:
-        return wallet_key_generation_share.from_dict(self.share_data)
+        """
+        this is not is use - need to check if works
+        """
+        return wallet_key_generation_share.from_dict(self)
 
 class TransactionResponse(Base):
     __tablename__ = "TransactionResponse"
@@ -136,6 +153,7 @@ class TransactionResponse(Base):
     stage = Column(Integer, nullable=False)
     response = Column(Boolean, nullable=False)
     
+    @classmethod
     def from_dto(cls, transaction_response_dto: TransactionResponseDTO):
         return cls(
             transaction_id=transaction_response_dto.transaction_id,
@@ -148,14 +166,16 @@ def create_db_if_not_exists(db_file_name):
             os.path.abspath(__file__)
         )
     abs_path = os.path.join(current_path, db_file_name)
+    
+    if os.path.exists(abs_path) and Config.is_test:
+        os.remove(abs_path)
+    
     engine = create_engine(f"sqlite:///{abs_path}")
     if not os.path.exists(abs_path):    
         Base.metadata.create_all(engine)
     # Session maker
     Session = sessionmaker(bind=engine)
-    # this is the session that will be used to interact with the database
-    session = Session()
-    return session
+    return Session
 
 
 class DB():
@@ -165,6 +185,6 @@ class DB():
     } if Config.is_test else { 'default': create_db_if_not_exists(Config.DB_FILE1)}
     def session():
         if Config.is_test:
-            return DB.sessions[Context.matrix_user_id()]
+            return DB.sessions[Context.matrix_user_id()]()
         else:
-            return list(DB.sessions.values())[0]
+            return list(DB.sessions.values())[0]()
