@@ -27,6 +27,8 @@ def get_all_new_invitations():
 def respond_to_room_invitation(room_id : str, user_accepted_invitation : bool):
     if not user_accepted_invitation:
         MatrixService.instance().reject_room_invitation_by_id(room_id=room_id)
+        # remove wallet from db
+        db_dal.delete_wallet(room_id)
         return False
         # RON - should we handle the case where the user rejected the invitation?
     

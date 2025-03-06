@@ -327,3 +327,10 @@ def add_user(email : str, hashed_password : str, matrix_user_id : str) -> bool:
         session.add(user)
         session.commit()
         return True
+
+
+def delete_wallet(wallet_id : str) -> bool:
+    with DB.session() as session:
+        session.query(sql_db.Wallet).filter(sql_db.Wallet.wallet_id == wallet_id).delete()
+        session.commit()
+        return True
