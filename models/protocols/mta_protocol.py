@@ -11,12 +11,11 @@ from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZK
 from phe import paillier, EncryptedNumber, PaillierPrivateKey, PaillierPublicKey
 import random
 from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
-from models.protocols.BobZKProofMtAModels import Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
+from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
 from models.models import user_public_share, user_modulus
 from models.protocols import BobZKProofMTA, AliceZKProof 
 from ecdsa import curves, NIST256p
 from ecdsa.ellipticcurve import PointJacobi
-import gmpy2
 
 """
     Mta Protocol : Alice holds value a, Bob holds value b.
@@ -81,14 +80,12 @@ class MTAProtocolWithZKP:
                                                       verifier_challenge, a, self.Alice_Alg_prover_paillier_N)
 
 
-    def bob_verify_a_commiting_encrypting_b(self, enc_a : EncryptedNumber, challenge, proof_of_a : AliceZKProof_Proof_For_Challenge,
+    def bob_verify_a_commiting_encrypting_b(self, b :int, enc_a : EncryptedNumber, challenge, proof_of_a : AliceZKProof_Proof_For_Challenge,
                                                commitment_of_a : AliceZKProof_Commitment, prover_settings : Bob_ZKProof_RegMta_Prover_Settings):
         
         """Bob verifies Alice's proof, then computes E(ab + beta') and proves correctness"""
         verified_a_value = AliceZKProof.verifier_verify_result(commitment_of_a.z, commitment_of_a.u, commitment_of_a.w, proof_of_a.s, proof_of_a.s1, 
                                                                proof_of_a.s2, challenge, enc_a, self.q, self.Alice_Alg_Verifier_Modulus, self.Alice_Alg_prover_paillier_N, self.Alice_Alg_prover_paillier_Gamma)
-        
-
 
         if not verified_a_value:
             raise ValueError("Alice failed ZK proof!")
@@ -106,12 +103,12 @@ class MTAProtocolWithZKP:
     def alice_challenging_bob_commitment(self):
         return BobZKProofMTA.verifier_send_challenge(self.q)
     
-    def bob_provide_proof_for_alice_challenge(self, commitment_of_b_and_beta_prime : Bob_ZKProof_RegMta_ProverCommitment,
+    def bob_provide_proof_for_alice_challenge(self, commitment_of_b_and_beta_prime : Bob_ZKProof_ProverCommitment,
                                                 settings : Bob_ZKProof_RegMta_Prover_Settings, challenge):
         """Given Alice's challenge, Bob provides a proof"""
         return BobZKProofMTA.prover_answers_challenge(commitment_of_b_and_beta_prime, challenge, settings)
 
-    def alice_finalize(self, proof_for_challenge : Bob_ZKProof_RegMta_Proof_For_Challenge, commitment : Bob_ZKProof_RegMta_ProverCommitment,
+    def alice_finalize(self, proof_for_challenge : Bob_ZKProof_Proof_For_Challenge, commitment : Bob_ZKProof_ProverCommitment,
                         enc_result, enc_a,  settings : Bob_ZKProof_RegMta_Settings, challenge, alice_paillier_secret_key : paillier.PaillierPrivateKey):
         """Alice verifies Bob's proof, decrypts and computes her additive share of ab"""
         alice_approves_bob_proof_result = BobZKProofMTA.verifier_verify_result(commitment, proof_for_challenge, challenge, settings, enc_a, enc_result)
@@ -156,7 +153,7 @@ mta = MTAProtocolWithZKP(q=q, alice_public_share=alice_share, bob_public_share=b
 enc_a, commitment_of_a = mta.alice_encrypting_a_and_sending_commitment(a, alice_paillier_public_key=mta.Alice_Alg_public_key)
 bob_challenges_alice = mta.bob_challenging_a_commitment()
 proof_for_challenge = mta.alice_sends_proof_answering_challenge(commitment_of_a, a, bob_challenges_alice)
-enc_result, beta_prime, bob_commitment = mta.bob_verify_a_commiting_encrypting_b(enc_a=enc_a, challenge=bob_challenges_alice,proof_of_a= proof_for_challenge,
+enc_result, beta_prime, bob_commitment = mta.bob_verify_a_commiting_encrypting_b(b= mta.bob_alg_prover_settings.b, enc_a=enc_a, challenge=bob_challenges_alice,proof_of_a= proof_for_challenge,
                                                                                  commitment_of_a= commitment_of_a, prover_settings= mta.bob_alg_prover_settings)
 alice_challenges_bob = mta.alice_challenging_bob_commitment()
 bob_proof_for_alice_challenge = mta.bob_provide_proof_for_alice_challenge(bob_commitment,mta.bob_alg_prover_settings,alice_challenges_bob)

@@ -1,9 +1,8 @@
 from phe import paillier, EncryptedNumber
 import random
 import gmpy2
-from protocols.BobZKProofMtAModels import Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
+from models.protocols.BobZKProofMtAModels import Bob_ZKProof_ProverCommitment, Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
 import random
-from ecdsa import NIST256p, curves
 
 """
     Zero Knowledge Proof used by Bob in the case he wants to prove values x,y are small
@@ -23,7 +22,7 @@ def pick_element_from_Multiplicative_group(N):
         if gmpy2.gcd(a, N) == 1:
             return a
 
-def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, enc_a_cipher ) -> Bob_ZKProof_RegMta_ProverCommitment:
+def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, enc_a_cipher ) -> Bob_ZKProof_ProverCommitment:
     """
     :param q: Security parameter or order of the group
     :param paillier_N: Paillier modulus
@@ -32,10 +31,10 @@ def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, e
     :return: Bob ZK Proof Commitment composed of alpha, beta, little_gamma, rho, rho',tau,sigma,z,z',t,v, w
     """
     q = settings.q
-    Modulus_N = settings.Modulus_N
+    Modulus_N = settings.verifier_modulus.N
     paillier_N = settings.paillier_public_key.n
-    h1 = settings.h1
-    h2 = settings.h2
+    h1 = settings.verifier_modulus.h1
+    h2 = settings.verifier_modulus.h2
     c1 = enc_a_cipher
 
     q_third = q ** 3
@@ -59,14 +58,14 @@ def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, e
     w = (gmpy2.powmod(h1, little_gamma, Modulus_N) * gmpy2.powmod(h2, tau, Modulus_N)) % Modulus_N
     u = alpha * settings.g
 
-    commitment = Bob_ZKProof_RegMta_ProverCommitment(alpha, rho, rho_prime, sigma, beta, little_gamma, tau, z, z_prime, t, v, w, u)
+    commitment = Bob_ZKProof_ProverCommitment(alpha, rho, rho_prime, sigma, beta, little_gamma, tau, z, z_prime, t, v, w, u)
     return commitment
 
 def verifier_send_challenge(q):
     e = random.randint(1, q - 1)
     return e
 
-def prover_answers_challenge(prover_commitment : Bob_ZKProof_RegMta_ProverCommitment, e, settings : Bob_ZKProof_RegMta_Prover_Settings) -> Bob_ZKProof_RegMta_Proof_For_Challenge:
+def prover_answers_challenge(prover_commitment : Bob_ZKProof_ProverCommitment, e, settings : Bob_ZKProof_RegMta_Prover_Settings) -> Bob_ZKProof_Proof_For_Challenge:
     
     #Align with ZK proof notation
     x = settings.b
@@ -79,19 +78,19 @@ def prover_answers_challenge(prover_commitment : Bob_ZKProof_RegMta_ProverCommit
     t1 = e * y + prover_commitment.gamma
     t2 = e * prover_commitment.sigma + prover_commitment.tau
 
-    proof_for_challenge = Bob_ZKProof_RegMta_Proof_For_Challenge(s=s, s1=s1, s2=s2, t1=t1, t2=t2)
+    proof_for_challenge = Bob_ZKProof_Proof_For_Challenge(s=s, s1=s1, s2=s2, t1=t1, t2=t2)
     return proof_for_challenge
 
-def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitment, proof_for_challenge : Bob_ZKProof_RegMta_Proof_For_Challenge,
+def verifier_verify_result(prover_commitment : Bob_ZKProof_ProverCommitment, proof_for_challenge : Bob_ZKProof_Proof_For_Challenge,
                             e, settings : Bob_ZKProof_RegMta_Settings, enc_a : EncryptedNumber, enc_ab_plus_beta_prime : EncryptedNumber):
     
     enc_a_cipher = enc_a.ciphertext(be_secure=False)
     enc_ab_plus_beta_prime_cipher = enc_ab_plus_beta_prime.ciphertext(be_secure=False)
     q = settings.q
     paillier_N = settings.paillier_public_key.n
-    Modulus_N = settings.Modulus_N
-    h1 = settings.h1
-    h2 = settings.h2
+    Modulus_N = settings.verifier_modulus.N
+    h1 = settings.verifier_modulus.h1
+    h2 = settings.verifier_modulus.h2
     paillier_g = settings.paillier_public_key.g
 
     q_third = q ** 3

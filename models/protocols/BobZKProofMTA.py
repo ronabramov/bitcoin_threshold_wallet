@@ -1,7 +1,7 @@
 from phe import paillier, EncryptedNumber
 import random
 import gmpy2
-from models.protocols.BobZKProofMtAModels import Bob_ZKProof_RegMta_ProverCommitment, Bob_ZKProof_RegMta_Proof_For_Challenge, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
+from models.protocols.BobZKProofMtAModels import Bob_ZKProof_ProverCommitment, Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
 
 """
     Zero Knowledge Proof used by Bob in the case he wants to prove values x,y are small
@@ -20,7 +20,7 @@ def pick_element_from_Multiplicative_group(N):
         if gmpy2.gcd(a, N) == 1:
             return a
 
-def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, enc_a_cipher_valued) -> Bob_ZKProof_RegMta_ProverCommitment:
+def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, enc_a_cipher_valued) -> Bob_ZKProof_ProverCommitment:
     """
     :param q: Security parameter or order of the group
     :param paillier_N: Paillier modulus
@@ -55,14 +55,14 @@ def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, e
          * gmpy2.powmod(beta, paillier_N, paiilier_N_squared)) % paiilier_N_squared
     w = (gmpy2.powmod(h1, little_gamma, Modulus_N) * gmpy2.powmod(h2, tau, Modulus_N)) % Modulus_N
 
-    commitment = Bob_ZKProof_RegMta_ProverCommitment(alpha, rho, rho_prime, sigma, beta, little_gamma, tau, z, z_prime, t, v, w)
+    commitment = Bob_ZKProof_ProverCommitment(alpha, rho, rho_prime, sigma, beta, little_gamma, tau, z, z_prime, t, v, w)
     return commitment
 
 def verifier_send_challenge(q):
     e = random.randint(1, q - 1)
     return e
 
-def prover_answers_challenge(prover_commitment : Bob_ZKProof_RegMta_ProverCommitment, e, settings : Bob_ZKProof_RegMta_Prover_Settings) -> Bob_ZKProof_RegMta_Proof_For_Challenge:
+def prover_answers_challenge(prover_commitment : Bob_ZKProof_ProverCommitment, e, settings : Bob_ZKProof_RegMta_Prover_Settings) -> Bob_ZKProof_Proof_For_Challenge:
     
     #Align with ZK proof notation
     x = settings.b
@@ -75,10 +75,10 @@ def prover_answers_challenge(prover_commitment : Bob_ZKProof_RegMta_ProverCommit
     t1 = e * y + prover_commitment.gamma
     t2 = e * prover_commitment.sigma + prover_commitment.tau
 
-    proof_for_challenge = Bob_ZKProof_RegMta_Proof_For_Challenge(s=s, s1=s1, s2=s2, t1=t1, t2=t2)
+    proof_for_challenge = Bob_ZKProof_Proof_For_Challenge(s=s, s1=s1, s2=s2, t1=t1, t2=t2)
     return proof_for_challenge
 
-def verifier_verify_result(prover_commitment : Bob_ZKProof_RegMta_ProverCommitment, proof_for_challenge : Bob_ZKProof_RegMta_Proof_For_Challenge,
+def verifier_verify_result(prover_commitment : Bob_ZKProof_ProverCommitment, proof_for_challenge : Bob_ZKProof_Proof_For_Challenge,
                             e, settings : Bob_ZKProof_RegMta_Settings, enc_a : EncryptedNumber, enc_ab_plus_beta_prime: EncryptedNumber):
     
     enc_a_cipher = enc_a.ciphertext(be_secure=False)

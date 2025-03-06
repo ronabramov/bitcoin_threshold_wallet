@@ -2,7 +2,7 @@ from phe import paillier
 from ecdsa import NIST256p, curves
 from models.models import user_modulus
 
-class Bob_ZKProof_RegMta_ProverCommitment:
+class Bob_ZKProof_ProverCommitment:
     def __init__(self, alpha, rho, rho_prime, sigma, beta, gamma, tau, z, z_prime, t, v, w, u = None):
         self.alpha = alpha
         self.beta = beta
@@ -19,7 +19,7 @@ class Bob_ZKProof_RegMta_ProverCommitment:
         self.u = u
 
 
-class Bob_ZKProof_RegMta_Proof_For_Challenge:
+class Bob_ZKProof_Proof_For_Challenge:
     def __init__(self, s, s1, s2, t1, t2):
         self.s = s
         self.s1 = s1
