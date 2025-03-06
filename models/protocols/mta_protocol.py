@@ -28,9 +28,7 @@ import gmpy2
 
 
 class MTAProtocolWithZKP:
-    # TODO: 
-    # Instead of having the values as properties and use them along the class 
-    # We should activate the methods and send the corresponding arguments in the relevnat places. 
+
 
     def __init__(self, q, alice_public_share : user_public_share, 
                  bob_public_share : user_public_share,
@@ -55,7 +53,7 @@ class MTAProtocolWithZKP:
                                                                            r= self.Bob_Alg_r, b=b_value, beta_prime=Bob_Alg_Beta_Prime, X=bob_public_g_power_secret, curve=curve)
 
     @staticmethod
-    def homomorphic_exponentiation(enc_a, b):
+    def homomorphic_exponentiation(enc_a : EncryptedNumber, b):
         """Compute E(a^b) securely using Paillier's homomorphic properties."""
         if not isinstance(b, int) or b < 0:
             raise ValueError("Exponentiation only supports non-negative integers.")
@@ -95,23 +93,13 @@ class MTAProtocolWithZKP:
         if not verified_a_value:
             raise ValueError("Alice failed ZK proof!")
 
-        squared_paillier_N = self.Alice_Alg_prover_paillier_N**2
         beta_prime = prover_settings.beta_prime
         enc_beta_prime = AliceZKProof.enc_x(x=beta_prime, r=self.Bob_Alg_r, paillier_pub_key= prover_settings.paillier_public_key)
         enc_a_cipher = enc_a.ciphertext(be_secure=False)
-        # Homomorphic computation
-        #c_ab = pow(, b, squared_paillier_N)  # Modular exponentiation
-        # c_ab =gmpy2.powmod(enc_a_cipher, b, squared_paillier_N)
-        #c_ab = enc_a ** b
         c_ab = MTAProtocolWithZKP.homomorphic_exponentiation(enc_a, b)  # Computes E(a^b)
-        # enc_result = (c_ab * enc_beta_prime) % squared_paillier_N #enc_a**prover_settings.b * enc_beta_prime  # E(ab + β') TODO: Check if we should also encrypt b here
         enc_result = c_ab + enc_beta_prime
-        # if True:
-        #     enc_a = random.randint(1, squared_paillier_N)
-        #     c2 = BobZKProofMTA.caculate_c2(self.Bob_Alg_r, x= self.bob_alg_prover_settings.b, y=beta_prime, public_key=self.bob_alg_prover_settings.paillier_public_key, enc_a=enc_a)
-        #     enc_result = c2
 
-        b_and_beta_prime_commitment = BobZKProofMTA.prover_generates_commitment(settings=prover_settings, enc_a=enc_a_cipher)
+        b_and_beta_prime_commitment = BobZKProofMTA.prover_generates_commitment(settings=prover_settings, enc_a_cipher_valued=enc_a_cipher)
         return enc_result, beta_prime, b_and_beta_prime_commitment  # Send commitment to Alice
     
 

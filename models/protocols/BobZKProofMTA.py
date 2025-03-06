@@ -20,7 +20,7 @@ def pick_element_from_Multiplicative_group(N):
         if gmpy2.gcd(a, N) == 1:
             return a
 
-def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, enc_a) -> Bob_ZKProof_RegMta_ProverCommitment:
+def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, enc_a_cipher_valued) -> Bob_ZKProof_RegMta_ProverCommitment:
     """
     :param q: Security parameter or order of the group
     :param paillier_N: Paillier modulus
@@ -33,7 +33,7 @@ def prover_generates_commitment(settings : Bob_ZKProof_RegMta_Prover_Settings, e
     paillier_N = settings.paillier_public_key.n
     h1 = settings.verifier_modulus.h1
     h2 = settings.verifier_modulus.h2
-    c1 = enc_a
+    c1 = enc_a_cipher_valued
 
     q_third = q ** 3
     q_seventh = q ** 7

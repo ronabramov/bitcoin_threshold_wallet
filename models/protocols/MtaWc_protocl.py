@@ -21,7 +21,7 @@ class MtaWcProtocolWithZKP:
     # Instead of having the values as properties and use them along the class 
     # We should activate the methods and send the corresponding arguments in the relevnat places. 
 
-    def __init__(self, Alice_verifier_modulus_N, Alice_h1, Alice_h2, Bob_verifier_Modulus_N, Bob_h1, Bob_h2, a_value = None, b_value = None, curve : curves.Curve = NIST256p ):
+    def __init__(self, Alice_verifier_modulus_N, Alice_h1, Alice_h2, Bob_verifier_Modulus_N, Bob_h1, Bob_h2, b_value = None, curve : curves.Curve = NIST256p ):
         self.q = curve.order
         self.Alice_Alg_verifier_modulus_N = Alice_verifier_modulus_N 
         self.Alice_Alg_h1 = Alice_h1
@@ -41,7 +41,17 @@ class MtaWcProtocolWithZKP:
         self.bob_alg_prover_settings = Bob_ZKProof_RegMta_Prover_Settings(Bob_Alg_Public_key, Modulus_N=Bob_Alg_verifier_Modulus_N, h1=Bob_Alg_h1,
                                                     h2 = Bob_Alg_h2, r= Bob_Alg_r, b=b_value,
                                                      curve=curve, beta_prime=Bob_Alg_Beta_Prime)
+        
+    @staticmethod
+    def homomorphic_exponentiation(enc_a : EncryptedNumber, b):
+        """Compute E(a^b) securely using Paillier's homomorphic properties."""
+        if not isinstance(b, int) or b < 0:
+            raise ValueError("Exponentiation only supports non-negative integers.")
 
+        # Use Paillier's homomorphic property: E(a^b) = E(a * b)
+        ciphertext = enc_a._raw_mul(b)  # Perform scalar multiplication in encrypted space
+
+        return EncryptedNumber(enc_a.public_key, ciphertext, enc_a.exponent)
 
     def encrypt_value(self, value) -> EncryptedNumber:
         return self.Alice_Alg_public_key.encrypt(value)
@@ -86,7 +96,7 @@ class MtaWcProtocolWithZKP:
 
         # Homomorphic computation
         enc_result = enc_a * b + enc_beta_prime  # E(ab + β')
-        b_and_beta_prime_commitment = BobZKProofMtaWc.prover_generates_commitment(settings=prover_settings, enc_a=enc_a)
+        b_and_beta_prime_commitment = BobZKProofMtaWc.prover_generates_commitment(settings=prover_settings, enc_a_cipher=enc_a)
         return enc_result, beta_prime, b_and_beta_prime_commitment  # Send commitment to Alice
     
 
