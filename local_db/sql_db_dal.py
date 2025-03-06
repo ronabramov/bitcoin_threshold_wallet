@@ -213,7 +213,7 @@ def map_transaction_to_dto(transaction : sql_db.Transaction) -> TransactionDTO:
     details=transaction.details, 
     wallet_id=transaction.wallet_id
     )
-    transaction_dto.stage = TransactionStatus[transaction.status]
+    transaction_dto.status = TransactionStatus[transaction.status]
     return transaction_dto
 
 def update_signature_share(wallet_id : str, share : wallet_key_generation_share) -> bool:
@@ -325,5 +325,12 @@ def add_user(email : str, hashed_password : str, matrix_user_id : str) -> bool:
     with DB.session() as session:
         user = sql_db.User(email=email, hashed_password=hashed_password, matrix_user_id=matrix_user_id)
         session.add(user)
+        session.commit()
+        return True
+
+
+def delete_wallet(wallet_id : str) -> bool:
+    with DB.session() as session:
+        session.query(sql_db.Wallet).filter(sql_db.Wallet.wallet_id == wallet_id).delete()
         session.commit()
         return True

@@ -17,7 +17,7 @@ Methods:
 1. generate_transaction_and_send_to_wallet
 2. respond_to_new_transaction
 """
-def generate_transaction_and_send_to_wallet( wallet_id, transaction_details, name) -> bool:
+def generate_transaction_and_send_to_wallet( wallet_id, transaction_details, name, amount: int = None) -> bool:
     """
     * Generate new transaction
     * Saves transaction in local_db 
@@ -32,9 +32,11 @@ def generate_transaction_and_send_to_wallet( wallet_id, transaction_details, nam
         raise HTTPException(status_code=400, detail="cannot generate transaction, there are invited users in the wallet")
     
     transaction_id = generate_unique_transaction_id()
-    transaction = TransactionDTO(id= transaction_id, name=name, details=transaction_details, wallet_id=wallet_id, shrunken_secret_share=None)
+    transaction = TransactionDTO(id= transaction_id, name=name, details=transaction_details,amount=amount, wallet_id=wallet_id, shrunken_secret_share=None, status=TransactionStatus.PENDING_OTHERS_APPROVAL)
     # add my data to the transaction
     my_wallet_user_data = sql_db_dal.get_my_wallet_user_data(wallet_id=wallet_id)
+    if my_wallet_user_data is None:
+        raise HTTPException(status_code=400, detail="cannot generate transaction, my data is not in the database")
     
     insertion_succeeded = sql_db_dal.insert_new_transaction(transaction)
     sql_db_dal.insert_transaction_user_data(transaction_id=transaction_id,user_matrix_id=user_id,user_index=my_wallet_user_data.user_index)
@@ -53,25 +55,29 @@ def respond_to_new_transaction(transaction : TransactionDTO, user_response : boo
     """
     user_id = Context.matrix_user_id()
     if not user_response:
+        # set transaction status to declined
+        transaction.status = TransactionStatus.DECLINED
+        # update transaction in db
         print (f"user {user_id} rejects transaction {transaction.id}")
         return True
     else:
         my_wallet_user_data = sql_db_dal.get_my_wallet_user_data(wallet_id=transaction.wallet_id)
-        transaction_response = TransactionResponseDTO(transaction_id=transaction.id, stage=transaction.stage, response=user_response, approving_user_index=my_wallet_user_data.user_index, approving_user_matrix_id=user_id )
+        transaction_response = TransactionResponseDTO(transaction_id=transaction.id, stage=transaction.status, response=user_response, approving_user_index=my_wallet_user_data.user_index, approving_user_matrix_id=user_id )
         insertion_succeeded = sql_db_dal.insert_new_transaction(transaction)
         
-        # add my data to the transaction
         sql_db_dal.insert_transaction_user_data(transaction_id=transaction.id,user_matrix_id=user_id,user_index=my_wallet_user_data.user_index)
         if not insertion_succeeded:
             return False
         
-    
         approved_transaction_json = MessageDTO(type = MessageType.TransactionResponse, data=transaction_response).model_dump_json()
         MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= approved_transaction_json)   
+        transaction.status = TransactionStatus.PENDING_OTHERS_APPROVAL
         
+        sql_db_dal.update_transaction(transaction)
         if TransactionService.threshold_reached( transaction.wallet_id, transaction.id):
             TransactionService.handle_reached_threshold_transaction(transaction=transaction)
             
+        
         return True
     
 

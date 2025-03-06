@@ -14,8 +14,10 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
-import { getTransactions } from '../api/api';
+import CheckIcon from '@mui/icons-material/Check';
+import { getTransactions, respondToTransaction } from '../api/api';
 import CreateTransactionDialog from './CreateTransactionDialog';
+import { numberToStatus, statusColors } from '../Utils/Status';
 
 const TransactionsPanel = ({ wallet, isOpen }) => {
     const [transactions, setTransactions] = useState([]);
@@ -30,6 +32,15 @@ const TransactionsPanel = ({ wallet, isOpen }) => {
             console.error('Failed to fetch transactions:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleTransactionResponse = async (transactionId, accept) => {
+        try {
+            await respondToTransaction(wallet.wallet_id, transactionId, accept);
+            await fetchTransactions(); // Refresh the list after response
+        } catch (error) {
+            console.error('Failed to respond to transaction:', error);
         }
     };
 
@@ -126,20 +137,90 @@ const TransactionsPanel = ({ wallet, isOpen }) => {
                                         backgroundColor: 'rgba(255, 255, 255, 0.05)',
                                         borderRadius: '8px',
                                         mb: 1,
+                                        flexDirection: 'column',
+                                        alignItems: 'stretch',
                                     }}
                                 >
-                                    <ListItemText
-                                        primary={
-                                            <Typography color="#e0e0e0">
-                                                {transaction.description}
-                                            </Typography>
-                                        }
-                                        secondary={
-                                            <Typography color="rgba(224, 224, 224, 0.7)" variant="body2">
-                                                Status: {transaction.status}
-                                            </Typography>
-                                        }
-                                    />
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
+                                        <ListItemText
+                                            primary={
+                                                <Box>
+                                                    <Typography color="#e0e0e0" variant="subtitle1">
+                                                        {transaction.name || 'Unnamed Transaction'}
+                                                    </Typography>
+                                                    <Typography color="rgba(224, 224, 224, 0.7)" variant="body2">
+                                                        Amount: {transaction.amount} BTC
+                                                    </Typography>
+                                                </Box>
+                                            }
+                                            secondary={
+                                                <Box sx={{ mt: 1 }}>
+                                                    <Typography color="rgba(224, 224, 224, 0.7)" variant="body2">
+                                                        {transaction.details || 'No details provided'}
+                                                    </Typography>
+                                                    <Box
+                                                        component="span"
+                                                        variant="body2"
+                                                        sx={{ 
+                                                            mt: 0.5,
+                                                            display: 'inline-block',
+                                                            backgroundColor: `${statusColors[transaction.status]}20`,
+                                                            color: statusColors[transaction.status],
+                                                            px: 1,
+                                                            py: 0.5,
+                                                            borderRadius: '4px',
+                                                            border: `1px solid ${statusColors[transaction.status]}40`,
+                                                            fontSize: '0.875rem',
+                                                            fontWeight: 500
+                                                        }}
+                                                    >
+                                                        {numberToStatus[transaction.status] || 'Unknown'}
+                                                    </Box>
+                                                </Box>
+                                            }
+                                        />
+                                    </Box>
+                                    {transaction.status === '0' && (
+                                        <Box sx={{ 
+                                            display: 'flex', 
+                                            gap: 1, 
+                                            justifyContent: 'flex-end',
+                                            mt: 2,
+                                            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                                            pt: 2
+                                        }}>
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                color="error"
+                                                onClick={() => handleTransactionResponse(transaction.id, false)}
+                                                startIcon={<CloseIcon />}
+                                                sx={{
+                                                    backgroundColor: 'rgba(220, 53, 69, 0.5)',
+                                                    '&:hover': {
+                                                        backgroundColor: 'rgba(220, 53, 69, 0.7)'
+                                                    }
+                                                }}
+                                            >
+                                                Decline
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                color="success"
+                                                onClick={() => handleTransactionResponse(transaction.id, true)}
+                                                startIcon={<CheckIcon />}
+                                                sx={{
+                                                    backgroundColor: 'rgba(76, 175, 80, 0.5)',
+                                                    '&:hover': {
+                                                        backgroundColor: 'rgba(76, 175, 80, 0.7)'
+                                                    }
+                                                }}
+                                            >
+                                                Approve
+                                            </Button>
+                                        </Box>
+                                    )}
                                 </ListItem>
                             ))}
                         </List>

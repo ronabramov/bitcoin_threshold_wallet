@@ -16,12 +16,13 @@ export const createWallet = withErrorHandler(async ({ wallet_name, threshold, us
     return response.data;
 });
 
-export const createTransaction = withErrorHandler(async ({ wallet_id, description, name }) => {
+export const createTransaction = withErrorHandler(async ({ wallet_id, description, name, amount }) => {
     const response = await apiClient.post(
         `/wallets/${wallet_id}/transactions`,
         {
             description,
             name,
+            amount,
         }
     );
     return response.data;
@@ -62,3 +63,9 @@ export const respondToWalletInvitation = withErrorHandler(async (walletId, accep
     return 
 });
 
+export const respondToTransaction = withErrorHandler(async (walletId, transactionId, response) => {
+    await apiClient.post(`/wallets/${walletId}/transactions/${transactionId}/respond`, {
+        response
+    });
+    return 
+});
