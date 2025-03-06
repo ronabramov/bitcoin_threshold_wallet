@@ -146,7 +146,7 @@ a = 11
 b = 5
 
 # Example run
-mta = MTAProtocolWithZKP(q=q, alice_public_share=alice_share, bob_public_share=bob_share, curve=curve, bob_public_g_power_secret=bob_X, b_value=b, alice_paillier_private_key=allice_paillier_secret_key)  #For example both Alice and Bob having the same Paillier Keys and
+mta = MTAProtocolWithZKP(alice_public_share=alice_share, bob_public_share=bob_share, curve=curve, bob_public_g_power_secret=bob_X, b_value=b, alice_paillier_private_key=allice_paillier_secret_key)  #For example both Alice and Bob having the same Paillier Keys and
 
 
 #Protocol execution
