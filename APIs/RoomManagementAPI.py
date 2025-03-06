@@ -168,6 +168,12 @@ def send_private_message_to_every_user_in_Wallet(message : MessageDTO, wallet_id
             return False
     return True
 
+def send_private_message_to_user_in_wallet(message : MessageDTO, wallet_id : str, target_user_matrix_id : str) -> bool:
+    try:
+        MatrixService.instance().send_private_message_to_user(target_user_matrix_id=target_user_matrix_id, message=message.model_dump_json())
+        return True
+    except Exception as e:
+        return False
 
 # if __name__ == "__main__":
     
