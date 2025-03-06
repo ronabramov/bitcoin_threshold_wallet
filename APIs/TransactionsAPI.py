@@ -32,20 +32,20 @@ def generate_transaction_and_send_to_wallet( wallet_id, transaction_details, nam
         raise HTTPException(status_code=400, detail="cannot generate transaction, there are invited users in the wallet")
     
     transaction_id = generate_unique_transaction_id()
-    transaction = TransactionDTO(id= transaction_id, name=name, details=transaction_details,amount=amount, wallet_id=wallet_id, shrunken_secret_share=None, status=TransactionStatus.PENDING_OTHERS_APPROVAL)
+    transaction = TransactionDTO(id= transaction_id, name=name, details=transaction_details,amount=amount, wallet_id=wallet_id, shrunken_secret_share=None, status=TransactionStatus.PENDING_YOUR_APPROVAL)
     # add my data to the transaction
     my_wallet_user_data = sql_db_dal.get_my_wallet_user_data(wallet_id=wallet_id)
     if my_wallet_user_data is None:
         raise HTTPException(status_code=400, detail="cannot generate transaction, my data is not in the database")
     
-    insertion_succeeded = sql_db_dal.insert_new_transaction(transaction)
+    
     sql_db_dal.insert_transaction_user_data(transaction_id=transaction_id,user_matrix_id=user_id,user_index=my_wallet_user_data.user_index)
     
-    if not insertion_succeeded:
-        return False
-    # transaction request message is handled as a transaction message
     transaction_json = MessageDTO(type=MessageType.TransactionRequest, data=transaction).model_dump_json()
-    return MatrixService.instance().send_message_to_wallet_room(room_id = wallet_id, message = transaction_json)
+    MatrixService.instance().send_message_to_wallet_room(room_id = wallet_id, message = transaction_json)
+    transaction.status = TransactionStatus.PENDING_OTHERS_APPROVAL
+    sql_db_dal.insert_new_transaction(transaction)
+    return True
 
 def respond_to_new_transaction(transaction : TransactionDTO, user_response : bool) -> bool:
     """
