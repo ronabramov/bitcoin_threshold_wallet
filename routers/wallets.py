@@ -26,6 +26,8 @@ def get_user_wallets():
     db_wallets = get_my_wallets()
     wallets = []
     pending_invitations_rooms = MatrixService.instance().get_all_room_invitations()
+    # filter pending invitations by wallet id that are in the db_wallets
+    pending_invitations_rooms = [invitation for invitation in pending_invitations_rooms if invitation["id"] not in [wallet.wallet_id for wallet in db_wallets]]
     for wallet in db_wallets:
         # Fetch user details for each user in the wallet
         pending_users_data, existing_users_data  = get_wallet_users_data(wallet)

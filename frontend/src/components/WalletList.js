@@ -187,7 +187,13 @@ const WalletList = ({ userId, onSelectWallet }) => {
                         <ListItem key={wallet.wallet_id} disablePadding>
                             <ListItemButton 
                                 key={`button-${wallet.wallet_id}`}
-                                onClick={() => wallet.status !== 'pending' && onSelectWallet(wallet)}
+                                onClick={() => {
+                                    if (wallet.status === 'pending') {
+                                        onSelectWallet(null); // Close any open wallet details
+                                    } else {
+                                        onSelectWallet(wallet);
+                                    }
+                                }}
                                 sx={{
                                     '&:hover': {
                                         backgroundColor: 'rgba(255, 255, 255, 0.1)'
