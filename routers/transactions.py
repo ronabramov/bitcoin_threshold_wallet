@@ -33,20 +33,7 @@ async def get_transactions(wallet_id : str):
 
 @router.post("/")
 async def create_new_transaction(wallet_id: str,transaction: Transaction):
-
     generate_transaction_and_send_to_wallet( wallet_id=wallet_id,name=transaction.name, transaction_details=transaction.description, amount=transaction.amount)
-    transactions = get_transactions_by_wallet_id(wallet_id)        
-    return [
-        {
-            "id": tx.transaction_id,
-            "wallet_id": tx.wallet_id,
-            "details": tx.details,
-            "status": tx.status,
-            "name": tx.name,
-            "amount": tx.amount
-        }
-        for tx in transactions
-    ]
 
 @router.post("/{transaction_id}/respond")
 async def respond_to_transaction(wallet_id: str, transaction_id: str, response_payload: ResponsePayload):
