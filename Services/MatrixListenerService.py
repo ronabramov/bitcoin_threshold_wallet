@@ -56,12 +56,6 @@ class MatrixRoomListener:
             print(f"New message in room {room_id}: {event['content']['body']}")
             self._handle_room_message(room_id, event)
 
-        elif event_type == "m.room.member":
-            if event.get("content", {}).get("membership") == "invite":
-                room_id = event["room_id"]
-                print(f"New room invitation detected: {room_id}")
-                self._handle_room_invitation(room_id)
-
     def _handle_room_message(self, room_id: str, event: dict):
         """ Handles messages from existing rooms (to be implemented later). """
         
@@ -75,15 +69,6 @@ class MatrixRoomListener:
         self._handle_message_DTO(message_obj, room_id)
         # Forward to a message handler (to be implemented later)
         print(f"Message received in room {room_id}: {event['content']['body']}")
-
-    def _handle_room_invitation(self, room_id: str):
-        """ Handles new room invitations and joins automatically. """
-        try:
-            # should save room details to db and this data should be fetched by the frontend
-            joined_room = self.client.join_room(room_id)
-            print(f"Successfully joined room {joined_room.room_id}")
-        except Exception as e:
-            print(f"Failed to join room {room_id}: {e}")
 
     def _handle_error(self, exception: Exception):
         """ Handles exceptions that occur during event listening. """

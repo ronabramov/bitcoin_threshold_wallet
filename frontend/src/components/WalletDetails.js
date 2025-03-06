@@ -258,7 +258,7 @@ const WalletDetails = ({ wallet, onClose }) => {
                 </Box>
                 <Box sx={{ p: 3 }}>
                     <Typography variant="h6" color="#e0e0e0" gutterBottom>
-                        Existing Users
+                        Users
                     </Typography>
                     <Box sx={{ 
                         maxHeight: 'calc(100vh - 300px)',
@@ -274,7 +274,7 @@ const WalletDetails = ({ wallet, onClose }) => {
                             borderRadius: '4px',
                         },
                     }}>
-                        {wallet.existing_users.length === 0 ? (
+                        {wallet.existing_users.length === 0 && wallet.pending_users.length === 0 ? (
                             <Box sx={{
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -284,15 +284,15 @@ const WalletDetails = ({ wallet, onClose }) => {
                                 textAlign: 'center'
                             }}>
                                 <Typography color="#e0e0e0" variant="body1" gutterBottom>
-                                    No Existing Users
+                                    No Users
                                 </Typography>
                                 <Typography color="rgba(224, 224, 224, 0.7)" variant="body2">
-                                    Users who have joined the wallet will appear here
+                                    Users who join the wallet will appear here
                                 </Typography>
                             </Box>
                         ) : (
                             <List>
-                                {wallet.existing_users.map((user, index) => (
+                                {wallet.existing_users.map((user) => (
                                     <ListItem key={user.matrix_id}>
                                         <ListItemAvatar>
                                             <Avatar sx={{ bgcolor: 'rgba(103, 58, 183, 0.5)' }}>
@@ -305,55 +305,39 @@ const WalletDetails = ({ wallet, onClose }) => {
                                         />
                                     </ListItem>
                                 ))}
-                            </List>
-                        )}
-                    </Box>
-                </Box>
-                <Box sx={{ p: 3 }}>
-                    <Typography variant="h6" color="#e0e0e0" gutterBottom>
-                            Pending Users
-                    </Typography>
-                    <Box sx={{ 
-                        maxHeight: 'calc(100vh - 300px)',
-                        overflowY: 'auto',
-                        '&::-webkit-scrollbar': {
-                            width: '8px',
-                        },
-                        '&::-webkit-scrollbar-track': {
-                            background: 'rgba(255, 255, 255, 0.05)',
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                            background: 'rgba(103, 58, 183, 0.5)',
-                            borderRadius: '4px',
-                        },
-                    }}>
-                        {wallet.pending_users.length === 0 ? (
-                            <Box sx={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                py: 4,
-                                textAlign: 'center'
-                            }}>
-                                <Typography color="#e0e0e0" variant="body1" gutterBottom>
-                                    No Pending Users
-                                </Typography>
-                                <Typography color="rgba(224, 224, 224, 0.7)" variant="body2">
-                                    Invited users who haven't joined yet will appear here
-                                </Typography>
-                            </Box>
-                        ) : (
-                            <List>
-                                {wallet.pending_users.map((user, index) => (
-                                    <ListItem key={user.matrix_id}>
+                                {wallet.pending_users.map((user) => (
+                                    <ListItem 
+                                        key={user.matrix_id}
+                                        sx={{
+                                            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                            borderRadius: '8px',
+                                            mb: 1,
+                                            position: 'relative',
+                                        }}
+                                    >
                                         <ListItemAvatar>
                                             <Avatar sx={{ bgcolor: 'rgba(103, 58, 183, 0.5)' }}>
                                                 {user.email[0].toUpperCase()}
                                             </Avatar>
                                         </ListItemAvatar>
                                         <ListItemText
-                                            primary={<Typography color="#e0e0e0">{user.email}</Typography>}
+                                            primary={
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Typography color="#e0e0e0">{user.email}</Typography>
+                                                    <Typography 
+                                                        variant="caption" 
+                                                        sx={{ 
+                                                            backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                                                            color: '#ffa726',
+                                                            px: 1,
+                                                            py: 0.5,
+                                                            borderRadius: '4px',
+                                                        }}
+                                                    >
+                                                        Pending
+                                                    </Typography>
+                                                </Box>
+                                            }
                                             secondary={<Typography color="rgba(224, 224, 224, 0.7)" variant="body2">{user.matrix_id}</Typography>}
                                         />
                                     </ListItem>

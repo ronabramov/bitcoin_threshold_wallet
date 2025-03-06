@@ -2,8 +2,11 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import logging
 from local_db.sql_db_dal import get_my_wallets, get_friend_by_matrix_id
-from APIs.RoomManagementAPI import create_new_wallet #respond_to_room_invitation
+from APIs.RoomManagementAPI import create_new_wallet, respond_to_room_invitation
 from Services.WalletService import get_wallet_users_data
+from Services.MatrixService import MatrixService
+
+
 logger = logging.getLogger("uvicorn")
 router = APIRouter(prefix="/wallets", tags=["wallets"])
 
@@ -13,12 +16,16 @@ class Wallet(BaseModel):
     users: list[str]
     max_participants: int
 
+class WalletResponse(BaseModel):
+    accept: bool
+
 @router.get("/")
 async def get_user_wallets():
     # Find wallets containing the user
     
     db_wallets = get_my_wallets()
     wallets = []
+    pending_invitations_rooms = MatrixService.instance().get_all_room_invitations()
     for wallet in db_wallets:
         # Fetch user details for each user in the wallet
         pending_users_data, existing_users_data  = get_wallet_users_data(wallet)
@@ -27,7 +34,18 @@ async def get_user_wallets():
             "name": wallet.name,
             "threshold": wallet.threshold,
             "existing_users": existing_users_data,
-            "pending_users": pending_users_data
+            "pending_users": pending_users_data,
+            "status": "active"
+        })
+    
+    for pending_invitation in pending_invitations_rooms:
+        wallets.append({
+            "wallet_id": pending_invitation["id"],
+            "name": pending_invitation["name"],
+            "threshold": "?",
+            "existing_users": [],
+            "pending_users": [],
+            "status": "pending"
         })
     return wallets
 
@@ -53,3 +71,8 @@ async def create_wallet(wallet_payload: Wallet):
     
     return wallet_response
 
+# accept is a boolean in the body:
+@router.post("/{wallet_id}/respond")
+async def respond_to_wallet_invitation(wallet_id: str, response: WalletResponse):
+    respond_to_room_invitation(wallet_id, response.accept)
+    return 
