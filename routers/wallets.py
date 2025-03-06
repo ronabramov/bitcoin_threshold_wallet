@@ -21,12 +21,13 @@ async def get_user_wallets():
     wallets = []
     for wallet in db_wallets:
         # Fetch user details for each user in the wallet
-        users_data = get_wallet_users_data(wallet)
+        pending_users_data, existing_users_data  = get_wallet_users_data(wallet)
         wallets.append({
             "wallet_id": wallet.wallet_id,
             "name": wallet.name,
             "threshold": wallet.threshold,
-            "users": users_data
+            "existing_users": existing_users_data,
+            "pending_users": pending_users_data
         })
     return wallets
 
@@ -37,14 +38,15 @@ async def create_wallet(wallet_payload: Wallet):
     success, wallet = create_new_wallet(invited_users_emails=wallet_payload.users,wallet_name=wallet_payload.wallet_name,wallet_threshold=wallet_payload.threshold,max_participants=wallet_payload.max_participants)
     # set users to a comma separated string
     
-    users_data = get_wallet_users_data(wallet)
+    pending_users_data, existing_users_data = get_wallet_users_data(wallet)
     # Insert the wallet into the database
     if success:
         wallet_response = {
             "wallet_id": wallet.wallet_id,
             "name": wallet.name,
             "threshold": wallet.threshold,
-            "users": users_data,
+            "existing_users": existing_users_data,
+            "pending_users": pending_users_data
         }
     else:
         raise HTTPException(status_code=400, detail="Failed to create wallet")

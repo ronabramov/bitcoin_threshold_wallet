@@ -13,6 +13,7 @@ import { createTransaction } from '../api/api';
 
 const CreateTransactionDialog = ({ open, onClose, walletId, onTransactionCreated }) => {
     const [description, setDescription] = useState('');
+    const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -30,6 +31,7 @@ const CreateTransactionDialog = ({ open, onClose, walletId, onTransactionCreated
         try {
             await createTransaction({
                 wallet_id: walletId,
+                name: name.trim(),
                 description: description.trim()
             });
             onTransactionCreated();
@@ -53,6 +55,14 @@ const CreateTransactionDialog = ({ open, onClose, walletId, onTransactionCreated
                 <DialogTitle>Create New Transaction</DialogTitle>
                 <DialogContent>
                     <Box sx={{ mt: 2 }}>
+                        <TextField
+                            label="Name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            fullWidth
+                            required
+                            sx={{ mb: 2 }}
+                        />
                         <TextField
                             label="Description"
                             value={description}

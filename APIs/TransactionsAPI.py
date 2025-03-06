@@ -9,6 +9,8 @@ import uuid
 from Services.MatrixService import MatrixService
 from Services import TransactionService
 from Services.Context import Context
+from fastapi import HTTPException
+
 """
 This is the APIs the controller should reach for any transaction service
 Methods:
@@ -27,8 +29,7 @@ def generate_transaction_and_send_to_wallet( wallet_id, transaction_details, nam
     # check if all users approve the wallet
     invited_users = MatrixService.instance().get_invited_users_in_room(wallet_id)
     if len(invited_users) > 0:
-        print("cannot generate transaction, there are invited users in the wallet")
-        return False
+        raise HTTPException(status_code=400, detail="cannot generate transaction, there are invited users in the wallet")
     
     transaction_id = generate_unique_transaction_id()
     transaction = TransactionDTO(id= transaction_id, name=name, details=transaction_details, wallet_id=wallet_id, shrunken_secret_share=None)

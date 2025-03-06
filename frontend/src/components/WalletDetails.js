@@ -10,6 +10,7 @@ import {
     Avatar,
     IconButton,
     Button,
+    Tooltip,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
@@ -24,7 +25,6 @@ const TransactionsPanel = ({ wallet, isOpen }) => {
     const fetchTransactions = async () => {
         try {
             const data = await getTransactions(wallet.wallet_id);
-            debugger
             setTransactions(data);
         } catch (error) {
             console.error('Failed to fetch transactions:', error);
@@ -158,6 +158,7 @@ const TransactionsPanel = ({ wallet, isOpen }) => {
 
 const WalletDetails = ({ wallet, onClose }) => {
     const [showTransactions, setShowTransactions] = useState(false);
+    const hasPendingUsers = wallet?.pending_users?.length > 0;
 
     if (!wallet) {
         return (
@@ -210,17 +211,28 @@ const WalletDetails = ({ wallet, onClose }) => {
                             {wallet.name || `Wallet ${wallet.wallet_id}`}
                         </Typography>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                        <IconButton
-                            onClick={() => setShowTransactions(!showTransactions)}
-                            sx={{ 
-                                color: showTransactions ? 'primary.main' : '#e0e0e0',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                                }
-                            }}
-                        >
-                            <AccountBalanceIcon />
-                        </IconButton>
+                        <Tooltip title={hasPendingUsers ? 
+                            "Transactions are disabled while there are pending users in the wallet" : 
+                            "View wallet transactions"
+                        }>
+                            <span> {/* Wrapper needed for disabled Tooltip */}
+                                <IconButton
+                                    onClick={() => setShowTransactions(!showTransactions)}
+                                    disabled={hasPendingUsers}
+                                    sx={{ 
+                                        color: showTransactions ? 'primary.main' : '#e0e0e0',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                        },
+                                        '&.Mui-disabled': {
+                                            color: 'rgba(224, 224, 224, 0.3)'
+                                        }
+                                    }}
+                                >
+                                    <AccountBalanceIcon />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
                         <IconButton 
                             onClick={onClose}
                             sx={{ 
@@ -246,7 +258,7 @@ const WalletDetails = ({ wallet, onClose }) => {
                 </Box>
                 <Box sx={{ p: 3 }}>
                     <Typography variant="h6" color="#e0e0e0" gutterBottom>
-                        Invited Users
+                        Existing Users
                     </Typography>
                     <Box sx={{ 
                         maxHeight: 'calc(100vh - 300px)',
@@ -262,21 +274,92 @@ const WalletDetails = ({ wallet, onClose }) => {
                             borderRadius: '4px',
                         },
                     }}>
-                        <List>
-                            {wallet.users.map((user, index) => (
-                                <ListItem key={user.matrix_id}>
-                                    <ListItemAvatar>
-                                        <Avatar sx={{ bgcolor: 'rgba(103, 58, 183, 0.5)' }}>
-                                            {user.email[0].toUpperCase()}
-                                        </Avatar>
-                                    </ListItemAvatar>
-                                    <ListItemText
-                                        primary={<Typography color="#e0e0e0">{user.email}</Typography>}
-                                        secondary={<Typography color="rgba(224, 224, 224, 0.7)" variant="body2">{user.matrix_id}</Typography>}
-                                    />
-                                </ListItem>
-                            ))}
-                        </List>
+                        {wallet.existing_users.length === 0 ? (
+                            <Box sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                py: 4,
+                                textAlign: 'center'
+                            }}>
+                                <Typography color="#e0e0e0" variant="body1" gutterBottom>
+                                    No Existing Users
+                                </Typography>
+                                <Typography color="rgba(224, 224, 224, 0.7)" variant="body2">
+                                    Users who have joined the wallet will appear here
+                                </Typography>
+                            </Box>
+                        ) : (
+                            <List>
+                                {wallet.existing_users.map((user, index) => (
+                                    <ListItem key={user.matrix_id}>
+                                        <ListItemAvatar>
+                                            <Avatar sx={{ bgcolor: 'rgba(103, 58, 183, 0.5)' }}>
+                                                {user.email[0].toUpperCase()}
+                                            </Avatar>
+                                        </ListItemAvatar>
+                                        <ListItemText
+                                            primary={<Typography color="#e0e0e0">{user.email}</Typography>}
+                                            secondary={<Typography color="rgba(224, 224, 224, 0.7)" variant="body2">{user.matrix_id}</Typography>}
+                                        />
+                                    </ListItem>
+                                ))}
+                            </List>
+                        )}
+                    </Box>
+                </Box>
+                <Box sx={{ p: 3 }}>
+                    <Typography variant="h6" color="#e0e0e0" gutterBottom>
+                            Pending Users
+                    </Typography>
+                    <Box sx={{ 
+                        maxHeight: 'calc(100vh - 300px)',
+                        overflowY: 'auto',
+                        '&::-webkit-scrollbar': {
+                            width: '8px',
+                        },
+                        '&::-webkit-scrollbar-track': {
+                            background: 'rgba(255, 255, 255, 0.05)',
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            background: 'rgba(103, 58, 183, 0.5)',
+                            borderRadius: '4px',
+                        },
+                    }}>
+                        {wallet.pending_users.length === 0 ? (
+                            <Box sx={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                py: 4,
+                                textAlign: 'center'
+                            }}>
+                                <Typography color="#e0e0e0" variant="body1" gutterBottom>
+                                    No Pending Users
+                                </Typography>
+                                <Typography color="rgba(224, 224, 224, 0.7)" variant="body2">
+                                    Invited users who haven't joined yet will appear here
+                                </Typography>
+                            </Box>
+                        ) : (
+                            <List>
+                                {wallet.pending_users.map((user, index) => (
+                                    <ListItem key={user.matrix_id}>
+                                        <ListItemAvatar>
+                                            <Avatar sx={{ bgcolor: 'rgba(103, 58, 183, 0.5)' }}>
+                                                {user.email[0].toUpperCase()}
+                                            </Avatar>
+                                        </ListItemAvatar>
+                                        <ListItemText
+                                            primary={<Typography color="#e0e0e0">{user.email}</Typography>}
+                                            secondary={<Typography color="rgba(224, 224, 224, 0.7)" variant="body2">{user.matrix_id}</Typography>}
+                                        />
+                                    </ListItem>
+                                ))}
+                            </List>
+                        )}
                     </Box>
                 </Box>
             </Paper>
