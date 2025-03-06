@@ -183,7 +183,8 @@ class MatrixService:
     def __get_private_room_with_user(self, target_user_matrix_id: str) -> Room:
         rooms = self.client.rooms
         target_room: Room = None
-        invited_rooms = self._get_pending_invitations_rooms()
+        invited_rooms = self.get_pending_invitations_rooms()
+        # TODO - change to handle room ids!
         all_rooms = list(rooms.values()) + invited_rooms
         for room in all_rooms:
             if self._is_private_room(room, target_user_matrix_id):
@@ -203,33 +204,14 @@ class MatrixService:
     def _get_private_room_name(self, first_user_matrix_id: str, second_user_matrix_id: str) -> str:
         return f"private_room_for_{self.__user_matrix_id_to_room_name(first_user_matrix_id)}_and_{self.__user_matrix_id_to_room_name(second_user_matrix_id)}"
     
-    def _get_pending_invitations_rooms(self) -> List[Room]:
-        room_ids = self._get_all_room_invitations_ids()
-        return [self.client.join_room(room_id) for room_id in room_ids]
-    
-    # TODO: private message is sent in a public room - should be fixed
     def send_private_message_to_user(self, target_user_matrix_id: str, message: str):
 
         target_room: Room = self.__get_private_room_with_user(target_user_matrix_id)
         target_room.send_text(message)
         print(f"Successfully sent private message in room {target_room.room_id}")
     
-    def fetch_pending_invited_rooms(self) -> List[Room]:
-        rooms = self.client.invited_rooms
-        # TODO : Required Fix.
-        # pending_rooms for room in rooms.values():
-        #     if room.invite_state == "invite":
-        #         print(f"Room {room.room_id} is pending invitation")
-        #         return room
-        return None
-    
     def reject_room_invitation_by_id(self, room_id : str):
-        rooms = self.client.invited_rooms
-        for room  in rooms.values():
-            self.reject_room_invitation(room=room) # Should be fixed
-    
-    def reject_room_invitation(self, room : Room) -> bool:
-        return room.leave()
+        self.client.api.leave_room(room_id=room_id)
     
     def get_next_available_index(self, room_id: str) -> bool:
         existing_users = self.get_existing_users_in_room(room_id=room_id)
@@ -300,7 +282,7 @@ class MatrixService:
             room.leave()
         return True
     
-    def _get_all_room_invitations_ids(self) -> List[str]:
+    def get_all_room_invitations(self) -> List[dict]:
         token = self.client.token
         url = f"{Config.HOMESERVER_URL}/_matrix/client/v3/sync"
         params = {
@@ -309,11 +291,18 @@ class MatrixService:
 
         response = requests.get(url, params=params, headers=headers).json()
         if "rooms" in response and "invite" in response["rooms"]:
-            return list(response["rooms"]["invite"].keys())
+            room_ids = list(response["rooms"]["invite"].keys())
+            # get name in 
+            room_names = []
+            for room_id in room_ids:
+                name = [ event["content"]["name"] for event in response["rooms"]["invite"][room_id]["invite_state"]["events"]  if event["type"] == "m.room.name"]
+                if name:
+                    room_names.append({"id": room_id, "name": name[0]})
+            return room_names
         return []
     
     def reject_all_invitations(self) -> bool:
-        room_ids = self._get_all_room_invitations_ids()
+        room_ids = self.get_all_room_invitations()
         for room_id in room_ids:
             self.client.api.leave_room(room_id)
         return True

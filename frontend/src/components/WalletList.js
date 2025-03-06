@@ -8,11 +8,17 @@ import {
     Typography,
     Paper,
     Button,
-    IconButton
+    IconButton,
+    Chip,
+    Stack,
+    Tooltip,
+    CircularProgress
 } from '@mui/material';
-import { getWallets, createWallet } from '../api/api';
+import { getWallets, createWallet, respondToWalletInvitation } from '../api/api';
 import CreateWalletDialog from './CreateWalletDialog';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { useNotification } from './NotificationContext';
 
 const EmptyWalletList = ({ onCreateWallet }) => (
@@ -70,8 +76,55 @@ const WalletList = ({ userId, onSelectWallet }) => {
         }
     };
 
+    const handleWalletResponse = async (walletId, accept) => {
+        try {
+            await respondToWalletInvitation(walletId, accept);
+            showNotification(`Wallet invitation ${accept ? 'accepted' : 'rejected'} successfully!`, 'success');
+            fetchWallets(); // Refresh the wallet list
+        } catch (err) {
+            // Error will be handled by the error handler decorator
+        }
+    };
+
     if (loading) {
-        return <Typography>Loading wallets...</Typography>;
+        return (
+            <Paper
+                sx={{
+                    backgroundColor: 'rgba(103, 58, 183, 0.25)',
+                    backdropFilter: 'blur(8px)',
+                    width: '300px',
+                    position: 'fixed',
+                    left: 0,
+                    top: '64px',
+                    bottom: '20px',
+                    borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                }}
+            >
+                <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center',
+                    gap: 2
+                }}>
+                    <CircularProgress 
+                        sx={{ 
+                            color: 'rgba(224, 224, 224, 0.7)',
+                            mb: 2
+                        }} 
+                    />
+                    <Typography 
+                        color="rgba(224, 224, 224, 0.7)"
+                        variant="body1"
+                    >
+                        Loading wallets...
+                    </Typography>
+                </Box>
+            </Paper>
+        );
     }
 
     return (
@@ -134,7 +187,7 @@ const WalletList = ({ userId, onSelectWallet }) => {
                         <ListItem key={wallet.wallet_id} disablePadding>
                             <ListItemButton 
                                 key={`button-${wallet.wallet_id}`}
-                                onClick={() => onSelectWallet(wallet)}
+                                onClick={() => wallet.status !== 'pending' && onSelectWallet(wallet)}
                                 sx={{
                                     '&:hover': {
                                         backgroundColor: 'rgba(255, 255, 255, 0.1)'
@@ -142,10 +195,80 @@ const WalletList = ({ userId, onSelectWallet }) => {
                                 }}
                             >
                                 <ListItemText
-                                    primary={wallet.name || `Wallet ${wallet.wallet_id}`}
-                                    secondary={`Threshold: ${wallet.threshold}`}
-                                    primaryTypographyProps={{ color: '#e0e0e0' }}
-                                    secondaryTypographyProps={{ color: 'rgba(224, 224, 224, 0.7)' }}
+                                    primary={
+                                        <Typography
+                                            component="span"
+                                            sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                                            color="#e0e0e0"
+                                        >
+                                            {wallet.name || `Wallet ${wallet.wallet_id}`}
+                                            {wallet.status === 'pending' && (
+                                                <Chip 
+                                                    label="Pending" 
+                                                    size="small" 
+                                                    color="warning"
+                                                    sx={{ 
+                                                        backgroundColor: 'rgba(255, 152, 0, 0.2)',
+                                                        color: '#ffa726',
+                                                        '& .MuiChip-label': {
+                                                            px: 1
+                                                        }
+                                                    }}
+                                                />
+                                            )}
+                                        </Typography>
+                                    }
+                                    secondary={
+                                        wallet.status === 'pending' ? (
+                                            <Typography
+                                                component="span"
+                                                color="rgba(224, 224, 224, 0.7)"
+                                            >
+                                                <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                                                    <Tooltip title="Accept wallet invitation">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleWalletResponse(wallet.wallet_id, true);
+                                                            }}
+                                                            sx={{ 
+                                                                color: 'rgba(224, 224, 224, 0.7)',
+                                                                '&:hover': {
+                                                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                                                    color: '#e0e0e0'
+                                                                }
+                                                            }}
+                                                        >
+                                                            <CheckCircleIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Reject wallet invitation">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleWalletResponse(wallet.wallet_id, false);
+                                                            }}
+                                                            sx={{ 
+                                                                color: 'rgba(224, 224, 224, 0.7)',
+                                                                '&:hover': {
+                                                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                                                    color: '#e0e0e0'
+                                                                }
+                                                            }}
+                                                        >
+                                                            <CancelIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Stack>
+                                            </Typography>
+                                        ) : (
+                                            <Typography color="#e0e0e0">
+                                                Threshold: {wallet.threshold}
+                                            </Typography>
+                                        )
+                                    }
                                 />
                             </ListItemButton>
                         </ListItem>

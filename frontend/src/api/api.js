@@ -55,3 +55,10 @@ export const getTransactions = withErrorHandler(async (wallet_id) => {
     return response.data;
 });
 
+export const respondToWalletInvitation = withErrorHandler(async (walletId, accept) => {
+     await apiClient.post(`/wallets/${walletId}/respond`, {
+        accept
+    });
+    return 
+});
+
