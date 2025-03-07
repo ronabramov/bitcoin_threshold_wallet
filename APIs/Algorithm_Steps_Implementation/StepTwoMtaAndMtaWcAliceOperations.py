@@ -103,7 +103,7 @@ class StepTwoMtaAndMtaWcAliceOperations:
       insertion_success = db_dal.update_bobs_encrypted_value_and_commitment(transaction_id=transaction_id, user_index=user_index, bobs_encrypted_value=bob_encrypted_value,
                                                                             bobs_commitment=bobs_commitment)
       
-      protocol, bob_user_matrix_id =  StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=destination_user_index)                                                                      bobs_encrypted_value=bob_encrypted_value, bobs_commitment=bobs_commitment)
+      protocol, bob_user_matrix_id =  StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=destination_user_index)
       if not insertion_success:
           print(f'Failed Recording encryption of bobs value for target user : {bob_user_matrix_id}')
           raise SystemError(f'Failed Recording encryption of k_i for target user : {bob_user_matrix_id}')
@@ -117,7 +117,7 @@ class StepTwoMtaAndMtaWcAliceOperations:
     def alice_handles_bob_proof_for_challenge_and_finalize(bob_proof_for_challenge : Bob_ZKProof_Proof_For_Challenge, transaction_id : str, wallet_id : str, 
                                                            user_index : int, target_user_index : int):
         
-        protocol, _ =  StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=target_user_index)                                                                      bobs_encrypted_value=bob_encrypted_value, bobs_commitment=bobs_commitment)
+        protocol, _ =  StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=target_user_index)
         alice_secret = db_dal.get_wallet_by_id(wallet_id=wallet_id).get_room_secret_user_data()
         alice_mta_user_data = db_dal.get_mta_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=target_user_index)
         alice_additive_share = protocol.alice_finalize(proof_for_challenge=bob_proof_for_challenge, commitment=alice_mta_user_data.bobs_commitment, 

@@ -83,25 +83,72 @@ class Transaction(Base):
             name=transaction_dto.name
         )
 
-
-# check every transaction user changes - should we change simething in this table?
 class TransactionUserData(Base):
+    """
+    Stores user-specific data for MtA and MtAwc protocols within a transaction.
+    Contains only the final computed integer results.
+    """
     __tablename__ = "TransactionUserData"
-    # id with uuid default val
     id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
     transaction_id = Column(String, ForeignKey("Transaction.transaction_id"), nullable=False)
     user_matrix_id = Column(String, primary_key=True, nullable=False)
     user_index = Column(Integer, primary_key=True, nullable=False)
-    mta_data = Column(JSON, nullable=True) 
-    
-    def add_mta_data(self, mta_info: dict):
-        self.mta_data = mta_info
 
-    def get_mta_data(self) -> dict:
-        return self.mta_data
+    # MtA & MtAwc result values (final integer shares)
+    mta_user_as_alice_value = Column(Integer, nullable=True)  # Stores Alice's final α
+    mta_user_as_bob_value = Column(Integer, nullable=True)  # Stores Bob's final β
+    mta_wc_as_alice_value = Column(Integer, nullable=True)  # Stores Alice's final MtAwc share
+    mta_wc_user_as_bob_value = Column(Integer, nullable=True)  # Stores Bob's final MtAwc share
 
-    def remove_mta_data(self):
-        self.mta_data = {}
+    def add_mta_result(self, result_value: int, role: str, protocol_type: str):
+        """
+        Stores the final MtA or MtAwc integer result for the user based on their role.
+
+        :param result_value: Final computed integer result from MtA or MtAwc.
+        :param role: 'alice' or 'bob' (denoting user role in MtA/MtAwc)
+        :param protocol_type: 'mta' or 'mta_wc' (denoting MtA or MtAwc protocol)
+        """
+        if protocol_type == "mta":
+            if role == "alice":
+                self.mta_user_as_alice_value = result_value
+            elif role == "bob":
+                self.mta_user_as_bob_value = result_value
+        elif protocol_type == "mta_wc":
+            if role == "alice":
+                self.mta_wc_as_alice_value = result_value
+            elif role == "bob":
+                self.mta_wc_user_as_bob_value = result_value
+
+    def get_mta_result(self, role: str, protocol_type: str) -> int:
+        """
+        Retrieves the stored MtA or MtAwc final integer result for the user.
+
+        :param role: 'alice' or 'bob' (denoting user role in MtA/MtAwc)
+        :param protocol_type: 'mta' or 'mta_wc' (denoting MtA or MtAwc protocol)
+        :return: Final integer result (or None if not found).
+        """
+        if protocol_type == "mta":
+            return self.mta_user_as_alice_value if role == "alice" else self.mta_user_as_bob_value
+        elif protocol_type == "mta_wc":
+            return self.mta_wc_as_alice_value if role == "alice" else self.mta_wc_user_as_bob_value
+
+    def remove_mta_result(self, role: str, protocol_type: str):
+        """
+        Resets the stored MtA or MtAwc final result for the user.
+
+        :param role: 'alice' or 'bob' (denoting user role in MtA/MtAwc)
+        :param protocol_type: 'mta' or 'mta_wc' (denoting MtA or MtAwc protocol)
+        """
+        if protocol_type == "mta":
+            if role == "alice":
+                self.mta_user_as_alice_value = None
+            elif role == "bob":
+                self.mta_user_as_bob_value = None
+        elif protocol_type == "mta_wc":
+            if role == "alice":
+                self.mta_wc_as_alice_value = None
+            elif role == "bob":
+                self.mta_wc_user_as_bob_value = None
 
 
     @classmethod
@@ -191,6 +238,33 @@ class Mta_As_Alice_Users_Data(Base):
     bob_proof_for_challenge = Column(JSON, nullable=True)  # Bob_ZKProof_Proof_For_Challenge (JSON format)
 
     transaction = relationship("Transaction", back_populates="mta_as_alice_data")
+
+
+from sqlalchemy import Column, String, Integer, JSON, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+import uuid
+
+Base = declarative_base()
+
+class Mta_As_Bob_Users_Data(Base):
+    """
+    Stores data for the MtA protocol where the current user played as Bob.
+    """
+
+    __tablename__ = "Mta_As_Bob_Users_Data"
+    id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    transaction_id = Column(String, ForeignKey("Transaction.transaction_id"), nullable=False)
+    user_index = Column(Integer, nullable=False)  # Bob's index
+    counterparty_index = Column(Integer, nullable=False)  # Alice's index
+    b = Column(Integer, nullable=True)  # Bob's secret integer value
+    enc_a = Column(JSON, nullable=True)  # Alice’s encrypted value (EncryptedNumber, serialized as JSON)
+    commitment_of_a = Column(JSON, nullable=True)  # Alice’s commitment (AliceZKProof_Commitment, serialized as JSON)
+    bobs_challenge = Column(Integer, nullable=True)  # Integer challenge sent to Alice
+    enc_result = Column(JSON, nullable=True)  # Encrypted (ab + β') (EncryptedNumber, serialized as JSON)
+    bobs_commitment = Column(JSON, nullable=True)  # Bob’s commitment (Bob_ZKProof_ProverCommitment, serialized as JSON)
+    beta_prime = Column(Integer, nullable=True)  # Bob’s additive term for decryption
+    alice_challenge = Column(Integer, nullable=True)  # Challenge received from Alice
+    bob_proof_for_challenge = Column(JSON, nullable=True)  # Bob’s proof for Alice’s challenge (Bob_ZKProof_Proof_For_Challenge, serialized as JSON)
 
 
 

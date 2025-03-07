@@ -1,5 +1,5 @@
 from local_db import sql_db
-from local_db.sql_db import DB, Transaction, Mta_As_Alice_Users_Data
+from local_db.sql_db import DB, Transaction, Mta_As_Alice_Users_Data, Mta_As_Bob_Users_Data
 from typing import List
 from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
@@ -486,5 +486,97 @@ def update_bob_proof_for_challenge(transaction_id: str, user_index: int, bob_pro
             print(f"Failed to update Bob's proof for Alice's challenge for transaction {transaction_id}: {e}")
             return False
 
+# ================================================================================================
+# MTA Protocl Methods - When the user is in Bob's shoes. The relevant steps are:
+# 1. Store enc_a  and a's commitment
+# 2. Store Bob's Challenge
+# 3. Store Bob's Encrypted Response & Bob's Commitment and finally beta_prime
+# 5. Store Bob's Proof for challenge - After getting challenge by alice
+# 6. Store Bob's Proof for Alice's challenge (mainly for tracking...)
+# ================================================================================================
 
+def insert_mta_as_bob(transaction_id: str, user_index: int, counterparty_index: int, enc_a: EncryptedNumber, commitment_of_a: AliceZKProof_Commitment) -> bool:
+    with DB.session() as session:
+        try:
+            entry = Mta_As_Bob_Users_Data(
+                transaction_id=transaction_id,
+                user_index=user_index,
+                counterparty_index=counterparty_index,
+                enc_a=enc_a.to_dict(),  # RON TODO : Fix
+                commitment_of_a=commitment_of_a.to_dict()  # Serialize Commitment
+            )
+            session.add(entry)
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to insert MtA (as Bob) for transaction {transaction_id}: {e}")
+            return False
 
+def update_bobs_challenge(transaction_id: str, user_index: int, bobs_challenge: int) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(Mta_As_Bob_Users_Data).filter(
+                Mta_As_Bob_Users_Data.transaction_id == transaction_id,
+                Mta_As_Bob_Users_Data.user_index == user_index
+            ).update({"bobs_challenge": bobs_challenge})
+
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update Bob's challenge for transaction {transaction_id}: {e}")
+            return False
+
+def update_bobs_encrypted_value_and_commitment(transaction_id: str, user_index: int, enc_result: EncryptedNumber, 
+                                                bobs_commitment: Bob_ZKProof_ProverCommitment, beta_prime: int) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(Mta_As_Bob_Users_Data).filter(
+                Mta_As_Bob_Users_Data.transaction_id == transaction_id,
+                Mta_As_Bob_Users_Data.user_index == user_index
+            ).update({
+                "enc_result": enc_result.to_dict(),  # Serialize EncryptedNumber
+                "bobs_commitment": bobs_commitment.to_dict(),  # Serialize Commitment
+                "beta_prime": beta_prime})
+
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update Bob's encrypted result for transaction {transaction_id}: {e}")
+            return False
+
+def update_bob_proof_for_challenge(transaction_id: str, user_index: int, bob_proof_for_challenge: Bob_ZKProof_Proof_For_Challenge) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(Mta_As_Bob_Users_Data).filter(
+                Mta_As_Bob_Users_Data.transaction_id == transaction_id,
+                Mta_As_Bob_Users_Data.user_index == user_index
+            ).update({"bob_proof_for_challenge": bob_proof_for_challenge.to_dict()})  # Serialize Proof
+
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update Bob's proof for transaction {transaction_id}: {e}")
+            return False
+
+def get_mta_as_bob(transaction_id: str, user_index: int, counterparty_index: int) -> Mta_As_Bob_Users_Data:
+    with DB.session() as session:
+        record = session.query(Mta_As_Bob_Users_Data).filter(
+            Mta_As_Bob_Users_Data.transaction_id == transaction_id,
+            Mta_As_Bob_Users_Data.user_index == user_index,
+            Mta_As_Bob_Users_Data.counterparty_index == counterparty_index).first()
+
+        if not record:
+            print(f"Couldn't find mta_as_bob data for target user {counterparty_index} for transaction {transaction_id}")
+            return None
+        
+        record.enc_a = EncryptedNumber.from_dict(record.enc_a) if record.enc_a else None
+        record.commitment_of_a = AliceZKProof_Commitment.from_dict(record.commitment_of_a) if record.commitment_of_a else None
+        record.enc_result = EncryptedNumber.from_dict(record.enc_result) if record.enc_result else None
+        record.bobs_commitment = Bob_ZKProof_ProverCommitment.from_dict(record.bobs_commitment) if record.bobs_commitment else None
+        record.bob_proof_for_challenge = Bob_ZKProof_Proof_For_Challenge.from_dict(record.bob_proof_for_challenge) if record.bob_proof_for_challenge else None
+
+        return record
