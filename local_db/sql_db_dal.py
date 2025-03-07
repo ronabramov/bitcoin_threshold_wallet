@@ -5,6 +5,9 @@ from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
 from models.models import  user_public_share, wallet_key_generation_share, GPowerX
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
+from phe import EncryptedNumber
+from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
+from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment, Bob_ZKProof_RegMta_Prover_Settings, Bob_ZKProof_RegMta_Settings
 from Services.Context import Context
 
 def get_friend_by_email(email : str) -> sql_db.Friend:
@@ -156,6 +159,10 @@ def get_all_wallet_user_data(wallet_id : str) -> List[sql_db.WalletUserData]:
     with DB.session() as session:
         return session.query(sql_db.WalletUserData).filter(sql_db.WalletUserData.wallet_id == wallet_id).all()
 
+def get_specific_wallet_user_data(wallet_id : str, traget_user_index_in_wallet : int)-> sql_db.WalletUserData:
+    with DB.session() as session:
+        return session.query(sql_db.WalletUserData).filter(sql_db.WalletUserData.wallet_id == wallet_id, sql_db.WalletUserData.user_index == traget_user_index_in_wallet).first()
+
 # TODO: maybe remove matrix id and index as parameters since we get them from the user_public_keys
 def insert_new_wallet_user_data(wallet_id : str, user_index : int, user_matrix_id : str, user_public_share : user_public_share):
     with DB.session() as session:
@@ -288,6 +295,24 @@ def insert_transaction_user_data(transaction_id : str, user_index : int, user_ma
             print(f"Failed to insert transaction user data {transaction_id}", e)
             return False
 
+def update_transaction_user_data(transaction_user_data: sql_db.TransactionUserData) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(sql_db.TransactionUserData).filter(
+                sql_db.TransactionUserData.transaction_id == transaction_user_data.transaction_id,
+                sql_db.TransactionUserData.user_index == transaction_user_data.user_index
+            ).delete()
+
+            session.add(transaction_user_data)
+
+            session.commit()
+            print(f"Successfully replaced TransactionUserData for transaction {transaction_user_data.transaction_id} and user {transaction_user_data.user_index}.")
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update TransactionUserData for transaction {transaction_user_data.transaction_id} and user {transaction_user_data.user_index}: {e}")
+            return False
+
 def get_transaction_user_data_by_index(transaction_id : str, user_index : int) -> sql_db.TransactionUserData:
     with DB.session() as session:
         return session.query(sql_db.TransactionUserData).filter(sql_db.TransactionUserData.transaction_id == transaction_id, sql_db.TransactionUserData.user_index == user_index).first()
@@ -345,41 +370,55 @@ def delete_wallet(wallet_id : str) -> bool:
 # 6. Store Bob's Proof for Alice's challenge (mainly for tracking...)
 # ================================================================================================
 
-def insert_alice_a_and_enc_a(transaction_id: str, counterparty_matrix_id: str, user_index: int, counterparty_index: int,
-                             a: int, enc_a: dict) -> bool:
+#RON TODO: handle the encrypted_number to dict
+
+
+def get_mta_as_alice_user_data(transaction_id: str, user_index: int, counterparty_index: int) -> Mta_As_Alice_Users_Data:
     """
-    Inserts Alice's secret `a` and its encrypted version `enc_a` when she starts the MtA protocol.
+    Retrieves MtA data where the user played as Alice for a specific counterparty.
+    Converts JSON fields back into models safely, ensuring missing fields don't cause exceptions.
     """
     with DB.session() as session:
+        record = session.query(Mta_As_Alice_Users_Data).filter(
+            Mta_As_Alice_Users_Data.transaction_id == transaction_id,
+            Mta_As_Alice_Users_Data.user_index == user_index,  # Alice's index
+            Mta_As_Alice_Users_Data.counterparty_index == counterparty_index  # Bob's index
+        ).first()
+
+        if not record:
+            return None
+
+        # Convert JSON fields back into models only if they exist
+        record.enc_a = EncryptedNumber.from_dict(record.enc_a) if record.enc_a else None
+        record.commitment_of_a = AliceZKProof_Commitment.from_dict(record.commitment_of_a) if record.commitment_of_a else None
+        record.bobs_encrypted_value = EncryptedNumber.from_dict(record.bobs_encrypted_value) if record.bobs_encrypted_value else None
+        record.bobs_commitment = Bob_ZKProof_ProverCommitment.from_dict(record.bobs_commitment) if record.bobs_commitment else None
+        record.bob_proof_for_challenge = Bob_ZKProof_Proof_For_Challenge.from_dict(record.bob_proof_for_challenge) if record.bob_proof_for_challenge else None
+
+        return record
+
+def insert_alice_a_and_enc_a(transaction_id: str, user_index: int, counterparty_index: int,
+                             a: int, enc_a: EncryptedNumber) -> bool:
+    with DB.session() as session:
         try:
-            entry = Mta_As_Alice_Users_Data(
-                transaction_id=transaction_id,
-                user_index=user_index,
-                counterparty_index=counterparty_index,
-                a=a,
-                enc_a=enc_a
-            )
+            entry = Mta_As_Alice_Users_Data(transaction_id=transaction_id, user_index=user_index, counterparty_index=counterparty_index,
+                a=a, enc_a=enc_a.to_dict())
             session.add(entry)
             session.commit()
-            print(f"Successfully inserted Alice's secret and encrypted value for transaction {transaction_id}.")
             return True
         except Exception as e:
             session.rollback()
             print(f"Failed to insert Alice's secret for transaction {transaction_id}: {e}")
             return False
         
-def update_alice_commitment(transaction_id: str, user_index: int, commitment_of_a: dict) -> bool:
-    """
-    Updates Alice's commitment after she encrypts and sends her value.
-    """
+def update_alice_commitment(transaction_id: str, user_index: int, commitment_of_a: AliceZKProof_Commitment) -> bool:
     with DB.session() as session:
         try:
             session.query(Mta_As_Alice_Users_Data).filter(
                 Mta_As_Alice_Users_Data.transaction_id == transaction_id,
                 Mta_As_Alice_Users_Data.user_index == user_index
-            ).update({"commitment_of_a": commitment_of_a})
+            ).update({"commitment_of_a": commitment_of_a.to_dict()})  # Convert to dict inside the DAL
             session.commit()
-            print(f"Successfully updated Alice's commitment for transaction {transaction_id}.")
             return True
         except Exception as e:
             session.rollback()
@@ -387,9 +426,6 @@ def update_alice_commitment(transaction_id: str, user_index: int, commitment_of_
             return False
 
 def update_bobs_challenge(transaction_id: str, user_index: int, bobs_challenge: int) -> bool:
-    """
-    Updates the MtA entry with Bob's challenge to Alice.
-    """
     with DB.session() as session:
         try:
             session.query(Mta_As_Alice_Users_Data).filter(
@@ -397,39 +433,32 @@ def update_bobs_challenge(transaction_id: str, user_index: int, bobs_challenge: 
                 Mta_As_Alice_Users_Data.user_index == user_index
             ).update({"bobs_challenge": bobs_challenge})
             session.commit()
-            print(f"Successfully updated Bob's challenge for transaction {transaction_id}.")
             return True
         except Exception as e:
             session.rollback()
             print(f"Failed to update Bob's challenge for transaction {transaction_id}: {e}")
             return False
 
-def update_bobs_encrypted_value_and_commitment(transaction_id: str, user_index: int, 
-                                                bobs_encrypted_value: dict, bobs_commitment: dict) -> bool:
-    """
-    Updates the MtA entry with Bob's encrypted response (E(ab + beta')) and Bob's commitment.
-    """
+def update_bobs_encrypted_value_and_commitment(transaction_id: str, user_index: int, bobs_encrypted_value: EncryptedNumber, 
+                                                bobs_commitment: Bob_ZKProof_ProverCommitment) -> bool:
     with DB.session() as session:
         try:
             session.query(Mta_As_Alice_Users_Data).filter(
                 Mta_As_Alice_Users_Data.transaction_id == transaction_id,
                 Mta_As_Alice_Users_Data.user_index == user_index
             ).update({
-                "bobs_encrypted_value": bobs_encrypted_value,
-                "bobs_commitment": bobs_commitment
+                "bobs_encrypted_value": bobs_encrypted_value.to_dict(),  # Convert EncryptedNumber
+                "bobs_commitment": bobs_commitment.to_dict()  # Convert Commitment
             })
             session.commit()
-            print(f"Successfully updated Bob's encrypted response and commitment for transaction {transaction_id}.")
             return True
         except Exception as e:
             session.rollback()
             print(f"Failed to update Bob's encrypted response and commitment for transaction {transaction_id}: {e}")
             return False
 
+
 def update_alice_challenge(transaction_id: str, user_index: int, alice_challenge: int) -> bool:
-    """
-    Updates the MtA entry with Alice's challenge to Bob.
-    """
     with DB.session() as session:
         try:
             session.query(Mta_As_Alice_Users_Data).filter(
@@ -437,25 +466,20 @@ def update_alice_challenge(transaction_id: str, user_index: int, alice_challenge
                 Mta_As_Alice_Users_Data.user_index == user_index
             ).update({"alice_challenge": alice_challenge})
             session.commit()
-            print(f"Successfully updated Alice's challenge for transaction {transaction_id}.")
             return True
         except Exception as e:
             session.rollback()
             print(f"Failed to update Alice's challenge for transaction {transaction_id}: {e}")
             return False
 
-def update_bob_proof_for_challenge(transaction_id: str, user_index: int, bob_proof_for_challenge: dict) -> bool:
-    """
-    Updates the MtA entry with Bob's proof for Alice's challenge.
-    """
+def update_bob_proof_for_challenge(transaction_id: str, user_index: int, bob_proof_for_challenge: Bob_ZKProof_Proof_For_Challenge) -> bool:
     with DB.session() as session:
         try:
             session.query(Mta_As_Alice_Users_Data).filter(
                 Mta_As_Alice_Users_Data.transaction_id == transaction_id,
                 Mta_As_Alice_Users_Data.user_index == user_index
-            ).update({"bob_proof_for_challenge": bob_proof_for_challenge})
+            ).update({"bob_proof_for_challenge": bob_proof_for_challenge.to_dict()})
             session.commit()
-            print(f"Successfully updated Bob's proof for Alice's challenge for transaction {transaction_id}.")
             return True
         except Exception as e:
             session.rollback()

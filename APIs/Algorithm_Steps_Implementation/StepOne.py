@@ -4,7 +4,7 @@ import random
 from ecdsa import curves
 from models.protocols.Commitment import commit_x
 import json
-from APIs.Algorithm_Steps_Implementation.StepTwo import StepTwo_SendAliceMtaMessages
+from APIs.Algorithm_Steps_Implementation.StepTwo import StepTwo_Mta_And_MtaWc
 from models.commitment import Commitment
 from models.algorithm_step import Algorithm_Step
 from APIs.RoomManagementAPI import send_private_message_to_every_user_in_Wallet
@@ -34,7 +34,7 @@ class StepOne_PrepareDataForMta:
                                         committed_values=[encrypted_commitment], 
                                         committing_user_paillier_public_key= paillier.PaillierPublicKey(n= n))
         send_private_message_to_every_user_in_Wallet(commitment_message, wallet.wallet_id)
-        StepTwo_SendAliceMtaMessages.execute(wallet, k_i, gamma_i, my_user_data, curve)
+        StepTwo_Mta_And_MtaWc.send_alice_mta_encryptions_and_commitment(wallet, k_i, gamma_i, my_user_data, curve)
         
 
         

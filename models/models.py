@@ -306,6 +306,7 @@ class user_index_to_user_id_message(BaseModel):
     def from_dict(cls, data):
         return cls(index_to_user_id=data["index_to_user_id"])
 
+# RON TODO : Fix that class and the usages. Should be Point Jacobi not int. Not necessary the save the additonal properties
 class GPowerX(BaseModel):
     value: int
     user_matrix_id: str
