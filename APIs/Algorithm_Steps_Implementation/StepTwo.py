@@ -14,7 +14,7 @@ from phe import EncryptedNumber
 
 
 
-class StepTwo_Mta_And_MtaWc:
+class StepTwoMtaAndMtaWcAliceOperations:
     
     def send_alice_mta_encryptions_and_commitment(self, wallet : Wallet, k_i : int, gamma_i : int, sending_user_data : WalletUserData, curve : Curve, transaction_id : str):
         """
@@ -27,17 +27,14 @@ class StepTwo_Mta_And_MtaWc:
         sending_user_public_share = user_public_share.from_dict(sending_user_data.user_public_keys_data)
         for destination_user_data in wallet_users_public_shares:
             destination_user_share = user_public_share.from_dict(destination_user_data.user_public_keys_data)
-            StepTwo_Mta_And_MtaWc.create_and_send_Ki_mta_commitment(sending_user_public_share=sending_user_public_share, curve=curve,
+            StepTwoMtaAndMtaWcAliceOperations.create_and_send_Ki_mta_commitment(sending_user_public_share=sending_user_public_share, curve=curve,
                                                                             user_secret_data=user_secret_data,
                                                                             destination_user_data=destination_user_share, k_i=k_i, transaction_id=transaction_id)
             
-            StepTwo_Mta_And_MtaWc.create_and_send_Ki_mta_wc_commitment(sending_user_public_share=sending_user_public_share,
+            StepTwoMtaAndMtaWcAliceOperations.create_and_send_Ki_mta_wc_commitment(sending_user_public_share=sending_user_public_share,
                                                                                curve=curve, user_secret_data=user_secret_data,
                                                                                 destination_user_data=destination_user_share, k_i=k_i, transaction_id=transaction_id)
 
-    
-
-    
     @staticmethod
     def create_and_send_Ki_mta_commitment(sending_user_public_share : user_public_share, curve : Curve,
                                            user_secret_data : user_secret_signature_share, destination_user_data : user_public_share,
@@ -58,7 +55,7 @@ class StepTwo_Mta_And_MtaWc:
 
         mta_commitment_message = MessageDTO(type=MessageType.MtaCommitmentAlice, data=mta_commitment_of_ki).model_dump_json()
         MatrixService.instance().send_private_message_to_user(target_user_matrix_id=destination_user_public_share.user_id, message=mta_commitment_message)
-        return db_dal.update_alice_commitment(transaction_id=transaction_id, user_index=user_public_share.user_index, commitment_of_a=mta_commitment_message)
+        return db_dal.update_alice_commitment(transaction_id=transaction_id, user_index=user_public_share.user_index, commitment_of_a=mta_commitment_of_ki)
 
     @staticmethod
     def create_and_send_Ki_mta_wc_commitment(sending_user_public_share : user_public_share, curve : Curve,
@@ -79,7 +76,7 @@ class StepTwo_Mta_And_MtaWc:
     def send_alice_mta_proof_for_challenge(wallet_id : str, transaction_id : str, user_index : int, destination_user_index : int):
         alice_mta_user_data = db_dal.get_mta_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=destination_user_index)
         #Should store in that stage : a, enc_a, alice_commitment and bob's challenge
-        protocol, bob_user_matrix_id = StepTwo_Mta_And_MtaWc.get_mta_protocol(wallet_id=wallet_id, destination_user_index=destination_user_index)
+        protocol, bob_user_matrix_id = StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=destination_user_index)
         protocol : MTAProtocolWithZKP
         alice_proof_for_challenge = protocol.alice_sends_proof_answering_challenge(commitment_of_a=alice_mta_user_data.commitment_of_a, a=alice_mta_user_data.a,
                                                                                      verifier_challenge=alice_mta_user_data.bobs_challenge)
@@ -106,7 +103,7 @@ class StepTwo_Mta_And_MtaWc:
       insertion_success = db_dal.update_bobs_encrypted_value_and_commitment(transaction_id=transaction_id, user_index=user_index, bobs_encrypted_value=bob_encrypted_value,
                                                                             bobs_commitment=bobs_commitment)
       
-      protocol, bob_user_matrix_id =  StepTwo_Mta_And_MtaWc.get_mta_protocol(wallet_id=wallet_id, destination_user_index=destination_user_index)                                                                      bobs_encrypted_value=bob_encrypted_value, bobs_commitment=bobs_commitment)
+      protocol, bob_user_matrix_id =  StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=destination_user_index)                                                                      bobs_encrypted_value=bob_encrypted_value, bobs_commitment=bobs_commitment)
       if not insertion_success:
           print(f'Failed Recording encryption of bobs value for target user : {bob_user_matrix_id}')
           raise SystemError(f'Failed Recording encryption of k_i for target user : {bob_user_matrix_id}')
@@ -120,7 +117,7 @@ class StepTwo_Mta_And_MtaWc:
     def alice_handles_bob_proof_for_challenge_and_finalize(bob_proof_for_challenge : Bob_ZKProof_Proof_For_Challenge, transaction_id : str, wallet_id : str, 
                                                            user_index : int, target_user_index : int):
         
-        protocol, _ =  StepTwo_Mta_And_MtaWc.get_mta_protocol(wallet_id=wallet_id, destination_user_index=target_user_index)                                                                      bobs_encrypted_value=bob_encrypted_value, bobs_commitment=bobs_commitment)
+        protocol, _ =  StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=target_user_index)                                                                      bobs_encrypted_value=bob_encrypted_value, bobs_commitment=bobs_commitment)
         alice_secret = db_dal.get_wallet_by_id(wallet_id=wallet_id).get_room_secret_user_data()
         alice_mta_user_data = db_dal.get_mta_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=target_user_index)
         alice_additive_share = protocol.alice_finalize(proof_for_challenge=bob_proof_for_challenge, commitment=alice_mta_user_data.bobs_commitment, 
