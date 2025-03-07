@@ -145,7 +145,6 @@ class WalletSignatureSharesData(Base):
     )  # data of to dict/from_dict of key_generation_share.
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="signature_shares")
-
     
     def get_signature_share(self, user_index: int) -> wallet_key_generation_share:
         """
@@ -167,6 +166,35 @@ class TransactionResponse(Base):
             stage=transaction_response_dto.stage,
             response=transaction_response_dto.response
         )
+    
+class Mta_As_Alice_Users_Data(Base):
+    """
+    Stores data for the MtA protocol where the current user played as Alice.
+    """
+
+    __tablename__ = "Mta_As_Alice_Users_Data"
+
+    id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    transaction_id = Column(String, ForeignKey("Transaction.transaction_id"), nullable=False)
+    user_index = Column(Integer, nullable=False)  # Index of Alice in the transaction
+    counterparty_index = Column(Integer, nullable=False)  # Index of Bob in the transaction
+
+    a = Column(Integer, nullable=True)  # Alice's secret integer value
+    enc_a = Column(JSON, nullable=True)  # EncryptedNumber (serialized as JSON)
+    commitment_of_a = Column(JSON, nullable=True)  # AliceZKProof_Commitment (JSON format)
+    
+    bobs_challenge = Column(Integer, nullable=True)  # Integer challenge from Bob
+    bobs_encrypted_value = Column(JSON, nullable=True)  # EncryptedNumber (JSON format)
+    bobs_commitment = Column(JSON, nullable=True)  # Bob_ZKProof_ProverCommitment (JSON format)
+
+    alice_challenge = Column(Integer, nullable=True)  # Integer challenge from Alice to Bob
+    bob_proof_for_challenge = Column(JSON, nullable=True)  # Bob_ZKProof_Proof_For_Challenge (JSON format)
+
+    transaction = relationship("Transaction", back_populates="mta_as_alice_data")
+
+
+
+
 
 def create_db_if_not_exists(db_file_name): 
     current_path = os.path.dirname(
