@@ -4,11 +4,12 @@ from models.models import user_public_share, user_secret_signature_share, GPower
 from models.protocols.mta_protocol import MTAProtocolWithZKP
 from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge
 from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
-from ecdsa.curves import Curve, curve_by_name
+from ecdsa.curves import curve_by_name
 from models.DTOs.MessageType import MessageType
 from models.DTOs.message_dto import MessageDTO
 from Services.MatrixService import MatrixService
 from phe import EncryptedNumber
+from Services.Context import Context
 
 
 class StepTwoMtaBobOperations:
@@ -22,9 +23,12 @@ class StepTwoMtaBobOperations:
         db_dal.insert_mta_as_bob(transaction_id, user_index, alice_index, enc_a, commitment_of_a)
         protocol, alice_matrix_id = StepTwoMtaBobOperations.get_mta_protocol(wallet_id, alice_index)
         bobs_challenge = protocol.bob_challenging_a_commitment()
-        challenge_message = MessageDTO(type=MessageType.MtaChallenge, data=bobs_challenge).model_dump_json()
+        challenge_message = MessageDTO(type=MessageType.MtaChallenge, data=bobs_challenge, sender_id=Context.matrix_user_id,
+                                        wallet_id=wallet_id, transaction_id=transaction_id, user_index=user_index).model_dump_json()
+        
         MatrixService.instance().send_private_message_to_user(target_user_matrix_id=alice_matrix_id, message=challenge_message)
         db_dal.update_bobs_challenge(transaction_id, user_index, bobs_challenge)
+
 
     def verify_alice_proof_and_encrypt_value(self, transaction_id: str, user_index: int, alice_index: int, 
                                              alice_proof: AliceZKProof_Proof_For_Challenge, wallet_id: str):

@@ -15,7 +15,7 @@ from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZK
 from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment
 import time
 from common_utils import deserialize_encrypted_number
-from local_db.db_dal import get_specific_wallet_user_data
+from local_db.sql_db_dal import get_specific_wallet_user_data
 
 class MatrixRoomListener:
     """
