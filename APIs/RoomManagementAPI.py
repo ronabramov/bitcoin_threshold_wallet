@@ -72,7 +72,8 @@ def _handle_joining_new_wallet(room_id : str) -> bool:
         print (f"Failed saving room_users_data to local db")
         return False
     
-    public_keys_message = MessageDTO(type=MessageType.UserPublicShare, data=users_public_data).model_dump_json()
+    public_keys_message = MessageDTO(type=MessageType.UserPublicShare, data=users_public_data,
+                                      sender_id=Context.matrix_user_id, wallet_id=room_id, user_index=user_index_in_wallet).model_dump_json()
     message_sent = MatrixService.instance().send_message_to_wallet_room(room_id=room_id, message=public_keys_message)
     if not message_sent:
         print(f' Failed sending joining message to wallet room.')
@@ -111,7 +112,7 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
         return False, None
     wallet_generation_message = MessageDTO(type = MessageType.WalletGenerationMessage, 
                                            data=WalletGenerationMessage(threshold=wallet_threshold, curve_name=curve_name,
-                                                                         max_number_of_participants=max_participants)).model_dump_json()
+                                                                         max_number_of_participants=max_participants), sender_id=user_id).model_dump_json()
     
     users_ids : list[Friend] = [db_dal.get_friend_by_email(email=email).matrix_id for email in invited_users_emails]
     room_id = MatrixService.instance().create_new_room_and_invite_users(wallet_name=wallet_name, users_Ids=users_ids, first_message=wallet_generation_message)
@@ -137,7 +138,7 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
         print (f"Failed saving wallet to local db")
         return False, None
     
-    public_keys_message = MessageDTO(type=MessageType.UserPublicShare, data=user_room_public_data).model_dump_json()
+    public_keys_message = MessageDTO(type=MessageType.UserPublicShare, data=user_room_public_data, sender_id=user_id, wallet_id=room_id, user_index=GeneratorExit).model_dump_json()
     message_sent = MatrixService.instance().send_message_to_wallet_room(room_id=room_id, message=public_keys_message)
     return insertion_succeeded and message_sent, wallet
 

@@ -69,7 +69,8 @@ def respond_to_new_transaction(transaction : TransactionDTO, user_response : boo
         if not insertion_succeeded:
             return False
         
-        approved_transaction_json = MessageDTO(type = MessageType.TransactionResponse, data=transaction_response).model_dump_json()
+        approved_transaction_json = MessageDTO(type = MessageType.TransactionResponse, data=transaction_response, sender_id=user_id,
+                                                wallet_id=transaction.wallet_id, transaction_id=transaction.id, user_index=my_wallet_user_data.user_index).model_dump_json()
         MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= approved_transaction_json)   
         transaction.status = TransactionStatus.PENDING_OTHERS_APPROVAL
         
