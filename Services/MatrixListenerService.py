@@ -100,12 +100,9 @@ class MatrixRoomListener:
             # For backward compatibility, ensure wallet_id is set
             if not message_dto.wallet_id:
                 message_dto.wallet_id = wallet_id
-                
-            # Use the sender's wallet_id instead of the parameter if available
-            wallet_id = message_dto.wallet_id or wallet_id
             
-            # Default the transaction_id to wallet_id if not provided
-            transaction_id = message_dto.transaction_id or wallet_id
+            wallet_id = message_dto.wallet_id or wallet_id
+            transaction_id = message_dto.transaction_id if message_dto.transaction_id is not None else None
             
             # Get sender user index from metadata
             sender_index = message_dto.user_index
@@ -136,7 +133,7 @@ class MatrixRoomListener:
             elif message_dto.type == MessageType.Commitment:
                 commitment_obj = message_dto.data
                 print(f"Commitment received")
-                # Handle commitment logic
+                # RON TODO : Handle commitment logic - required for Steps 3-5
 
             elif message_dto.type == MessageType.GPowerX:
                 g_power_x_obj: GPowerX = message_dto.data
@@ -153,12 +150,7 @@ class MatrixRoomListener:
             elif message_dto.type == MessageType.MtaAliceCommitment:
                 print(f"MTA commitment from Alice received")
                 mta_commitment_alice_obj = message_dto.data
-
-                # Use metadata from message instead of data payload
-                alice_index = sender_index or mta_commitment_alice_obj.get("user_index")
                 alice_paillier_pub_key = get_user_paillier_public_key(wallet_id, sender_id)
-                
-                # Process Alice's commitment
                 StepTwoMtaBobOperations.process_alice_mta_commitment(
                     transaction_id=transaction_id,
                     user_index=self.client.user_id,
@@ -171,15 +163,12 @@ class MatrixRoomListener:
             elif message_dto.type == MessageType.MtaAliceProofForChallenge:
                 print(f"MTA proof for challenge from Alice received")
                 alice_proof_obj = message_dto.data
-                
-                # Convert to proper proof object
                 alice_proof = AliceZKProof_Proof_For_Challenge(
                     s=alice_proof_obj["s"],
                     s1=alice_proof_obj["s1"],
                     s2=alice_proof_obj["s2"]
                 )
                 
-                # Bob verifies Alice's proof and encrypts his value
                 StepTwoMtaBobOperations.verify_alice_proof_and_encrypt_value(
                     transaction_id=transaction_id,
                     user_index=self.client.user_id,
@@ -192,7 +181,6 @@ class MatrixRoomListener:
                 print(f"MTA challenge received from Alice")
                 mta_challenge_obj = message_dto.data
                 
-                # Bob processes Alice's challenge and sends proof
                 StepTwoMtaBobOperations.process_alice_challenge_and_send_proof(
                     transaction_id=transaction_id,
                     user_index=self.client.user_id,
