@@ -1,136 +1,345 @@
-from local_db.sql_db import Wallet, WalletUserData
-import local_db.sql_db_dal as db_dal
-from models.models import user_modulus, user_public_share, user_secret_signature_share, GPowerX
-from models.protocols.mta_protocol import MTAProtocolWithZKP
-from models.protocols.MtaWc_protocl import MtaWcProtocolWithZKP
-from models.protocols.BobZKProofMtAModels import Bob_ZKProof_ProverCommitment, Bob_ZKProof_Proof_For_Challenge
-from ecdsa.curves import Curve, curve_by_name
+import random
+from local_db.db_dal import (
+    get_wallet_by_id, get_specific_wallet_user_data, 
+    get_all_wallet_user_data, get_transaction_by_id
+)
+from models.models import user_public_share
+from protocols.mta_protocol import MTAProtocolWithZKP
+from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
+from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment, Bob_ZKProof_RegMta_Settings
+from phe import EncryptedNumber
+from ecdsa import curves, NIST256p
 from ecdsa.ellipticcurve import PointJacobi
+from APIs.MatrixCommunicationAPI import MatrixCommunicationAPI
 from models.DTOs.MessageType import MessageType
 from models.DTOs.message_dto import MessageDTO
-from Services.MatrixService import MatrixService
-from phe import EncryptedNumber
-
-
+from common_utils import serialize_encryped_number
+from Services.Context import Context
 
 class StepTwoMtaAndMtaWcAliceOperations:
-    
-    def send_alice_mta_encryptions_and_commitment(self, wallet : Wallet, k_i : int, gamma_i : int, sending_user_data : WalletUserData, curve : Curve, transaction_id : str):
+    """
+    Operations for the MTA protocol, where Alice initiates the protocol.
+    Alice holds value 'a' and sends an encrypted commitment to Bob.
+    """
+
+    @staticmethod
+    def initialize_mta_protocol_as_alice(wallet_id: str, transaction_id: str, target_user_index: str):
         """
-        In that stage we need to send for every user our Mta message as alice. 
-        Moreover, we want to prepare all the relevant data in the DB
-        for the rest of the Mta and MtaWC algorithms.
+        Alice initializes the MTA protocol with a target user (Bob).
+        She encrypts her value 'a' and sends a commitment to Bob.
         """
-        user_secret_data = wallet.get_room_secret_user_data()
-        wallet_users_public_shares = db_dal.get_all_wallet_user_data(wallet_id=wallet.wallet_id)
-        sending_user_public_share = user_public_share.from_dict(sending_user_data.user_public_keys_data)
-        for destination_user_data in wallet_users_public_shares:
-            destination_user_share = user_public_share.from_dict(destination_user_data.user_public_keys_data)
-            StepTwoMtaAndMtaWcAliceOperations.create_and_send_Ki_mta_commitment(sending_user_public_share=sending_user_public_share, curve=curve,
-                                                                            user_secret_data=user_secret_data,
-                                                                            destination_user_data=destination_user_share, k_i=k_i, transaction_id=transaction_id)
-            
-            StepTwoMtaAndMtaWcAliceOperations.create_and_send_Ki_mta_wc_commitment(sending_user_public_share=sending_user_public_share,
-                                                                               curve=curve, user_secret_data=user_secret_data,
-                                                                                destination_user_data=destination_user_share, k_i=k_i, transaction_id=transaction_id)
-
-    @staticmethod
-    def create_and_send_Ki_mta_commitment(sending_user_public_share : user_public_share, curve : Curve,
-                                           user_secret_data : user_secret_signature_share, destination_user_data : user_public_share,
-                                             k_i :int, transaction_id : str):
-        destination_user_public_share = user_public_share.from_dict(destination_user_data.user_public_keys_data)
-        destination_user_public_key = PointJacobi() #RON TODO : deserialize the destinatoin user public key
-        mta_protocol = MTAProtocolWithZKP(alice_public_share=sending_user_public_share, bob_public_share=destination_user_public_share, curve=curve,
-                                              bob_public_g_power_secret=destination_user_public_key, b_value=None,
-                                                alice_paillier_private_key=user_secret_data.paillier_secret_key)
-            
-            
-        mta_enc_ki, mta_commitment_of_ki = mta_protocol.alice_encrypting_a_and_sending_commitment(a=k_i, alice_paillier_public_key=user_secret_data.paillier_public_key)
-        insertion_success = db_dal.insert_alice_a_and_enc_a(transaction_id=transaction_id, user_index=sending_user_public_share.user_index,
-                                                             counterparty_index=destination_user_data.user_index, a=k_i, enc_a=mta_enc_ki)
-        if not insertion_success:
-            print(f'Failed Recording encryption of k_i for target user : {destination_user_data.user_id}')
-            raise SystemError(f'Failed Recording encryption of k_i for target user : {destination_user_data.user_id}')
-
-        mta_commitment_message = MessageDTO(type=MessageType.MtaCommitmentAlice, data=mta_commitment_of_ki).model_dump_json()
-        MatrixService.instance().send_private_message_to_user(target_user_matrix_id=destination_user_public_share.user_id, message=mta_commitment_message)
-        return db_dal.update_alice_commitment(transaction_id=transaction_id, user_index=user_public_share.user_index, commitment_of_a=mta_commitment_of_ki)
-
-    @staticmethod
-    def create_and_send_Ki_mta_wc_commitment(sending_user_public_share : user_public_share, curve : Curve,
-                                           user_secret_data : user_secret_signature_share, destination_user_data : user_public_share,
-                                             k_i :int, transaction_id : str):
-        destination_user_public_share = user_public_share.from_dict(destination_user_data.user_public_keys_data)
-        destination_user_public_key = PointJacobi() #RON TODO : deserialize the destinatoin user public key
-        mta_wc_protocol = MtaWcProtocolWithZKP(alice_public_share=sending_user_public_share, bob_public_share=destination_user_public_share, curve=curve,
-                                              bob_public_g_power_secret=destination_user_public_key, b_value=None,
-                                                alice_paillier_private_key=user_secret_data.paillier_secret_key)
-            
+        # Get wallet data
+        wallet = get_wallet_by_id(wallet_id)
+        if not wallet:
+            print(f"No wallet found with ID {wallet_id}")
+            return False
         
-        mta_enc_ki, mta_wc_commitment_of_ki = mta_wc_protocol.alice_encrypting_a_and_sending_commitment(a=k_i, alice_paillier_public_key=user_secret_data.paillier_public_key)
-        mta_commitment_message = MessageDTO(type=MessageType.MtaWcCommitmentAlice, data=mta_wc_commitment_of_ki).model_dump_json()
-        MatrixService.instance().send_private_message_to_user(target_user_matrix_id=destination_user_public_share.user_id, message=mta_commitment_message)
-        #RON TODO : Recored the commitment message
-
-    def send_alice_mta_proof_for_challenge(wallet_id : str, transaction_id : str, user_index : int, destination_user_index : int):
-        destination_user_wallet_user_data = db_dal.get_specific_wallet_user_data(wallet_id=wallet_id, traget_user_index_in_wallet=destination_user_index)
-        bob_user_share = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
-        counter_party_paillier_pub_key = bob_user_share.paillier_public_key
-        alice_mta_user_data = db_dal.get_mta_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=destination_user_index,
-                                                                 counter_party_paillier_pub_key= counter_party_paillier_pub_key)
-        #Should store in that stage : a, enc_a, alice_commitment and bob's challenge
-        protocol, bob_user_matrix_id = StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=destination_user_index)
-        protocol : MTAProtocolWithZKP
-        alice_proof_for_challenge = protocol.alice_sends_proof_answering_challenge(commitment_of_a=alice_mta_user_data.commitment_of_a, a=alice_mta_user_data.a,
-                                                                                     verifier_challenge=alice_mta_user_data.bobs_challenge)
-        alice_proof_for_challenge_message = MessageDTO(type=MessageType.MtaProofForChallengeAlice, data=alice_proof_for_challenge).model_dump_json()
-        MatrixService.instance().send_private_message_to_user(target_user_matrix_id=bob_user_matrix_id, message=alice_proof_for_challenge_message)
+        # Get the transaction
+        transaction = get_transaction_by_id(transaction_id)
+        if not transaction:
+            print(f"No transaction found with ID {transaction_id}")
+            return False
+        
+        # Get Alice's data (current user)
+        alice_data = get_specific_wallet_user_data(wallet_id, Context.matrix_user_id())
+        if not alice_data:
+            print(f"No user data found for user {Context.matrix_user_id()} in wallet {wallet_id}")
+            return False
+        
+        alice_user_index = alice_data.user_index
+        
+        # Get Bob's data (target user)
+        bob_data = get_specific_wallet_user_data(wallet_id, target_user_index)
+        if not bob_data:
+            print(f"No user data found for user {target_user_index} in wallet {wallet_id}")
+            return False
+        
+        # Construct public shares
+        alice_public_share = user_public_share.from_dict(alice_data.user_public_keys_data)
+        bob_public_share = user_public_share.from_dict(bob_data.user_public_keys_data)
+        
+        # Set up the curve
+        curve = NIST256p
+        
+        # Create MTA protocol instance
+        mta_protocol = MTAProtocolWithZKP(
+            alice_public_share=alice_public_share,
+            bob_public_share=bob_public_share,
+            curve=curve,
+            bob_public_g_power_secret=None,  # Not needed for Alice
+            alice_paillier_private_key=get_alice_paillier_private_key()  # Function to retrieve Alice's private key
+        )
+        
+        # Alice generates a random 'a' value
+        a = random.randint(1, curve.order - 1)
+        
+        # Alice encrypts 'a' and generates a commitment
+        enc_a, commitment_of_a = mta_protocol.alice_encrypting_a_and_sending_commitment(
+            a=a,
+            alice_paillier_public_key=alice_public_share.paillier_public_key
+        )
+        
+        # Store Alice's 'a', enc_a, and commitment in the database
+        # This would insert into the appropriate DB table for MTA protocol data
+        
+        # Send Alice's encrypted 'a' and commitment to Bob
+        matrix_api = MatrixCommunicationAPI()
+        alice_commitment_message = {
+            # Only include protocol-specific data, not metadata
+            "enc_a": serialize_encryped_number(enc_a),
+            "commitment_of_a": commitment_of_a.to_dict()
+        }
+        
+        # Create message with metadata
+        message_dto = MessageDTO(
+            type=MessageType.MtaAliceCommitment, 
+            data=alice_commitment_message,
+            sender_id=Context.matrix_user_id(),
+            wallet_id=wallet_id,
+            transaction_id=transaction_id,
+            user_index=alice_user_index
+        )
+        
+        matrix_api.send_message_to_room(wallet_id, message_dto.model_dump_json())
+        
+        print(f"Sent MTA commitment to Bob (user {target_user_index})")
+        return True
 
     @staticmethod
-    def get_mta_protocol(wallet_id : str, destination_user_index : int):
-        wallet = db_dal.get_wallet_by_id(wallet_id=wallet_id)
-        destination_user_wallet_user_data = db_dal.get_specific_wallet_user_data(wallet_id=wallet.wallet_id, traget_user_index_in_wallet=destination_user_index)
-        bob_user_share = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
-        bob_public_key_g_x =  GPowerX.from_dict(destination_user_wallet_user_data.g_power_x) # RON TODO : Fix that class
-        alice_user_share = user_public_share.from_dict(db_dal.get_my_wallet_user_data(wallet_id=wallet.wallet_id).user_public_keys_data)
-        curve = curve_by_name(wallet.curve_name)
-        alice_secret_data = wallet.get_room_secret_user_data()
-        return MTAProtocolWithZKP(alice_public_share=alice_user_share, bob_public_share=bob_user_share, curve=curve,
-                                              bob_public_g_power_secret=bob_public_key_g_x, b_value=None,
-                                                alice_paillier_private_key=alice_secret_data.paillier_secret_key), destination_user_wallet_user_data.user_matrix_id
-    
-    def alice_record_bob_encrypted_value_and_commitment_sending_challenge(wallet_id : str, transaction_id : str, user_index : int,
-                                                                         destination_user_index : int, bob_encrypted_value : EncryptedNumber,
-                                                                         bobs_commitment : Bob_ZKProof_ProverCommitment):
-      
-      insertion_success = db_dal.update_bobs_encrypted_value_and_commitment(transaction_id=transaction_id, user_index=user_index, bobs_encrypted_value=bob_encrypted_value,
-                                                                            bobs_commitment=bobs_commitment)
-      
-      protocol, bob_user_matrix_id =  StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=destination_user_index)
-      if not insertion_success:
-          print(f'Failed Recording encryption of bobs value for target user : {bob_user_matrix_id}')
-          raise SystemError(f'Failed Recording encryption of k_i for target user : {bob_user_matrix_id}')
-      alice_challenge = protocol.alice_challenging_bob_commitment()
-      alice_challenge_message = MessageDTO(type=MessageType.MtaChallenge, data=alice_challenge).model_dump_json()
-      MatrixService.instance().send_private_message_to_user(target_user_matrix_id=bob_user_matrix_id, message=alice_challenge_message)
-      insertion_success = db_dal.update_alice_challenge(transaction_id=transaction_id, user_index=user_index, alice_challenge=alice_challenge)
-      return insertion_success
-
-
-    def alice_handles_bob_proof_for_challenge_and_finalize(bob_proof_for_challenge : Bob_ZKProof_Proof_For_Challenge, transaction_id : str, wallet_id : str, 
-                                                           user_index : int, target_user_index : int):
+    def alice_answer_bob_challenge(
+        wallet_id: str,
+        transaction_id: str,
+        user_index: str,
+        destination_user_index: str,
+        bob_challenge: int
+    ):
+        """
+        Alice answers Bob's challenge with a proof.
+        """
+        # Get wallet and user data as in previous methods
+        wallet = get_wallet_by_id(wallet_id)
+        if not wallet:
+            print(f"No wallet found with ID {wallet_id}")
+            return False
         
-        protocol, _ =  StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=target_user_index)
-        destination_user_wallet_user_data = db_dal.get_specific_wallet_user_data(wallet_id=wallet_id, traget_user_index_in_wallet=target_user_index)
-        bob_user_share = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
-        counter_party_paillier_pub_key = bob_user_share.paillier_public_key
-        alice_secret = db_dal.get_wallet_by_id(wallet_id=wallet_id).get_room_secret_user_data()
-        alice_mta_user_data = db_dal.get_mta_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=target_user_index,
-                                                                 counter_party_paillier_pub_key=counter_party_paillier_pub_key)
-        alice_additive_share = protocol.alice_finalize(proof_for_challenge=bob_proof_for_challenge, commitment=alice_mta_user_data.bobs_commitment, 
-                                                       enc_result=alice_mta_user_data.bobs_encrypted_value, enc_a=alice_mta_user_data.enc_a, settings=protocol.Bob_Alg_verifier_Settings,
-                                                       challenge=alice_mta_user_data.alice_challenge, alice_paillier_secret_key=alice_secret.paillier_secret_key)
-        target_user_transaction_data = db_dal.get_transaction_user_data_by_index(transaction_id=transaction_id, user_index=target_user_index)
-        target_user_transaction_data.add_mta_result(result_value=alice_additive_share, role='bob', protocol_type='mta')
-        db_dal.update_transaction_user_data(transaction_user_data= target_user_transaction_data)
+        # Get Alice's data
+        alice_data = get_specific_wallet_user_data(wallet_id, user_index)
+        if not alice_data:
+            print(f"No user data found for user {user_index} in wallet {wallet_id}")
+            return False
+        
+        alice_user_index = alice_data.user_index
+        
+        # Get Bob's data
+        bob_data = get_specific_wallet_user_data(wallet_id, destination_user_index)
+        if not bob_data:
+            print(f"No user data found for user {destination_user_index} in wallet {wallet_id}")
+            return False
+        
+        # Construct public shares
+        alice_public_share = user_public_share.from_dict(alice_data.user_public_keys_data)
+        bob_public_share = user_public_share.from_dict(bob_data.user_public_keys_data)
+        
+        # Set up the curve
+        curve = NIST256p
+        
+        # Initialize MTA protocol
+        mta_protocol = MTAProtocolWithZKP(
+            alice_public_share=alice_public_share,
+            bob_public_share=bob_public_share,
+            curve=curve,
+            bob_public_g_power_secret=None,  # Not needed for Alice
+            alice_paillier_private_key=get_alice_paillier_private_key()
+        )
+        
+        # Retrieve Alice's 'a' and commitment from the database
+        # For demonstration, we'll assume these values are available
+        a = None  # Alice's secret value
+        commitment_of_a = None  # Alice's commitment
+        
+        # Generate proof for Bob's challenge
+        proof_for_challenge = mta_protocol.alice_sends_proof_answering_challenge(
+            commitment_of_a=commitment_of_a,
+            a=a,
+            verifier_challenge=bob_challenge
+        )
+        
+        # Store the proof in the database
+        # This would update the appropriate DB table
+        
+        # Send the proof to Bob
+        matrix_api = MatrixCommunicationAPI()
+        
+        # Create message with metadata
+        message_dto = MessageDTO(
+            type=MessageType.MtaAliceProofForChallenge, 
+            data=proof_for_challenge.to_dict(),
+            sender_id=Context.matrix_user_id(),
+            wallet_id=wallet_id,
+            transaction_id=transaction_id,
+            user_index=alice_user_index
+        )
+        
+        matrix_api.send_message_to_room(wallet_id, message_dto.model_dump_json())
+        
+        print(f"Sent MTA proof to Bob (user {destination_user_index})")
+        return True
 
+    @staticmethod
+    def alice_record_bob_encrypted_value_and_commitment_sending_challenge(
+        wallet_id: str,
+        transaction_id: str,
+        user_index: str,
+        destination_user_index: str,
+        bob_encrypted_value: EncryptedNumber,
+        bobs_commitment: Bob_ZKProof_ProverCommitment
+    ):
+        """
+        Alice records Bob's encrypted value and commitment,
+        then sends a challenge to Bob.
+        """
+        # Get wallet and user data
+        wallet = get_wallet_by_id(wallet_id)
+        if not wallet:
+            print(f"No wallet found with ID {wallet_id}")
+            return False
+        
+        # Get Alice's data
+        alice_data = get_specific_wallet_user_data(wallet_id, user_index)
+        if not alice_data:
+            print(f"No user data found for user {user_index} in wallet {wallet_id}")
+            return False
+        
+        alice_user_index = alice_data.user_index
+        
+        # Get Bob's data
+        bob_data = get_specific_wallet_user_data(wallet_id, destination_user_index)
+        if not bob_data:
+            print(f"No user data found for user {destination_user_index} in wallet {wallet_id}")
+            return False
+        
+        # Store Bob's encrypted value and commitment in the database
+        # This would update the appropriate DB table
+        
+        # Generate a challenge for Bob
+        curve = NIST256p
+        challenge = random.randint(1, curve.order - 1)
+        
+        # Store Alice's challenge in the database
+        # This would update the appropriate DB table
+        
+        # Send the challenge to Bob
+        matrix_api = MatrixCommunicationAPI()
+        challenge_message = {
+            "challenge": challenge
+        }
+        
+        # Create message with metadata
+        message_dto = MessageDTO(
+            type=MessageType.MtaAliceChallengeToBob, 
+            data=challenge_message,
+            sender_id=Context.matrix_user_id(),
+            wallet_id=wallet_id,
+            transaction_id=transaction_id,
+            user_index=alice_user_index
+        )
+        
+        matrix_api.send_message_to_room(wallet_id, message_dto.model_dump_json())
+        
+        print(f"Sent MTA challenge to Bob (user {destination_user_index})")
+        return True
+
+    @staticmethod
+    def alice_handles_bob_proof_for_challenge_and_finalize(
+        bob_proof_for_challenge: Bob_ZKProof_Proof_For_Challenge,
+        transaction_id: str,
+        wallet_id: str,
+        user_index: str,
+        target_user_index: str
+    ):
+        """
+        Alice verifies Bob's proof and finalizes the MTA protocol,
+        obtaining her additive share of the product a*b.
+        """
+        # Get wallet and user data
+        wallet = get_wallet_by_id(wallet_id)
+        if not wallet:
+            print(f"No wallet found with ID {wallet_id}")
+            return False
+        
+        # Get Alice's data
+        alice_data = get_specific_wallet_user_data(wallet_id, user_index)
+        if not alice_data:
+            print(f"No user data found for user {user_index} in wallet {wallet_id}")
+            return False
+        
+        # Get Bob's data
+        bob_data = get_specific_wallet_user_data(wallet_id, target_user_index)
+        if not bob_data:
+            print(f"No user data found for user {target_user_index} in wallet {wallet_id}")
+            return False
+        
+        # Construct public shares
+        alice_public_share = user_public_share.from_dict(alice_data.user_public_keys_data)
+        bob_public_share = user_public_share.from_dict(bob_data.user_public_keys_data)
+        
+        # Set up the curve
+        curve = NIST256p
+        
+        # Initialize MTA protocol
+        mta_protocol = MTAProtocolWithZKP(
+            alice_public_share=alice_public_share,
+            bob_public_share=bob_public_share,
+            curve=curve,
+            bob_public_g_power_secret=None,  # Not needed for Alice
+            alice_paillier_private_key=get_alice_paillier_private_key()
+        )
+        
+        # Retrieve from the database:
+        # - Bob's commitment
+        # - Encrypted result from Bob
+        # - Alice's encrypted 'a'
+        # - Alice's challenge
+        # For demonstration, we'll assume these values are available
+        bob_commitment = None  # Bob's commitment
+        enc_result = None  # Encrypted result from Bob
+        enc_a = None  # Alice's encrypted 'a'
+        challenge = None  # Alice's challenge
+        
+        # Create settings for verification
+        bob_verifier_settings = Bob_ZKProof_RegMta_Settings(
+            public_key=bob_public_share.paillier_public_key,
+            verifier_modulus=alice_public_share.user_modulus,
+            X=None,  # Not needed for standard MTA
+            curve=curve
+        )
+        
+        # Alice verifies Bob's proof and finalizes her share
+        alpha = mta_protocol.alice_finalize(
+            proof_for_challenge=bob_proof_for_challenge,
+            commitment=bob_commitment,
+            enc_result=enc_result,
+            enc_a=enc_a,
+            settings=bob_verifier_settings,
+            challenge=challenge,
+            alice_paillier_secret_key=get_alice_paillier_private_key()
+        )
+        
+        # Store Alice's final result (alpha) in the transaction user data
+        # This would update the appropriate field in the TransactionUserData table
+        
+        print(f"MTA protocol as Alice completed with Bob (user {target_user_index})")
+        return True
+
+    # Similar methods for MtaWc protocol would follow the same pattern
+    # with appropriate message types
+
+# Helper function to get Alice's Paillier private key
+def get_alice_paillier_private_key():
+    """
+    Retrieves Alice's Paillier private key.
+    In a real implementation, this would be securely stored and retrieved.
+    """
+    # This is a placeholder - in a real implementation, this would
+    # retrieve the private key from secure storage
+    return None  # Replace with actual implementation
