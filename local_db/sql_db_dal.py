@@ -1,5 +1,5 @@
 from local_db import sql_db
-from local_db.sql_db import DB, Transaction, Mta_As_Alice_Users_Data, Mta_As_Bob_Users_Data
+from local_db.sql_db import DB, Transaction, Mta_As_Alice_Users_Data, Mta_As_Bob_Users_Data, MtaWc_As_Alice_Users_Data, MtaWc_As_Bob_Users_Data
 from typing import List
 from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
@@ -441,7 +441,7 @@ def update_bobs_challenge(transaction_id: str, user_index: int, bobs_challenge: 
             print(f"Failed to update Bob's challenge for transaction {transaction_id}: {e}")
             return False
 
-def update_bobs_encrypted_value_and_commitment(transaction_id: str, user_index: int, bobs_encrypted_value: EncryptedNumber, 
+def alice_update_bobs_encrypted_value_and_commitment(transaction_id: str, user_index: int, bobs_encrypted_value: EncryptedNumber, 
                                                 bobs_commitment: Bob_ZKProof_ProverCommitment) -> bool:
     with DB.session() as session:
         try:
@@ -573,6 +573,214 @@ def get_mta_as_bob(transaction_id: str, user_index: int, user_paillier_pub_key :
 
         if not record:
             print(f"Couldn't find mta_as_bob data for target user {counterparty_index} for transaction {transaction_id}")
+            return None
+        
+        record.enc_a = deserialize_encrypted_number(record.enc_a, user_paillier_pub_key) if record.enc_a else None
+        record.commitment_of_a = AliceZKProof_Commitment.from_dict(record.commitment_of_a) if record.commitment_of_a else None
+        record.enc_result = deserialize_encrypted_number(record.enc_result, counter_party_paillier_pub_key) if record.enc_result else None
+        record.bobs_commitment = Bob_ZKProof_ProverCommitment.from_dict(record.bobs_commitment) if record.bobs_commitment else None
+        record.bob_proof_for_challenge = Bob_ZKProof_Proof_For_Challenge.from_dict(record.bob_proof_for_challenge) if record.bob_proof_for_challenge else None
+
+        return record
+
+# ================================================================================================
+# MtaWc Protocol Methods - When the user is in Alice's shoes.
+# ================================================================================================
+
+def get_mtawc_as_alice_user_data(transaction_id: str, user_index: int, user_paillier_pub_key: PaillierPublicKey,
+                                counterparty_index: int, counter_party_paillier_pub_key: PaillierPublicKey) -> MtaWc_As_Alice_Users_Data:
+    """
+    Retrieves MtaWc data where the user played as Alice for a specific counterparty.
+    Converts JSON fields back into models safely, ensuring missing fields don't cause exceptions.
+    """
+    with DB.session() as session:
+        record = session.query(MtaWc_As_Alice_Users_Data).filter(
+            MtaWc_As_Alice_Users_Data.transaction_id == transaction_id,
+            MtaWc_As_Alice_Users_Data.user_index == user_index,  # Alice's index
+            MtaWc_As_Alice_Users_Data.counterparty_index == counterparty_index  # Bob's index
+        ).first()
+
+        if not record:
+            return None
+
+        # Convert JSON fields back into models only if they exist
+        record.enc_a = deserialize_encrypted_number(record.enc_a, user_paillier_pub_key) if record.enc_a else None
+        record.commitment_of_a = AliceZKProof_Commitment.from_dict(record.commitment_of_a) if record.commitment_of_a else None
+        record.bobs_encrypted_value = deserialize_encrypted_number(record.bobs_encrypted_value, counter_party_paillier_pub_key) if record.bobs_encrypted_value else None
+        record.bobs_commitment = Bob_ZKProof_ProverCommitment.from_dict(record.bobs_commitment) if record.bobs_commitment else None
+        record.bob_proof_for_challenge = Bob_ZKProof_Proof_For_Challenge.from_dict(record.bob_proof_for_challenge) if record.bob_proof_for_challenge else None
+
+        return record
+
+def insert_mtawc_alice_a_and_enc_a(transaction_id: str, user_index: int, counterparty_index: int,
+                             a: int, enc_a: EncryptedNumber) -> bool:
+    with DB.session() as session:
+        try:
+            entry = MtaWc_As_Alice_Users_Data(transaction_id=transaction_id, user_index=user_index, counterparty_index=counterparty_index,
+                a=a, enc_a=serialize_encryped_number(encrypted_number=enc_a))
+            session.add(entry)
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to insert Alice's secret for MtaWc transaction {transaction_id}: {e}")
+            return False
+        
+def update_mtawc_alice_commitment(transaction_id: str, user_index: int, commitment_of_a: AliceZKProof_Commitment) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(MtaWc_As_Alice_Users_Data).filter(
+                MtaWc_As_Alice_Users_Data.transaction_id == transaction_id,
+                MtaWc_As_Alice_Users_Data.user_index == user_index
+            ).update({"commitment_of_a": commitment_of_a.to_dict()})
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update Alice's MtaWc commitment for transaction {transaction_id}: {e}")
+            return False
+
+def update_mtawc_bobs_challenge(transaction_id: str, user_index: int, bobs_challenge: int) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(MtaWc_As_Alice_Users_Data).filter(
+                MtaWc_As_Alice_Users_Data.transaction_id == transaction_id,
+                MtaWc_As_Alice_Users_Data.user_index == user_index
+            ).update({"bobs_challenge": bobs_challenge})
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update Bob's MtaWc challenge for transaction {transaction_id}: {e}")
+            return False
+
+def update_mtawc_bobs_encrypted_value_and_commitment(transaction_id: str, user_index: int, bobs_encrypted_value: EncryptedNumber, 
+                                                bobs_commitment: Bob_ZKProof_ProverCommitment) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(MtaWc_As_Alice_Users_Data).filter(
+                MtaWc_As_Alice_Users_Data.transaction_id == transaction_id,
+                MtaWc_As_Alice_Users_Data.user_index == user_index
+            ).update({
+                "bobs_encrypted_value": serialize_encryped_number(bobs_encrypted_value),
+                "bobs_commitment": bobs_commitment.to_dict()
+            })
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update Bob's MtaWc encrypted response and commitment for transaction {transaction_id}: {e}")
+            return False
+
+def update_mtawc_alice_challenge(transaction_id: str, user_index: int, alice_challenge: int) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(MtaWc_As_Alice_Users_Data).filter(
+                MtaWc_As_Alice_Users_Data.transaction_id == transaction_id,
+                MtaWc_As_Alice_Users_Data.user_index == user_index
+            ).update({"alice_challenge": alice_challenge})
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update Alice's MtaWc challenge for transaction {transaction_id}: {e}")
+            return False
+
+def update_mtawc_bob_proof_for_challenge(transaction_id: str, user_index: int, bob_proof_for_challenge: Bob_ZKProof_Proof_For_Challenge) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(MtaWc_As_Alice_Users_Data).filter(
+                MtaWc_As_Alice_Users_Data.transaction_id == transaction_id,
+                MtaWc_As_Alice_Users_Data.user_index == user_index
+            ).update({"bob_proof_for_challenge": bob_proof_for_challenge.to_dict()})
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update Bob's proof for Alice's MtaWc challenge for transaction {transaction_id}: {e}")
+            return False
+
+# ================================================================================================
+# MtaWc Protocol Methods - When the user is in Bob's shoes.
+# ================================================================================================
+
+def insert_mtawc_as_bob(transaction_id: str, user_index: int, counterparty_index: int, enc_a: EncryptedNumber, commitment_of_a: AliceZKProof_Commitment) -> bool:
+    with DB.session() as session:
+        try:
+            entry = MtaWc_As_Bob_Users_Data(
+                transaction_id=transaction_id,
+                user_index=user_index,
+                counterparty_index=counterparty_index,
+                enc_a=serialize_encryped_number(enc_a),
+                commitment_of_a=commitment_of_a.to_dict()
+            )
+            session.add(entry)
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to insert MtaWc (as Bob) for transaction {transaction_id}: {e}")
+            return False
+
+def update_mtawc_bobs_challenge_as_bob(transaction_id: str, user_index: int, bobs_challenge: int) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(MtaWc_As_Bob_Users_Data).filter(
+                MtaWc_As_Bob_Users_Data.transaction_id == transaction_id,
+                MtaWc_As_Bob_Users_Data.user_index == user_index
+            ).update({"bobs_challenge": bobs_challenge})
+
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update Bob's MtaWc challenge for transaction {transaction_id}: {e}")
+            return False
+
+def update_mtawc_bobs_encrypted_value_and_commitment_as_bob(transaction_id: str, user_index: int, enc_result: EncryptedNumber, 
+                                                bobs_commitment: Bob_ZKProof_ProverCommitment, beta_prime: int) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(MtaWc_As_Bob_Users_Data).filter(
+                MtaWc_As_Bob_Users_Data.transaction_id == transaction_id,
+                MtaWc_As_Bob_Users_Data.user_index == user_index
+            ).update({
+                "enc_result": serialize_encryped_number(enc_result),
+                "bobs_commitment": bobs_commitment.to_dict(),
+                "beta_prime": beta_prime})
+
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update Bob's MtaWc encrypted result for transaction {transaction_id}: {e}")
+            return False
+
+def update_mtawc_bob_proof_for_challenge_as_bob(transaction_id: str, user_index: int, bob_proof_for_challenge: Bob_ZKProof_Proof_For_Challenge) -> bool:
+    with DB.session() as session:
+        try:
+            session.query(MtaWc_As_Bob_Users_Data).filter(
+                MtaWc_As_Bob_Users_Data.transaction_id == transaction_id,
+                MtaWc_As_Bob_Users_Data.user_index == user_index
+            ).update({"bob_proof_for_challenge": bob_proof_for_challenge.to_dict()})
+
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to update Bob's MtaWc proof for transaction {transaction_id}: {e}")
+            return False
+
+def get_mtawc_as_bob(transaction_id: str, user_index: int, user_paillier_pub_key: PaillierPublicKey, 
+                    counterparty_index: int, counter_party_paillier_pub_key: PaillierPublicKey) -> MtaWc_As_Bob_Users_Data:
+    with DB.session() as session:
+        record = session.query(MtaWc_As_Bob_Users_Data).filter(
+            MtaWc_As_Bob_Users_Data.transaction_id == transaction_id,
+            MtaWc_As_Bob_Users_Data.user_index == user_index,
+            MtaWc_As_Bob_Users_Data.counterparty_index == counterparty_index).first()
+
+        if not record:
+            print(f"Couldn't find mtawc_as_bob data for target user {counterparty_index} for transaction {transaction_id}")
             return None
         
         record.enc_a = deserialize_encrypted_number(record.enc_a, user_paillier_pub_key) if record.enc_a else None

@@ -239,13 +239,6 @@ class Mta_As_Alice_Users_Data(Base):
 
     transaction = relationship("Transaction", back_populates="mta_as_alice_data")
 
-
-from sqlalchemy import Column, String, Integer, JSON, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-import uuid
-
-Base = declarative_base()
-
 class Mta_As_Bob_Users_Data(Base):
     """
     Stores data for the MtA protocol where the current user played as Bob.
@@ -266,7 +259,47 @@ class Mta_As_Bob_Users_Data(Base):
     alice_challenge = Column(Integer, nullable=True)  # Challenge received from Alice
     bob_proof_for_challenge = Column(JSON, nullable=True)  # Bob’s proof for Alice’s challenge (Bob_ZKProof_Proof_For_Challenge, serialized as JSON)
 
+class MtaWc_As_Alice_Users_Data(Base):
+    """
+    Stores data for the MtaWc protocol where the current user played as Alice.
+    """
 
+    __tablename__ = "MtaWc_As_Alice_Users_Data"
+
+    id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    transaction_id = Column(String, ForeignKey("Transaction.transaction_id"), nullable=False)
+    user_index = Column(Integer, nullable=False)  # Index of Alice in the transaction
+    counterparty_index = Column(Integer, nullable=False)  # Index of Bob in the transaction
+    a = Column(Integer, nullable=True)  # Alice's secret integer value
+    enc_a = Column(JSON, nullable=True)  # EncryptedNumber (serialized as JSON)
+    commitment_of_a = Column(JSON, nullable=True)  # AliceZKProof_Commitment (JSON format)
+    bobs_challenge = Column(Integer, nullable=True)  # Integer challenge from Bob
+    bobs_encrypted_value = Column(JSON, nullable=True)  # EncryptedNumber (JSON format)
+    bobs_commitment = Column(JSON, nullable=True)  # Bob_ZKProof_ProverCommitment (JSON format)
+    alice_challenge = Column(Integer, nullable=True)  # Integer challenge from Alice to Bob
+    bob_proof_for_challenge = Column(JSON, nullable=True)  # Bob_ZKProof_Proof_For_Challenge (JSON format)
+    transaction = relationship("Transaction", backref="mtawc_as_alice_data")
+
+
+class MtaWc_As_Bob_Users_Data(Base):
+    """
+    Stores data for the MtaWc protocol where the current user played as Bob.
+    """
+
+    __tablename__ = "MtaWc_As_Bob_Users_Data"
+    id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    transaction_id = Column(String, ForeignKey("Transaction.transaction_id"), nullable=False)
+    user_index = Column(Integer, nullable=False)  # Bob's index
+    counterparty_index = Column(Integer, nullable=False)  # Alice's index
+    b = Column(Integer, nullable=True)  # Bob's secret integer value
+    enc_a = Column(JSON, nullable=True)  # Alice's encrypted value (EncryptedNumber, serialized as JSON)
+    commitment_of_a = Column(JSON, nullable=True)  # Alice's commitment (AliceZKProof_Commitment, serialized as JSON)
+    bobs_challenge = Column(Integer, nullable=True)  # Integer challenge sent to Alice
+    enc_result = Column(JSON, nullable=True)  # Encrypted (ab + β') (EncryptedNumber, serialized as JSON)
+    bobs_commitment = Column(JSON, nullable=True)  # Bob's commitment (Bob_ZKProof_ProverCommitment, serialized as JSON)
+    beta_prime = Column(Integer, nullable=True)  # Bob's additive term for decryption
+    alice_challenge = Column(Integer, nullable=True)  # Challenge received from Alice
+    bob_proof_for_challenge = Column(JSON, nullable=True)  # Bob's proof for Alice's challenge (Bob_ZKProof_Proof_For_Challenge, serialized as JSON)
 
 
 
