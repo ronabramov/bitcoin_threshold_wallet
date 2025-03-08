@@ -69,6 +69,7 @@ def generate_user_modulus_parameters(bits=1024):
     return {"N": N, "h1": h1, "h2": h2}
 
 
+
 def serialize_encryped_number(encrypted_number : EncryptedNumber):
     return json.dumps({"ciphertext": str(encrypted_number.ciphertext(be_secure=False)), "exponent": encrypted_number.exponent})
 
@@ -78,15 +79,3 @@ def deserialize_encrypted_number(encrypted_number_str : str, encrypting_number_p
     encrypting_number_paillier_public_key, int(encrypted_number_json["ciphertext"]), encrypted_number_json["exponent"]
     )
     return retrieved_encrypted_number
-
-
-    
-
-pub_key, secret_key = generate_paillier_keypair()
-value_to_encrypt = 10
-encrypted_value = pub_key.encrypt(value_to_encrypt)
-data_to_store = serialize_encryped_number(encrypted_value)
-deseralized_encrypted_number = deserialize_encrypted_number(data_to_store, pub_key)
-decrypted_value = secret_key.decrypt(deseralized_encrypted_number)
-assert decrypted_value == value_to_encrypt
-print(f'Works : decrypted value = {decrypted_value}')

@@ -61,15 +61,11 @@ class StepTwoMtaBobOperations:
         bob_mta_data = db_dal.get_mta_as_bob(transaction_id = transaction_id, user_index = user_index, user_paillier_pub_key=user_pub_key,
                                               counterparty_index= alice_index, counter_party_paillier_pub_key= dstination_user_pub_key)
 
-        # Generate proof for Alice's challenge
         bob_proof = protocol.bob_provide_proof_for_alice_challenge(
             commitment_of_b_and_beta_prime=bob_mta_data.bobs_commitment, settings=protocol.bob_alg_prover_settings, challenge=alice_challenge
         )
 
-        # Store Bob’s proof in DB
         db_dal.update_bob_proof_for_challenge(transaction_id, user_index, bob_proof)
-
-        # Send proof to Alice
         proof_message = MessageDTO(type=MessageType.MtaProofForChallengeBob, data=bob_proof).model_dump_json()
         MatrixService.instance().send_private_message_to_user(target_user_matrix_id=alice_matrix_id, message=proof_message)
 

@@ -73,7 +73,11 @@ class StepTwoMtaAndMtaWcAliceOperations:
         #RON TODO : Recored the commitment message
 
     def send_alice_mta_proof_for_challenge(wallet_id : str, transaction_id : str, user_index : int, destination_user_index : int):
-        alice_mta_user_data = db_dal.get_mta_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=destination_user_index)
+        destination_user_wallet_user_data = db_dal.get_specific_wallet_user_data(wallet_id=wallet_id, traget_user_index_in_wallet=destination_user_index)
+        bob_user_share = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
+        counter_party_paillier_pub_key = bob_user_share.paillier_public_key
+        alice_mta_user_data = db_dal.get_mta_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=destination_user_index,
+                                                                 counter_party_paillier_pub_key= counter_party_paillier_pub_key)
         #Should store in that stage : a, enc_a, alice_commitment and bob's challenge
         protocol, bob_user_matrix_id = StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=destination_user_index)
         protocol : MTAProtocolWithZKP
@@ -117,8 +121,12 @@ class StepTwoMtaAndMtaWcAliceOperations:
                                                            user_index : int, target_user_index : int):
         
         protocol, _ =  StepTwoMtaAndMtaWcAliceOperations.get_mta_protocol(wallet_id=wallet_id, destination_user_index=target_user_index)
+        destination_user_wallet_user_data = db_dal.get_specific_wallet_user_data(wallet_id=wallet_id, traget_user_index_in_wallet=target_user_index)
+        bob_user_share = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
+        counter_party_paillier_pub_key = bob_user_share.paillier_public_key
         alice_secret = db_dal.get_wallet_by_id(wallet_id=wallet_id).get_room_secret_user_data()
-        alice_mta_user_data = db_dal.get_mta_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=target_user_index)
+        alice_mta_user_data = db_dal.get_mta_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=target_user_index,
+                                                                 counter_party_paillier_pub_key=counter_party_paillier_pub_key)
         alice_additive_share = protocol.alice_finalize(proof_for_challenge=bob_proof_for_challenge, commitment=alice_mta_user_data.bobs_commitment, 
                                                        enc_result=alice_mta_user_data.bobs_encrypted_value, enc_a=alice_mta_user_data.enc_a, settings=protocol.Bob_Alg_verifier_Settings,
                                                        challenge=alice_mta_user_data.alice_challenge, alice_paillier_secret_key=alice_secret.paillier_secret_key)

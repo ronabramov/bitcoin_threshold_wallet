@@ -564,7 +564,7 @@ def update_bob_proof_for_challenge(transaction_id: str, user_index: int, bob_pro
             print(f"Failed to update Bob's proof for transaction {transaction_id}: {e}")
             return False
 
-def get_mta_as_bob(transaction_id: str, user_index: int, counterparty_index: int) -> Mta_As_Bob_Users_Data:
+def get_mta_as_bob(transaction_id: str, user_index: int, user_paillier_pub_key : PaillierPublicKey, counterparty_index: int, counter_party_paillier_pub_key : PaillierPublicKey) -> Mta_As_Bob_Users_Data:
     with DB.session() as session:
         record = session.query(Mta_As_Bob_Users_Data).filter(
             Mta_As_Bob_Users_Data.transaction_id == transaction_id,
@@ -575,9 +575,9 @@ def get_mta_as_bob(transaction_id: str, user_index: int, counterparty_index: int
             print(f"Couldn't find mta_as_bob data for target user {counterparty_index} for transaction {transaction_id}")
             return None
         
-        record.enc_a = EncryptedNumber.from_dict(record.enc_a) if record.enc_a else None
+        record.enc_a = deserialize_encrypted_number(record.enc_a, user_paillier_pub_key) if record.enc_a else None
         record.commitment_of_a = AliceZKProof_Commitment.from_dict(record.commitment_of_a) if record.commitment_of_a else None
-        record.enc_result = EncryptedNumber.from_dict(record.enc_result) if record.enc_result else None
+        record.enc_result = deserialize_encrypted_number(record.enc_result, counter_party_paillier_pub_key) if record.enc_result else None
         record.bobs_commitment = Bob_ZKProof_ProverCommitment.from_dict(record.bobs_commitment) if record.bobs_commitment else None
         record.bob_proof_for_challenge = Bob_ZKProof_Proof_For_Challenge.from_dict(record.bob_proof_for_challenge) if record.bob_proof_for_challenge else None
 
