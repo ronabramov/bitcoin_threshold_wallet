@@ -5,7 +5,8 @@ from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
 from models.models import  user_public_share, wallet_key_generation_share, GPowerX
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
-from phe import EncryptedNumber
+from phe import EncryptedNumber, PaillierPublicKey
+from common_utils import serialize_encryped_number, deserialize_encrypted_number
 from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
 from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment, Bob_ZKProof_RegMta_Prover_Settings, Bob_ZKProof_RegMta_Settings
 from Services.Context import Context
@@ -373,7 +374,8 @@ def delete_wallet(wallet_id : str) -> bool:
 #RON TODO: handle the encrypted_number to dict
 
 
-def get_mta_as_alice_user_data(transaction_id: str, user_index: int, counterparty_index: int) -> Mta_As_Alice_Users_Data:
+def get_mta_as_alice_user_data(transaction_id: str, user_index: int, user_paillier_pub_key : PaillierPublicKey,
+                                counterparty_index: int, counter_party_paillier_pub_key : PaillierPublicKey) -> Mta_As_Alice_Users_Data:
     """
     Retrieves MtA data where the user played as Alice for a specific counterparty.
     Converts JSON fields back into models safely, ensuring missing fields don't cause exceptions.
@@ -389,9 +391,9 @@ def get_mta_as_alice_user_data(transaction_id: str, user_index: int, counterpart
             return None
 
         # Convert JSON fields back into models only if they exist
-        record.enc_a = EncryptedNumber.from_dict(record.enc_a) if record.enc_a else None
+        record.enc_a = deserialize_encrypted_number(record.enc_a, user_paillier_pub_key) if record.enc_a else None
         record.commitment_of_a = AliceZKProof_Commitment.from_dict(record.commitment_of_a) if record.commitment_of_a else None
-        record.bobs_encrypted_value = EncryptedNumber.from_dict(record.bobs_encrypted_value) if record.bobs_encrypted_value else None
+        record.bobs_encrypted_value = deserialize_encrypted_number(record.bobs_encrypted_value, counter_party_paillier_pub_key) if record.bobs_encrypted_value else None
         record.bobs_commitment = Bob_ZKProof_ProverCommitment.from_dict(record.bobs_commitment) if record.bobs_commitment else None
         record.bob_proof_for_challenge = Bob_ZKProof_Proof_For_Challenge.from_dict(record.bob_proof_for_challenge) if record.bob_proof_for_challenge else None
 
@@ -402,7 +404,7 @@ def insert_alice_a_and_enc_a(transaction_id: str, user_index: int, counterparty_
     with DB.session() as session:
         try:
             entry = Mta_As_Alice_Users_Data(transaction_id=transaction_id, user_index=user_index, counterparty_index=counterparty_index,
-                a=a, enc_a=enc_a.to_dict())
+                a=a, enc_a=serialize_encryped_number(encrypted_number=enc_a))
             session.add(entry)
             session.commit()
             return True
@@ -447,7 +449,7 @@ def update_bobs_encrypted_value_and_commitment(transaction_id: str, user_index: 
                 Mta_As_Alice_Users_Data.transaction_id == transaction_id,
                 Mta_As_Alice_Users_Data.user_index == user_index
             ).update({
-                "bobs_encrypted_value": bobs_encrypted_value.to_dict(),  # Convert EncryptedNumber
+                "bobs_encrypted_value": serialize_encryped_number(bobs_encrypted_value),  # Convert EncryptedNumber
                 "bobs_commitment": bobs_commitment.to_dict()  # Convert Commitment
             })
             session.commit()
@@ -502,7 +504,7 @@ def insert_mta_as_bob(transaction_id: str, user_index: int, counterparty_index: 
                 transaction_id=transaction_id,
                 user_index=user_index,
                 counterparty_index=counterparty_index,
-                enc_a=enc_a.to_dict(),  # RON TODO : Fix
+                enc_a=serialize_encryped_number(enc_a),
                 commitment_of_a=commitment_of_a.to_dict()  # Serialize Commitment
             )
             session.add(entry)
@@ -536,7 +538,7 @@ def update_bobs_encrypted_value_and_commitment(transaction_id: str, user_index: 
                 Mta_As_Bob_Users_Data.transaction_id == transaction_id,
                 Mta_As_Bob_Users_Data.user_index == user_index
             ).update({
-                "enc_result": enc_result.to_dict(),  # Serialize EncryptedNumber
+                "enc_result": serialize_encryped_number(enc_result),
                 "bobs_commitment": bobs_commitment.to_dict(),  # Serialize Commitment
                 "beta_prime": beta_prime})
 

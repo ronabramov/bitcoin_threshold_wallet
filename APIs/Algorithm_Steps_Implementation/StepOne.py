@@ -4,7 +4,7 @@ import random
 from ecdsa import curves
 from models.protocols.Commitment import commit_x
 import json
-from APIs.Algorithm_Steps_Implementation.StepTwo import StepTwoMtaAndMtaWcAliceOperations
+from APIs.Algorithm_Steps_Implementation.StepTwoMtaAndMtaWcAliceOperations import StepTwoMtaAndMtaWcAliceOperations
 from models.commitment import Commitment
 from models.algorithm_step import Algorithm_Step
 from APIs.RoomManagementAPI import send_private_message_to_every_user_in_Wallet

@@ -32,7 +32,11 @@ class StepTwoMtaBobOperations:
         Bob verifies Alice's proof. If valid, he encrypts `(ab + β')`, 
         creates a commitment, and sends them to Alice.
         """
-        bob_mta_data = db_dal.get_mta_as_bob(transaction_id, user_index, alice_index)
+        user_pub_key = user_public_share.from_dict(db_dal.get_my_wallet_user_data(wallet_id=wallet_id).user_public_keys_data).paillier_public_key
+        destination_user_wallet_user_data = db_dal.get_specific_wallet_user_data(wallet_id=wallet_id, traget_user_index_in_wallet= alice_index)
+        dstination_user_pub_key = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
+        bob_mta_data = db_dal.get_mta_as_bob(transaction_id = transaction_id, user_index = user_index, user_paillier_pub_key=user_pub_key,
+                                              counterparty_index= alice_index, counter_party_paillier_pub_key= dstination_user_pub_key)
         protocol, alice_matrix_id = StepTwoMtaBobOperations.get_mta_protocol(wallet_id, alice_index)
         enc_result, beta_prime, bobs_commitment = protocol.bob_verify_a_commiting_encrypting_b(
             b=bob_mta_data.b, enc_a=bob_mta_data.enc_a, challenge=bob_mta_data.bobs_challenge, 
@@ -41,7 +45,7 @@ class StepTwoMtaBobOperations:
         )
         db_dal.update_bobs_encrypted_value_and_commitment(transaction_id, user_index, enc_result, bobs_commitment, beta_prime)
 
-        # Send encrypted response & commitment to Alice
+        # RON TODO : Generate a message which contains this data
         enc_result_message = MessageDTO(type=MessageType.MtaEncValueBob, data={"enc_result": enc_result, "commitment": bobs_commitment}).model_dump_json()
         MatrixService.instance().send_private_message_to_user(target_user_matrix_id=alice_matrix_id, message=enc_result_message)
 
@@ -50,11 +54,12 @@ class StepTwoMtaBobOperations:
         """
         Bob processes Alice's challenge and sends proof.
         """
-        # Retrieve protocol instance
         protocol, alice_matrix_id = StepTwoMtaBobOperations.get_mta_protocol(wallet_id, alice_index)
-
-        # Retrieve Bob's MtA data
-        bob_mta_data = db_dal.get_mta_as_bob(transaction_id, user_index, alice_index)
+        user_pub_key = user_public_share.from_dict(db_dal.get_my_wallet_user_data(wallet_id=wallet_id).user_public_keys_data).paillier_public_key
+        destination_user_wallet_user_data = db_dal.get_specific_wallet_user_data(wallet_id=wallet_id, traget_user_index_in_wallet= alice_index)
+        dstination_user_pub_key = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
+        bob_mta_data = db_dal.get_mta_as_bob(transaction_id = transaction_id, user_index = user_index, user_paillier_pub_key=user_pub_key,
+                                              counterparty_index= alice_index, counter_party_paillier_pub_key= dstination_user_pub_key)
 
         # Generate proof for Alice's challenge
         bob_proof = protocol.bob_provide_proof_for_alice_challenge(
@@ -72,16 +77,14 @@ class StepTwoMtaBobOperations:
         """
         Bob finalizes the MTA protocol and computes his final additive share (β).
         """
-        # Retrieve protocol instance
         protocol, _ = StepTwoMtaBobOperations.get_mta_protocol(wallet_id, alice_index)
-
-        # Retrieve Bob's MtA data
-        bob_mta_data = db_dal.get_mta_as_bob(transaction_id, user_index, alice_index)
-
-        # Compute final beta share
+        user_pub_key = user_public_share.from_dict(db_dal.get_my_wallet_user_data(wallet_id=wallet_id).user_public_keys_data).paillier_public_key
+        destination_user_wallet_user_data = db_dal.get_specific_wallet_user_data(wallet_id=wallet_id, traget_user_index_in_wallet= alice_index)
+        dstination_user_pub_key = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
+        bob_mta_data = db_dal.get_mta_as_bob(transaction_id = transaction_id, user_index = user_index, user_paillier_pub_key=user_pub_key,
+                                              counterparty_index= alice_index, counter_party_paillier_pub_key= dstination_user_pub_key)
+        
         beta = protocol.bob_finalize(beta_prime=bob_mta_data.beta_prime)
-
-        # Store final result in DB
         transaction_user_data = db_dal.get_transaction_user_data_by_index(transaction_id, user_index)
         transaction_user_data.add_mta_result(result_value=beta, role='bob', protocol_type='mta')
         db_dal.update_transaction_user_data(transaction_user_data)

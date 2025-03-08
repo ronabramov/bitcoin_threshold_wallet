@@ -3,7 +3,6 @@ import local_db.sql_db_dal as db_dal
 from models.models import user_modulus, user_public_share, user_secret_signature_share, GPowerX
 from models.protocols.mta_protocol import MTAProtocolWithZKP
 from models.protocols.MtaWc_protocl import MtaWcProtocolWithZKP
-from models.protocols.AliceZKProofModels import AliceZKProof_Commitment
 from models.protocols.BobZKProofMtAModels import Bob_ZKProof_ProverCommitment, Bob_ZKProof_Proof_For_Challenge
 from ecdsa.curves import Curve, curve_by_name
 from ecdsa.ellipticcurve import PointJacobi
