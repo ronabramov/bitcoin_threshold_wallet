@@ -3,12 +3,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../bitcoin_threshold_wallet')))
 
-# Debug output
-print("\n".join(sys.path))
-
-from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
-
-from phe import paillier, EncryptedNumber, PaillierPrivateKey, PaillierPublicKey
+from phe import paillier, EncryptedNumber, PaillierPublicKey
 import random
 from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
 from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment, Bob_ZKProof_RegMta_Settings, Bob_ZKProof_RegMta_Prover_Settings
@@ -126,7 +121,7 @@ class MTAProtocolWithZKP:
         return beta  # Bob holds β only
     
 
-
+#Example : #
 curve = NIST256p
 q = curve.order
 bob_x = random.randint(1,q-1)

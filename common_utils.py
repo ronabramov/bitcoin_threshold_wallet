@@ -5,9 +5,10 @@ import sympy
 import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from Crypto.Util import number
-from phe import generate_paillier_keypair, EncryptedNumber
+from phe import generate_paillier_keypair, EncryptedNumber, PaillierPublicKey, paillier
 from models.models import user_public_share, user_secret_signature_share
 from local_db.sql_db import Wallet
+import json
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -67,12 +68,14 @@ def generate_user_modulus_parameters(bits=1024):
     h2 = random.randint(2, N - 1)
     return {"N": N, "h1": h1, "h2": h2}
 
-def homomorphic_exponentiation(enc_a, b):
-    """Compute E(a^b) securely using Paillier's homomorphic properties."""
-    if not isinstance(b, int) or b < 0:
-        raise ValueError("Exponentiation only supports non-negative integers.")
 
-    # Use Paillier's homomorphic property: E(a^b) = E(a * b)
-    ciphertext = enc_a._raw_mul(b)  # Perform scalar multiplication in encrypted space
 
-    return EncryptedNumber(enc_a.public_key, ciphertext, enc_a.exponent)
+def serialize_encryped_number(encrypted_number : EncryptedNumber):
+    return json.dumps({"ciphertext": str(encrypted_number.ciphertext(be_secure=False)), "exponent": encrypted_number.exponent})
+
+def deserialize_encrypted_number(encrypted_number_str : str, encrypting_number_paillier_public_key : PaillierPublicKey):
+    encrypted_number_json = json.loads(encrypted_number_str)
+    retrieved_encrypted_number = paillier.EncryptedNumber(
+    encrypting_number_paillier_public_key, int(encrypted_number_json["ciphertext"]), encrypted_number_json["exponent"]
+    )
+    return retrieved_encrypted_number
