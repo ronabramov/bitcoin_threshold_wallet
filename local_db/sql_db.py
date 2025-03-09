@@ -70,6 +70,7 @@ class Transaction(Base):
     amount = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
+    mta_as_alice_data = relationship("Mta_As_Alice_Users_Data", back_populates="transaction")
     
     @classmethod
     def from_dto(cls, transaction_dto: "TransactionDTO"):
@@ -250,14 +251,14 @@ class Mta_As_Bob_Users_Data(Base):
     user_index = Column(Integer, nullable=False)  # Bob's index
     counterparty_index = Column(Integer, nullable=False)  # Alice's index
     b = Column(Integer, nullable=True)  # Bob's secret integer value
-    enc_a = Column(JSON, nullable=True)  # Alice’s encrypted value (EncryptedNumber, serialized as JSON)
-    commitment_of_a = Column(JSON, nullable=True)  # Alice’s commitment (AliceZKProof_Commitment, serialized as JSON)
+    enc_a = Column(JSON, nullable=True)  # Alice's encrypted value (EncryptedNumber, serialized as JSON)
+    commitment_of_a = Column(JSON, nullable=True)  # Alice's commitment (AliceZKProof_Commitment, serialized as JSON)
     bobs_challenge = Column(Integer, nullable=True)  # Integer challenge sent to Alice
     enc_result = Column(JSON, nullable=True)  # Encrypted (ab + β') (EncryptedNumber, serialized as JSON)
-    bobs_commitment = Column(JSON, nullable=True)  # Bob’s commitment (Bob_ZKProof_ProverCommitment, serialized as JSON)
-    beta_prime = Column(Integer, nullable=True)  # Bob’s additive term for decryption
+    bobs_commitment = Column(JSON, nullable=True)  # Bob's commitment (Bob_ZKProof_ProverCommitment, serialized as JSON)
+    beta_prime = Column(Integer, nullable=True)  # Bob's additive term for decryption
     alice_challenge = Column(Integer, nullable=True)  # Challenge received from Alice
-    bob_proof_for_challenge = Column(JSON, nullable=True)  # Bob’s proof for Alice’s challenge (Bob_ZKProof_Proof_For_Challenge, serialized as JSON)
+    bob_proof_for_challenge = Column(JSON, nullable=True)  # Bob's proof for Alice's challenge (Bob_ZKProof_Proof_For_Challenge, serialized as JSON)
 
 class MtaWc_As_Alice_Users_Data(Base):
     """
@@ -304,17 +305,33 @@ class MtaWc_As_Bob_Users_Data(Base):
 
 
 def create_db_if_not_exists(db_file_name): 
-    current_path = os.path.dirname(
-            os.path.abspath(__file__)
-        )
-    abs_path = os.path.join(current_path, db_file_name)
+    # Get the directory path
+    db_dir = os.path.dirname(db_file_name)
     
-    if os.path.exists(abs_path) and Config.is_test:
+    # Get the absolute path for the database
+    if os.path.isabs(db_file_name):
+        abs_path = db_file_name
+    else:
+        current_path = os.path.dirname(os.path.abspath(__file__))
+        abs_path = os.path.join(current_path, db_file_name)
+        # Also get the absolute directory path
+        db_dir = os.path.dirname(abs_path)
+    
+    # Create the directory if it doesn't exist
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
+        # Ensure directory has proper permissions
+        os.chmod(db_dir, 0o775)  # rwxrwxr-x permissions
+    
+    if os.path.exists(abs_path) and Config.drop_db:
         os.remove(abs_path)
     
     engine = create_engine(f"sqlite:///{abs_path}")
     if not os.path.exists(abs_path):    
         Base.metadata.create_all(engine)
+        # Ensure database file has proper permissions
+        os.chmod(abs_path, 0o666)  # rw-rw-rw- permissions
+    
     # Session maker
     Session = sessionmaker(bind=engine)
     return Session
@@ -322,11 +339,12 @@ def create_db_if_not_exists(db_file_name):
 
 class DB():
     sessions = {
-        Config.Test.User1.matrix_id: create_db_if_not_exists(Config.DB_FILE1),
-        Config.Test.User2.matrix_id: create_db_if_not_exists(Config.DB_FILE2),
+        'user1': create_db_if_not_exists(Config.DB_FILE1),
+        'user2': create_db_if_not_exists(Config.DB_FILE2),
     } if Config.is_test else { 'default': create_db_if_not_exists(Config.DB_FILE1)}
     def session():
         if Config.is_test:
-            return DB.sessions[Context.matrix_user_id()]()
+            user_num = Config.user_num()
+            return DB.sessions[user_num]()
         else:
             return list(DB.sessions.values())[0]()

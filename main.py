@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends
 from routers import transactions, messages, wallets, authentications, friends
 
@@ -5,11 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from jwt_utils import get_current_user
 
 FRONT_END_LOCALHOST_URL = "http://localhost:3000"
+FRONTEND_URL_8000 = "http://localhost:8000"
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONT_END_LOCALHOST_URL],
+    allow_origins=[FRONT_END_LOCALHOST_URL, FRONTEND_URL_8000],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,4 +35,19 @@ async def open_swagger_ui():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import argparse
+    
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Bitcoin Threshold Wallet API')
+    parser.add_argument('--other', type=bool, default=False, help='Run another server')
+    # Parse arguments
+    args = parser.parse_args()
+    if not args.other:
+        os.environ['USER_NUM'] = 'user1'
+        port = 6060
+    else:
+        os.environ['USER_NUM'] = 'user2'
+        port = 7070
+    
+    # Run with the specified or default port
+    uvicorn.run(app, host="0.0.0.0", port=port)

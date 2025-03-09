@@ -22,5 +22,9 @@ class Test():
 HOMESERVER_URL = os.getenv('HOMESERVER_URL',"https://matrix.org" )
 
 is_test = os.getenv('IS_TEST', "False") == "True"
-DB_FILE1 = os.getenv('DB_FILE1', "local_db1.sqlite")
-DB_FILE2 = os.getenv('DB_FILE2', "local_db2.sqlite")
+DB_FILE1 = os.getenv('DB_FILE1', os.path.join("local_db/user1/", "local_db1.sqlite"))
+DB_FILE2 = os.getenv('DB_FILE2', os.path.join("local_db/user2/", "local_db2.sqlite"))
+drop_db = os.getenv('DROP_DB', "False") == "True"
+
+def user_num():
+    return os.getenv('USER_NUM', 'user1')
