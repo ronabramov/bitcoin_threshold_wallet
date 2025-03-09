@@ -180,7 +180,7 @@ const TransactionsPanel = ({ wallet, isOpen }) => {
                                             }
                                         />
                                     </Box>
-                                    {transaction.status === '0' && (
+                                    {transaction.status === 0 && (
                                         <Box sx={{ 
                                             display: 'flex', 
                                             gap: 1, 

@@ -13,6 +13,7 @@ export const numberToStatus = {
 export const statusColors = {
      '-2': '#dc3545', // Red for aborted
     '-1': '#dc3545', // Red for declined
+    '0': '#ffffff', // white  for pending
     '1': '#ffa726', // Orange for pending
     '2': '#3f51b5', // Indigo for stage one
     '3': '#2196f3', // Blue for stage two

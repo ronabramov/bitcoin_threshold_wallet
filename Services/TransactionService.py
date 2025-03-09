@@ -1,6 +1,7 @@
 from models.DTOs.transaction_dto import TransactionDTO
 from models.transaction_status import TransactionStatus
 from local_db import sql_db_dal
+from local_db import sql_db
 from models.DTOs.transaction_response_dto import TransactionResponseDTO
 from Services.Context import Context
 from models.protocols.ShareShrinker import ShareShrinker
@@ -39,8 +40,6 @@ def handle_incoming_transaction_response(transaction_response: TransactionRespon
                                             user_index=transaction_response.approving_user_index,
                                             user_matrix_id=transaction_response.approving_user_matrix_id)
     
-    sql_db_dal.update_transaction(local_transaction)
-    
     if (threshold_reached( local_transaction.wallet_id, local_transaction.transaction_id)):
         handle_reached_threshold_transaction(transaction=local_transaction)
         # shrink secret share
@@ -69,15 +68,16 @@ def handler_new_transaction(transaction: TransactionDTO):
         print(f"Transaction {transaction.id} already exists in the local db")
     return
 
-def handle_reached_threshold_transaction(transaction : TransactionDTO, user_index) -> bool: 
-    transaction.status = TransactionStatus.STAGE_ONE
+def handle_reached_threshold_transaction(transaction : sql_db.Transaction, user_index) -> bool: 
     wallet = sql_db_dal.get_wallet_by_id(transaction.wallet_id)
     user_secret_signature_data = wallet.get_room_secret_user_data()
-    approvers_indecis = [participating_user.user_index for participating_user in sql_db_dal.get_all_transaction_user_data(transaction_id=transaction.id)]
+    approvers_indexes = [participating_user.user_index for participating_user in sql_db_dal.get_all_transaction_user_data(transaction_id=transaction.id)]
+    
     curve = curves.curve_by_name(wallet.curve_name)
-    shrinker = ShareShrinker(q= curve.order, i = user_index, S=approvers_indecis, x_i=user_secret_signature_data.user_evaluation)
+    shrinker = ShareShrinker(q= curve.order, i = user_index, S=approvers_indexes, x_i=user_secret_signature_data.user_evaluation)
     shrunken_secret = shrinker.compute_new_share()
-    transaction.shrunken_secret_share = shrunken_secret
-    sql_db_dal.update_transaction(transaction=transaction)
+    
+    sql_db_dal.insert_transaction_shrunken_secret(transaction_id=transaction.transaction_id, shrunken_secret_share=shrunken_secret)
+    sql_db_dal.update_transaction_status(transaction_id=transaction.transaction_id, status=TransactionStatus.STAGE_ONE)
     successeded_stage_one = StepOne_PrepareDataForMta.execute(wallet=wallet)
 
