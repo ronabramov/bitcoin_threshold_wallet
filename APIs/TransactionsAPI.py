@@ -67,11 +67,11 @@ def respond_to_new_transaction(transaction_id : str,wallet_id : str, user_respon
         sql_db_dal.insert_transaction_user_data(transaction_id=transaction.transaction_id,user_matrix_id=user_id,user_index=my_wallet_user_data.user_index)
         
         approved_transaction_json = MessageDTO(type = MessageType.TransactionResponse, data=transaction_response, sender_id=user_id,
-                                                wallet_id=transaction.wallet_id, transaction_id=transaction.id, user_index=my_wallet_user_data.user_index).model_dump_json()
+                                                wallet_id=transaction.wallet_id, transaction_id=transaction.transaction_id, user_index=my_wallet_user_data.user_index).model_dump_json()
         MatrixService.instance().send_message_to_wallet_room(room_id=transaction.wallet_id, message= approved_transaction_json)   
         
         sql_db_dal.update_transaction_status(transaction_id=transaction_id, status=TransactionStatus.PENDING_OTHERS_APPROVAL)
-        if TransactionService.threshold_reached( transaction.wallet_id, transaction.id):
+        if TransactionService.threshold_reached( transaction.wallet_id, transaction.transaction_id):
             TransactionService.handle_reached_threshold_transaction(transaction=transaction)
             
         
