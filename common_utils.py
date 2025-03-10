@@ -11,6 +11,7 @@ from local_db.sql_db import Wallet
 import json
 from concurrent.futures import ThreadPoolExecutor
 from ecdsa.ellipticcurve import PointJacobi
+import hashlib
 
 
 
@@ -85,3 +86,7 @@ def sum_jacobi_points(points : list[PointJacobi]):
         for p in points[1:]:
            res.__add__(p) 
         return res
+
+def H(message, q):
+    digest = hashlib.sha256(message).digest()
+    return int.from_bytes(digest, byteorder="big") % q

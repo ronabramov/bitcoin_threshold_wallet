@@ -826,6 +826,21 @@ def insert_user_gamma_i_step_four(gamma_i : PointJacobi, wallet_id : str, user_i
             print(f'Failed to insert user gamma for stage 4')
             return False
 
+def get_my_user_gamma(wallet_id , transaction_id : str):
+    with DB.session() as session:
+        user_index = get_my_wallet_user_data(wallet_id=wallet_id).user_index
+        try:
+            gamma_i = session.query(TransactionParticipatnsGammaValue).filter(
+                TransactionParticipatnsGammaValue.user_index == user_index,
+                TransactionParticipatnsGammaValue.transaction_id == transaction_id
+            ).first()
+            gamma_i_jacobi_point = PointJacobi() #Gilad TODO : to dict the point Jacobi
+            return gamma_i
+        except Exception as e:
+            print(f'Failed retrieving my gamma_i for transaction {transaction_id} : {e}')
+
+
+
 def get_users_gamma_shares_by_transaction_id(transaction_id : str) -> list[PointJacobi]:
     with DB.session as session:
         try:
