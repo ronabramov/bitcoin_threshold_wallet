@@ -10,12 +10,12 @@ import Services.UserShareService as UserShareService
 import Services.WalletService as WalletService
 from APIs.Algorithm_Steps_Implementation import StepTwoMtaAndMtaWcAliceOperations
 from APIs.Algorithm_Steps_Implementation.StepTwoMtaAndMtaWcBobOperations import StepTwoMtaBobOperations
-from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge, AliceCommitmentMessage
+from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
 from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment, BobMtaCommitmentMessage
 import time
 from common_utils import deserialize_encrypted_number
 from local_db.sql_db_dal import get_specific_wallet_user_data
-
+from models.protocols.MtaAndMtaWcMessages import MtaCommitmentAlice
 class MatrixRoomListener:
     """
     Listens to messages in all rooms the user participates in and handles new invitations.
@@ -148,7 +148,7 @@ class MatrixRoomListener:
             # MTA Protocol - Alice sends to Bob
             elif message_dto.type == MessageType.MtaAliceCommitment:
                 print(f"MTA commitment from Alice received")
-                mta_commitment_alice_obj : AliceCommitmentMessage = AliceCommitmentMessage. message_dto.data
+                mta_commitment_alice_obj : MtaCommitmentAlice = MtaCommitmentAlice. message_dto.data
                 alice_paillier_pub_key = get_user_paillier_public_key(wallet_id, sender_id)
                 StepTwoMtaBobOperations.process_alice_mta_commitment(
                     transaction_id=transaction_id,
