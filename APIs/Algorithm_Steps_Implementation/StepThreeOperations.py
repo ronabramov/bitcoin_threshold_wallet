@@ -18,7 +18,3 @@ class StepThreeOperations():
         delta_inv = mod_inverse(delta, q)
         insertion_success = sql_db_dal.update_delta_inversed_for_transaction(transaction_id=transaction_id, delta_inversed=delta_inv)
         return insertion_success
-
-
-
-
