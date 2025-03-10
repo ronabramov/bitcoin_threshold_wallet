@@ -167,7 +167,8 @@ class MatrixRoomListener:
                     s1=alice_proof_obj["s1"],
                     s2=alice_proof_obj["s2"]
                 )
-                
+                #Gilad to do : store the encrypted value in beta (user as bob ...)
+                # When reached the last user, sum up to get the actual beta. 
                 StepTwoMtaBobOperations.verify_alice_proof_and_encrypt_value(
                     transaction_id=transaction_id,
                     user_index=self.client.user_id,
@@ -194,7 +195,7 @@ class MatrixRoomListener:
                 bob_challenge_obj = message_dto.data
                 
                 # Alice answers Bob's challenge with a proof
-                StepTwoMtaAndMtaWcAliceOperations.alice_answer_bob_challenge(
+                StepTwoMtaAndMtaWcAliceOperations.StepTwoMtaAndMtaWcAliceOperations.alice_answer_bob_challenge(
                     wallet_id=wallet_id,
                     transaction_id=transaction_id,
                     user_index=self.client.user_id,
@@ -210,7 +211,7 @@ class MatrixRoomListener:
                 bob_paillier_pub_key = get_user_paillier_public_key(wallet_id, sender_id)
                 
                 # Alice records Bob's commitment and responds with challenge
-                StepTwoMtaAndMtaWcAliceOperations.alice_record_bob_encrypted_value_and_commitment_sending_challenge(
+                StepTwoMtaAndMtaWcAliceOperations.StepTwoMtaAndMtaWcAliceOperations.alice_record_bob_encrypted_value_and_commitment_sending_challenge(
                     wallet_id=wallet_id,
                     transaction_id=transaction_id,
                     user_index=self.client.user_id,
@@ -233,6 +234,7 @@ class MatrixRoomListener:
                 )
                 
                 # Alice handles Bob's proof and finalizes MTA
+                #Gilad TODO : If this is the last share finalizatoin (out of all participants) - Then sum up to Get alpha.
                 StepTwoMtaAndMtaWcAliceOperations.alice_handles_bob_proof_for_challenge_and_finalize(
                     bob_proof_for_challenge=bob_proof,
                     transaction_id=transaction_id,
