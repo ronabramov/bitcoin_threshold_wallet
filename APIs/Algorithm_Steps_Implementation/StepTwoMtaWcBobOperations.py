@@ -106,5 +106,5 @@ class StepTwoMtaWcBobOperations:
         bob_secret_data = wallet.get_room_secret_user_data()
 
         return MtaWcProtocolWithZKP(alice_public_share=bob_user_share, bob_public_share=bob_user_data, curve=curve,
-                                  bob_public_g_power_secret=bob_public_key_g_x, b_value=None,
+                                  bob_public_g_power_secret=bob_public_key_g_x, b_value=None, #RON TODO : Check why there is no b_value 
                                   alice_paillier_private_key=bob_secret_data.paillier_secret_key), destination_user_wallet_user_data.user_matrix_id
