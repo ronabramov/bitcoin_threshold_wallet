@@ -312,3 +312,7 @@ class GPowerX(BaseModel):
     user_matrix_id: str
     wallet_id: str
 # GILAD TODO : Here we should also support Point Jacobi Serialization and Deserialization.
+
+class delta_i_message(BaseModel):
+    transaction_id : str
+    delta_i : int
