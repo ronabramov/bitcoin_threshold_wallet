@@ -23,7 +23,7 @@ class StepTwoMtaBobOperations:
         db_dal.insert_mta_as_bob(transaction_id, user_index, alice_index, enc_a, commitment_of_a)
         protocol, alice_matrix_id = StepTwoMtaBobOperations.get_mta_protocol(wallet_id, alice_index)
         bobs_challenge = protocol.bob_challenging_a_commitment()
-        challenge_message = MessageDTO(type=MessageType.MtaBobChallengeToAlice, data=bobs_challenge, sender_id=Context.matrix_user_id,
+        challenge_message = MessageDTO(type=MessageType.MtaChallenge, data=bobs_challenge, sender_id=Context.matrix_user_id(),
                                         wallet_id=wallet_id, transaction_id=transaction_id, user_index=user_index).model_dump_json()
         
         MatrixService.instance().send_private_message_to_user(target_user_matrix_id=alice_matrix_id, message=challenge_message)
@@ -69,7 +69,7 @@ class StepTwoMtaBobOperations:
                                                                     settings=protocol.bob_alg_prover_settings, challenge=alice_challenge)
 
         db_dal.update_bob_proof_for_challenge(transaction_id, user_index, bob_proof)
-        proof_message = MessageDTO(type=MessageType.MtaBobProofForChallenge, data=bob_proof, sender_id=Context.matrix_user_id,
+        proof_message = MessageDTO(type=MessageType.MtaProofForChallengeBob, data=bob_proof, sender_id=Context.matrix_user_id(),
                                     wallet_id=wallet_id, transaction_id=transaction_id, user_index=user_index).model_dump_json()
         
         MatrixService.instance().send_private_message_to_user(target_user_matrix_id=alice_matrix_id, message=proof_message)
