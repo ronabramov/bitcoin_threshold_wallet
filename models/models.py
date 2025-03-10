@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
+from pydantic import BaseModel, ConfigDict, field_serializer, field_validator, model_validator
 from typing import List, Optional, Dict
 from ecdsa.ellipticcurve import PointJacobi, CurveFp
 from ecdsa.curves import NIST256p
@@ -71,13 +71,16 @@ class wallet_key_generation_share(BaseModel):
         validate_assignment=False  # This will make validation even more lenient
     )
 
-    @field_serializer("v_i", "v_0", when_used="json")
+    @field_serializer("v_i", "v_0")
     def serialize_point(self, value):
-        """ Convert PointJacobi to a serializable format """
         def point_to_dict(p):
             if isinstance(p, PointJacobi):
                 affine_p = p.to_affine()
-                return {"x": int(affine_p.x()), "y": int(affine_p.y())}
+                return {
+                    "x": int(affine_p.x()), 
+                    "y": int(affine_p.y()),
+                    "curve_name": self.curve  # Include curve name in serialized data
+                }
             return None
         
         if isinstance(value, list):
@@ -120,7 +123,17 @@ class wallet_key_generation_share(BaseModel):
     @field_validator("v_i","v_0", mode="before")
     @classmethod
     def deserialize_points(cls, value):
-        return value
+        if isinstance(value, list):
+            return [cls.deserialize_point(p) for p in value if p is not None]
+        return cls.deserialize_point(value)
+    
+    @classmethod
+    def deserialize_point(cls, value):
+        if isinstance(value, dict):
+            curve_instance = curves.curve_by_name(value["curve_name"])
+            return PointJacobi(curve_instance, int(value["x"]), int(value["y"]), 1)
+        if isinstance(value, PointJacobi):
+            return value
     
     @classmethod
     def from_dict(cls, share):

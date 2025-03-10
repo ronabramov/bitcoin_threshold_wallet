@@ -299,8 +299,7 @@ class MatrixService:
                 if name:
                     if "private_room_for_" in name[0]:
                         self.client.join_room(room_id)
-                    else:
-                        room_names.append({"id": room_id, "name": name[0]})
+                    room_names.append({"id": room_id, "name": name[0]})
             return room_names
         return []
     

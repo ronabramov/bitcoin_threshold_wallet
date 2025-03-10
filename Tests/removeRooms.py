@@ -21,8 +21,12 @@ print("user1 left all rooms and rejected all invitations")
 current_path = os.path.dirname(os.path.abspath(__file__))
 
 abs_path = os.path.join(current_path, "../local_db", Config.DB_FILE1)
+abs_path2 = os.path.join(current_path, "../local_db", Config.DB_FILE2)
     
 if os.path.exists(abs_path) :
     os.remove(abs_path)
+
+if os.path.exists(abs_path2) :
+    os.remove(abs_path2)
     
 print("DB file removed")
