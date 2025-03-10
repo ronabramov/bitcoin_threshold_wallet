@@ -27,3 +27,5 @@ local_db/local_db2.sqlite
 .DS_Store
 
 .vs/
+local_db/local_db/user1/local_db1.sqlite
+local_db/local_db/user2/local_db2.sqlite
