@@ -181,6 +181,7 @@ class MatrixService:
         return res["name"] in optional_names
     
     def __get_private_room_with_user(self, target_user_matrix_id: str) -> Room:
+        print(f"Getting private room with user {target_user_matrix_id}") 
         rooms = self.client.rooms
         target_room: Room = None
         invited_rooms = self.get_all_room_invitations()
@@ -299,8 +300,7 @@ class MatrixService:
                 if name:
                     if "private_room_for_" in name[0]:
                         self.client.join_room(room_id)
-                    else:
-                        room_names.append({"id": room_id, "name": name[0]})
+                    room_names.append({"id": room_id, "name": name[0]})
             return room_names
         return []
     

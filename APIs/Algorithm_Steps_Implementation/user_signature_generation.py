@@ -75,7 +75,6 @@ class UserSignatureGenerator:
         return user_secret
     
     def _validate_peer_share(self, peer_share : wallet_key_generation_share):
-        peer_user_protocol = Feldman_VSS_Protocol(self.n, self.t, peer_share.transaction_id, self.user_index_to_user_matrixId,
-                                                   generating_user_Index=peer_share.generating_user_index, curve=peer_share.curve)
+        peer_user_protocol = Feldman_VSS_Protocol(n=self.n, t=self.t, generating_user_Index=peer_share.generating_user_index, curve=peer_share.curve)
         is_valid = peer_user_protocol.verify_share(peer_share)
         return is_valid
