@@ -37,7 +37,7 @@ async def create_new_transaction(wallet_id: str,transaction: Transaction):
 
 @router.post("/{transaction_id}/respond")
 async def respond_to_transaction(wallet_id: str, transaction_id: str, response_payload: ResponsePayload):
-    respond_to_new_transaction(transaction_id, response_payload.response)
+    respond_to_new_transaction(transaction_id=transaction_id,wallet_id=wallet_id, user_response=response_payload.response)
     transactions = get_transactions_by_wallet_id(wallet_id)        
     return [
         {

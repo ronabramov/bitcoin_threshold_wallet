@@ -23,7 +23,7 @@ def login_user(email: str, matrix_user_id: str, password: str):
     user = get_user_by_email(email)
     
     if user is None:
-        register_new_user(email=email, matrix_user_id=matrix_user_id, password=password)
+        user = register_new_user(email=email, matrix_user_id=matrix_user_id, password=password)
     elif not verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=401, 
@@ -49,8 +49,10 @@ def login_user(email: str, matrix_user_id: str, password: str):
         )
     
 
-def register_new_user(email: str, matrix_user_id: str, password: str) -> bool:
+def register_new_user(email: str, matrix_user_id: str, password: str) -> User:
     """Register a new user in the database."""
     hashed_password = hash_password(password)
-    return add_user(email, hashed_password, matrix_user_id)
+    add_user(email, hashed_password, matrix_user_id)
+    user = get_user_by_email(email)
+    return user
 
