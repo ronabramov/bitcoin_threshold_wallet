@@ -68,6 +68,7 @@ class Transaction(Base):
     shrunken_secret_share = Column(Integer, nullable=True)
     name = Column(String, nullable=True)
     amount = Column(Integer, nullable=True)
+    delta_inversed = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
     mta_as_alice_data = relationship("Mta_As_Alice_Users_Data", back_populates="transaction")

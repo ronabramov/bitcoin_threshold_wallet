@@ -127,18 +127,16 @@ def insert_new_transaction(transaction : TransactionDTO) -> bool:
             print(f'failed to insert transaction {transaction.id} to db.', e)
             return False
 
-def update_transaction(transaction : sql_db.Transaction) -> bool:
+def update_delta_inversed_for_transaction(transaction_id : str, delta_inversed : int) -> bool:
     with DB.session() as session:
         try:
-            existing_transaction = session.query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction.transaction_id).first()
-            if existing_transaction is None:
-                print(f"Transaction {transaction.transaction_id} not found")
-                return False
+            transaction : sql_db.Transaction = session.query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction_id).first()
+            transaction.delta_inversed = delta_inversed
             session.commit()
-            print(f"Successfully updated transaction {transaction.transaction_id}")
+            print(f'Successfully added inversed delta to transaction')
             return True
         except Exception as e:
-            print(f'failed to update transaction {transaction.transaction_id} to db.', e)
+            print(f'Failed to update delta_inversed for transaction {transaction_id}')
             return False
 
 def update_transaction_status(transaction_id : str, status : TransactionStatus) -> bool:
@@ -378,6 +376,8 @@ def delete_wallet(wallet_id : str) -> bool:
         session.query(sql_db.Wallet).filter(sql_db.Wallet.wallet_id == wallet_id).delete()
         session.commit()
         return True
+
+
     
 # ================================================================================================
 # MTA Protocl Methods - When the user is in Alice's shoes. The relevant steps are:
