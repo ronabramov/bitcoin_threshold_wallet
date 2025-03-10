@@ -10,7 +10,7 @@ from models.models import user_public_share, user_secret_signature_share
 from local_db.sql_db import Wallet
 import json
 from concurrent.futures import ThreadPoolExecutor
-
+from ecdsa.ellipticcurve import PointJacobi
 
 
 
@@ -79,3 +79,9 @@ def deserialize_encrypted_number(encrypted_number_str : str, encrypting_number_p
     encrypting_number_paillier_public_key, int(encrypted_number_json["ciphertext"]), encrypted_number_json["exponent"]
     )
     return retrieved_encrypted_number
+
+def sum_jacobi_points(points : list[PointJacobi]):
+        res = points[0]
+        for p in points[1:]:
+           res.__add__(p) 
+        return res

@@ -303,6 +303,19 @@ class MtaWc_As_Bob_Users_Data(Base):
     alice_challenge = Column(Integer, nullable=True)  # Challenge received from Alice
     bob_proof_for_challenge = Column(JSON, nullable=True)  # Bob's proof for Alice's challenge (Bob_ZKProof_Proof_For_Challenge, serialized as JSON)
 
+class TransactionParticipatnsGammaValue(Base):
+    """
+    Used for phase 4 - The listner should store the values here after verifying using Schnorr the value is valid
+    The last share should trigger calculating R,r.
+    """
+    __tablename__ = "TransactionParticipatnsGammaValue"
+    id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    transaction_id = Column(String, ForeignKey("Transaction.transaction_id"), nullable=False)
+    user_index = Column(Integer, nullable=False) 
+    user_gamma = Column(JSON, nullable=True) # PointJacobi to_dict
+    
+
+
 
 
 def create_db_if_not_exists(db_file_name): 

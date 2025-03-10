@@ -1,5 +1,5 @@
 from local_db import sql_db
-from local_db.sql_db import DB, Transaction, Mta_As_Alice_Users_Data, Mta_As_Bob_Users_Data, MtaWc_As_Alice_Users_Data, MtaWc_As_Bob_Users_Data
+from local_db.sql_db import DB, Transaction, Mta_As_Alice_Users_Data, Mta_As_Bob_Users_Data, MtaWc_As_Alice_Users_Data, MtaWc_As_Bob_Users_Data, TransactionParticipatnsGammaValue
 from typing import List
 from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
@@ -9,6 +9,8 @@ from phe import EncryptedNumber, PaillierPublicKey
 from common_utils import serialize_encryped_number, deserialize_encrypted_number
 from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
 from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment, Bob_ZKProof_RegMta_Prover_Settings, Bob_ZKProof_RegMta_Settings
+from ecdsa.ellipticcurve import PointJacobi
+from ecdsa.curves import curve_by_name
 from Services.Context import Context
 
 def get_friend_by_email(email : str) -> sql_db.Friend:
@@ -808,3 +810,29 @@ def get_mtawc_as_bob(transaction_id: str, user_index: int, user_paillier_pub_key
         record.bob_proof_for_challenge = Bob_ZKProof_Proof_For_Challenge.from_dict(record.bob_proof_for_challenge) if record.bob_proof_for_challenge else None
 
         return record
+# ==================================================================================================
+# ==================================================================================================
+
+def insert_user_gamma_i_step_four(gamma_i : PointJacobi, wallet_id : str, user_index : int, transaction_id : str):
+    with DB.session() as session:
+        try:
+            curve = curve_by_name(get_wallet_by_id(wallet_id=wallet_id).curve_name)
+            gamma_i_json = gamma_i.to_dict() # GILAD TODO : Given the curve and point run to dict
+            entry = TransactionParticipatnsGammaValue(transaction_id = transaction_id, user_index = user_index, user_gamma = gamma_i_json)
+            session.add(entry)
+            session.commit()
+            return True
+        except Exception as e:
+            print(f'Failed to insert user gamma for stage 4')
+            return False
+
+def get_users_gamma_shares_by_transaction_id(transaction_id : str) -> list[PointJacobi]:
+    with DB.session as session:
+        try:
+            shares = session.query(TransactionParticipatnsGammaValue).filter(
+                TransactionParticipatnsGammaValue.transaction_id == transaction_id
+            ).all()
+            shares_as_jacobi_point = [jp.from_dict() for jp in shares]
+            return shares_as_jacobi_point
+        except Exception as e:
+            print(f'Failed to retrieve gamma shares for transaction id {transaction_id} : {e}')
