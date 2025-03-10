@@ -10,9 +10,8 @@ import Services.UserShareService as UserShareService
 import Services.WalletService as WalletService
 from APIs.Algorithm_Steps_Implementation import StepTwoMtaAndMtaWcAliceOperations
 from APIs.Algorithm_Steps_Implementation.StepTwoMtaAndMtaWcBobOperations import StepTwoMtaBobOperations
-from phe import EncryptedNumber
-from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
-from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment
+from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge, AliceCommitmentMessage
+from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment, BobMtaCommitmentMessage
 import time
 from common_utils import deserialize_encrypted_number
 from local_db.sql_db_dal import get_specific_wallet_user_data
@@ -149,14 +148,14 @@ class MatrixRoomListener:
             # MTA Protocol - Alice sends to Bob
             elif message_dto.type == MessageType.MtaAliceCommitment:
                 print(f"MTA commitment from Alice received")
-                mta_commitment_alice_obj = message_dto.data
+                mta_commitment_alice_obj : AliceCommitmentMessage = AliceCommitmentMessage. message_dto.data
                 alice_paillier_pub_key = get_user_paillier_public_key(wallet_id, sender_id)
                 StepTwoMtaBobOperations.process_alice_mta_commitment(
                     transaction_id=transaction_id,
                     user_index=self.client.user_id,
                     alice_index=sender_id,
-                    enc_a=deserialize_encrypted_number(mta_commitment_alice_obj["enc_a"], alice_paillier_pub_key),
-                    commitment_of_a=AliceZKProof_Commitment.from_dict(mta_commitment_alice_obj["commitment_of_a"]),
+                    enc_a=deserialize_encrypted_number(mta_commitment_alice_obj.enc_a, alice_paillier_pub_key),
+                    commitment_of_a=AliceZKProof_Commitment.from_dict(mta_commitment_alice_obj.zk_proof_commitment),
                     wallet_id=wallet_id
                 )
 

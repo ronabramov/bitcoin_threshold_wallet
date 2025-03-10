@@ -1,3 +1,5 @@
+from phe import EncryptedNumber
+
 class AliceZKProof_Commitment:
     def __init__(self, alpha, beta, gamma, rho, z, u, w):
         self.alpha = alpha

@@ -8,6 +8,7 @@ from models.models import user_secret_signature_share, wallet_key_generation_sha
 import APIs.UserToUserAPI 
 import Services.UserShareUtils as UserShareUtils
 import local_db.sql_db_dal as sql_dal
+from ecdsa.ellipticcurve import PointJacobi
 
 class UserSignatureGenerator:
     def __init__(self, wallet : Wallet, user_public_keys : user_public_share):
@@ -31,7 +32,7 @@ class UserSignatureGenerator:
         insertion_success = DB_DAL.insert_multiple_signature_shares(wallet_id=self.wallet_id, shares= list(user_key_generation_participants_shares.values()))
         return insertion_success, user_public_X
 
-    def _enrich_user_secret_data_with_signature_details(self, secret : int, share : wallet_key_generation_share):
+    def _enrich_user_secret_data_with_signature_details(self, secret : int, share : wallet_key_generation_share) -> PointJacobi:
         wallet_secret = self.wallet.get_room_secret_user_data()
         wallet_secret.original_secret_share = secret
         self.wallet.set_room_secret_user_data(wallet_secret)
