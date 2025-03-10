@@ -321,10 +321,7 @@ class user_index_to_user_id_message(BaseModel):
 
 # RON TODO : Fix that class and the usages. Should be Point Jacobi not int. Not necessary the save the additonal properties
 class GPowerX(BaseModel):
-    value: int
+    value: PointJacobi
     user_matrix_id: str
     wallet_id: str
-
-    @property
-    def type(self):
-        return MessageType.GPowerX
+# GILAD TODO : Here we should also support Point Jacobi Serialization and Deserialization.

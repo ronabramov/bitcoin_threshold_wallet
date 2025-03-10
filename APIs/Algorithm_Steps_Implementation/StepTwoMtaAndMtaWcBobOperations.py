@@ -2,7 +2,7 @@ from local_db.sql_db import Wallet
 import local_db.sql_db_dal as db_dal
 from models.models import user_public_share, user_secret_signature_share, GPowerX
 from models.protocols.mta_protocol import MTAProtocolWithZKP
-from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge
+from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, BobMtaCommitmentMessage
 from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
 from ecdsa.curves import curve_by_name
 from models.DTOs.MessageType import MessageType
@@ -49,8 +49,8 @@ class StepTwoMtaBobOperations:
         )
         db_dal.update_bobs_encrypted_value_and_commitment(transaction_id, user_index, enc_result, bobs_commitment, beta_prime)
 
-        # RON TODO : Generate a message which contains this data
-        enc_result_message = MessageDTO(type=MessageType.MtaEncValueBob, data={"enc_result": enc_result, "commitment": bobs_commitment}).model_dump_json()
+        commitment_message = BobMtaCommitmentMessage(zk_proof_commitment=bobs_commitment, encrypted_value=enc_result)
+        enc_result_message = MessageDTO(type=MessageType.MtaBobCommitment, data=commitment_message).model_dump_json()
         MatrixService.instance().send_private_message_to_user(target_user_matrix_id=alice_matrix_id, message=enc_result_message)
 
     def process_alice_challenge_and_send_proof(self, transaction_id: str, user_index: int, alice_index: int, 

@@ -1,7 +1,8 @@
-from local_db.sql_db import Wallet, WalletUserData, Mta_As_Alice_Users_Data, Mta_As_Bob_Users_Data
+from local_db.sql_db import Wallet, WalletUserData, Mta_As_Alice_Users_Data, Mta_As_Bob_Users_Data, MtaWc_As_Alice_Users_Data
 import local_db.sql_db_dal as db_dal
 from models.models import user_modulus, user_public_share, user_secret_signature_share, GPowerX
 from models.protocols.mta_protocol import MTAProtocolWithZKP
+from models.protocols.AliceZKProofModels import AliceCommitmentMessage
 from models.protocols.MtaWc_protocl import MtaWcProtocolWithZKP
 from models.protocols.BobZKProofMtAModels import Bob_ZKProof_ProverCommitment, Bob_ZKProof_Proof_For_Challenge
 from ecdsa.curves import Curve, curve_by_name
@@ -47,13 +48,14 @@ class StepTwoMtaAndMtaWcAliceOperations:
         mta_enc_ki, mta_commitment_of_ki = mta_protocol.alice_encrypting_a_and_sending_commitment(a=k_i, alice_paillier_public_key=user_secret_data.paillier_public_key)
         insertion_success = db_dal.insert_alice_a_and_enc_a(transaction_id=transaction_id, user_index=sending_user_public_share.user_index,
                                                              counterparty_index=destination_user_public_share.user_index, a=k_i, enc_a=mta_enc_ki)
+        commitment_message = AliceCommitmentMessage(zk_proof_commitment=mta_commitment_of_ki, enc_a=mta_enc_ki)
         if not insertion_success:
             print(f'Failed Recording encryption of k_i for target user : {destination_user_public_share.user_id}')
             raise SystemError(f'Failed Recording encryption of k_i for target user : {destination_user_public_share.user_id}')
 
         mta_commitment_message = MessageDTO(
             type=MessageType.MtaAliceCommitment, 
-            data=mta_commitment_of_ki,
+            data=commitment_message,
             sender_id=Context.matrix_user_id(),
             wallet_id=wallet_id,
             transaction_id=transaction_id,
@@ -73,12 +75,13 @@ class StepTwoMtaAndMtaWcAliceOperations:
                                                 alice_paillier_private_key=user_secret_data.paillier_secret_key)
             
         
-        _, mta_wc_commitment_of_ki = mta_wc_protocol.alice_encrypting_a_and_sending_commitment(a=k_i, alice_paillier_public_key=user_secret_data.paillier_public_key) #Check - don't we want to save the encripted
-        
+        mta_wc_enc_ki, mta_wc_commitment_of_ki = mta_wc_protocol.alice_encrypting_a_and_sending_commitment(a=k_i, alice_paillier_public_key=user_secret_data.paillier_public_key) #Check - don't we want to save the encripted
+        commitment_message = AliceCommitmentMessage(zk_proof_commitment=mta_wc_commitment_of_ki, enc_a=mta_wc_enc_ki)
+
         # Create enhanced MessageDTO with metadata
         mta_commitment_message = MessageDTO(
             type=MessageType.MtaWcAliceCommitment, 
-            data=mta_wc_commitment_of_ki,
+            data=commitment_message,
             sender_id=Context.matrix_user_id(),
             wallet_id=wallet_id,
             transaction_id=transaction_id,
@@ -159,7 +162,7 @@ class StepTwoMtaAndMtaWcAliceOperations:
         bob_user_share = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
         counter_party_paillier_pub_key = bob_user_share.paillier_public_key
         alice_secret = db_dal.get_wallet_by_id(wallet_id=wallet_id).get_room_secret_user_data()
-        alice_mta_user_data = db_dal.get_mta_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=target_user_index,
+        alice_mta_user_data : Mta_As_Alice_Users_Data = db_dal.get_mta_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=target_user_index,
                                                                  counter_party_paillier_pub_key=counter_party_paillier_pub_key)
         alice_additive_share = protocol.alice_finalize(proof_for_challenge=bob_proof_for_challenge, commitment=alice_mta_user_data.bobs_commitment, 
                                                        enc_result=alice_mta_user_data.bobs_encrypted_value, enc_a=alice_mta_user_data.enc_a, settings=protocol.Bob_Alg_verifier_Settings,
@@ -180,7 +183,7 @@ class StepTwoMtaAndMtaWcAliceOperations:
         counter_party_paillier_pub_key = bob_user_share.paillier_public_key
         
         # Get MtaWc protocol data from DB
-        alice_mtawc_user_data = db_dal.get_mtawc_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=destination_user_index,
+        alice_mtawc_user_data : MtaWc_As_Alice_Users_Data = db_dal.get_mtawc_as_alice_user_data(transaction_id=transaction_id, user_index=user_index, counterparty_index=destination_user_index,
                                                                   counter_party_paillier_pub_key=counter_party_paillier_pub_key)
         
         # Get MtaWc protocol and bob user matrix id
@@ -285,7 +288,7 @@ class StepTwoMtaAndMtaWcAliceOperations:
         alice_secret = db_dal.get_wallet_by_id(wallet_id=wallet_id).get_room_secret_user_data()
         
         # Get Alice's MtaWc data from database
-        alice_mtawc_user_data = db_dal.get_mtawc_as_alice_user_data(
+        alice_mtawc_user_data : MtaWc_As_Alice_Users_Data = db_dal.get_mtawc_as_alice_user_data(
             transaction_id=transaction_id, 
             user_index=user_index, 
             counterparty_index=target_user_index,

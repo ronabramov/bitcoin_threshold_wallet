@@ -1,9 +1,10 @@
-from phe import paillier
+from phe import paillier, EncryptedNumber
 from ecdsa import NIST256p, curves
 from models.models import user_modulus
 
 class Bob_ZKProof_ProverCommitment:
     def __init__(self, alpha, rho, rho_prime, sigma, beta, gamma, tau, z, z_prime, t, v, w, u = None):
+        #  u is none only in MtaWc
         self.alpha = alpha
         self.beta = beta
         self.rho = rho
@@ -48,3 +49,8 @@ class Bob_ZKProof_RegMta_Prover_Settings(Bob_ZKProof_RegMta_Settings):
         self.beta_prime = beta_prime
         self.b = b
         self.X = X 
+
+class BobMtaCommitmentMessage():
+    def __init__(self, zk_proof_commitment : Bob_ZKProof_ProverCommitment, encrypted_value : EncryptedNumber):
+        self.zk_proof_commitment = zk_proof_commitment
+        self.encrypted_value = encrypted_value

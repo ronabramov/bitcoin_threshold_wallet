@@ -2,6 +2,7 @@ from local_db.sql_db import Wallet
 import local_db.sql_db_dal as db_dal
 from models.models import user_public_share, GPowerX
 from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
+from models.protocols.BobZKProofMtAModels import BobMtaCommitmentMessage
 from ecdsa.curves import curve_by_name
 from models.DTOs.MessageType import MessageType
 from models.DTOs.message_dto import MessageDTO
@@ -47,8 +48,8 @@ class StepTwoMtaWcBobOperations:
             prover_settings=protocol.bob_alg_prover_settings
         )
         db_dal.update_mtawc_bobs_encrypted_value_and_commitment_as_bob(transaction_id, user_index, enc_result, bobs_commitment, beta_prime)
-
-        enc_result_message = MessageDTO(type=MessageType.MtaWcEncValueBob, data={"enc_result": enc_result, "commitment": bobs_commitment},
+        commitment_message = BobMtaCommitmentMessage(zk_proof_commitment=bobs_commitment, encrypted_value=enc_result)
+        enc_result_message = MessageDTO(type=MessageType.MtaWcBobCommitment, data={"enc_result": enc_result, "commitment": bobs_commitment},  #RON TODO : Create such message
                                         sender_id=Context.matrix_user_id(), wallet_id=wallet_id, 
                                         transaction_id=transaction_id, user_index=user_index).model_dump_json()
         MatrixService.instance().send_private_message_to_user(target_user_matrix_id=alice_matrix_id, message=enc_result_message)
@@ -69,7 +70,7 @@ class StepTwoMtaWcBobOperations:
                                                                     settings=protocol.bob_alg_prover_settings, challenge=alice_challenge)
 
         db_dal.update_mtawc_bob_proof_for_challenge_as_bob(transaction_id, user_index, bob_proof)
-        proof_message = MessageDTO(type=MessageType.MtaWcProofForChallengeBob, data=bob_proof, sender_id=Context.matrix_user_id(),
+        proof_message = MessageDTO(type=MessageType.MtaWcBobProofForChallenge, data=bob_proof, sender_id=Context.matrix_user_id(),
                                     wallet_id=wallet_id, transaction_id=transaction_id, user_index=user_index).model_dump_json()
         
         MatrixService.instance().send_private_message_to_user(target_user_matrix_id=alice_matrix_id, message=proof_message)

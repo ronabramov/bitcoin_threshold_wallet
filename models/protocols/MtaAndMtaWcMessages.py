@@ -18,6 +18,11 @@ class MtaChallenge(BaseModel):
     def from_dict(cls, data):
         return cls(challenge=data["challenge"])
 
+
+# GILAD TODO :
+# The Commitment Message should hold all the data below. There are 2 different commitments (1 for alice 1 for bob).
+# There are 4 MessagesTypes - MtaCommitment for Alice , MtaCommitment for BOB, MtaWCCommitment for Alice and MtaWCCommitment for Bob
+# Reach me when you get to this
 class MtaCommitmentAlice(BaseModel):
     """First Message in Mta Protocol, sent from Alice To Bob."""
     c_A: EncryptedNumber
@@ -30,7 +35,7 @@ class MtaCommitmentAlice(BaseModel):
     
     @property
     def type(self):
-        return MessageType.MtaCommitmentAlice
+        return MessageType.MtaAliceCommitment
 
     def to_dict(self):
         return {
