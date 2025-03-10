@@ -297,7 +297,10 @@ class MatrixService:
             for room_id in room_ids:
                 name = [ event["content"]["name"] for event in response["rooms"]["invite"][room_id]["invite_state"]["events"]  if event["type"] == "m.room.name"]
                 if name:
-                    room_names.append({"id": room_id, "name": name[0]})
+                    if "private_room_for_" in name[0]:
+                        self.client.join_room(room_id)
+                    else:
+                        room_names.append({"id": room_id, "name": name[0]})
             return room_names
         return []
     
