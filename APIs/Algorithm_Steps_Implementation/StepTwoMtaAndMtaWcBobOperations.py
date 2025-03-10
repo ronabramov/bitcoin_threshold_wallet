@@ -61,16 +61,17 @@ class StepTwoMtaBobOperations:
         protocol, alice_matrix_id = StepTwoMtaBobOperations.get_mta_protocol(wallet_id, alice_index)
         user_pub_key = user_public_share.from_dict(db_dal.get_my_wallet_user_data(wallet_id=wallet_id).user_public_keys_data).paillier_public_key
         destination_user_wallet_user_data = db_dal.get_specific_wallet_user_data(wallet_id=wallet_id, traget_user_index_in_wallet= alice_index)
-        dstination_user_pub_key = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
+        destination_user_pub_key = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
         bob_mta_data = db_dal.get_mta_as_bob(transaction_id = transaction_id, user_index = user_index, user_paillier_pub_key=user_pub_key,
-                                              counterparty_index= alice_index, counter_party_paillier_pub_key= dstination_user_pub_key)
+                                              counterparty_index= alice_index, counter_party_paillier_pub_key= destination_user_pub_key)
 
-        bob_proof = protocol.bob_provide_proof_for_alice_challenge(
-            commitment_of_b_and_beta_prime=bob_mta_data.bobs_commitment, settings=protocol.bob_alg_prover_settings, challenge=alice_challenge
-        )
+        bob_proof = protocol.bob_provide_proof_for_alice_challenge(commitment_of_b_and_beta_prime=bob_mta_data.bobs_commitment,
+                                                                    settings=protocol.bob_alg_prover_settings, challenge=alice_challenge)
 
         db_dal.update_bob_proof_for_challenge(transaction_id, user_index, bob_proof)
-        proof_message = MessageDTO(type=MessageType.MtaProofForChallengeBob, data=bob_proof).model_dump_json()
+        proof_message = MessageDTO(type=MessageType.MtaProofForChallengeBob, data=bob_proof, sender_id=Context.matrix_user_id,
+                                    wallet_id=wallet_id, transaction_id=transaction_id, user_index=user_index).model_dump_json()
+        
         MatrixService.instance().send_private_message_to_user(target_user_matrix_id=alice_matrix_id, message=proof_message)
 
     def finalize_mta_and_compute_beta(self, transaction_id: str, user_index: int, alice_index: int, wallet_id: str):
