@@ -9,7 +9,7 @@ def commit_x(public_key : PaillierPublicKey , x):
 def commit_multiple_values(values : list):
     return [commit_x(x) for x in values]
 
-def decommit_value(private_key : PaillierPrivateKey, value):
+def decommit_value(private_key : PaillierPrivateKey, value) -> int:
     return private_key.decrypt(value)
 
 

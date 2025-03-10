@@ -18,3 +18,6 @@ class StepThreeOperations():
         delta_inv = mod_inverse(delta, q)
         insertion_success = sql_db_dal.update_delta_inversed_for_transaction(transaction_id=transaction_id, delta_inversed=delta_inv)
         return insertion_success
+
+#Ron TODO : Add logic for updating delta from other users messages - which will be reached by the listner
+# There should be a tracer which on the last update reach calculate_inversed_delta
