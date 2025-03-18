@@ -18,8 +18,43 @@ class Bob_ZKProof_ProverCommitment:
         self.v = v
         self.w = w
         self.u = u
-
-
+    
+    def to_dict(self):
+        return {
+            "alpha": self.alpha,
+            "beta": self.beta,
+            "rho": self.rho,
+            "rho_prime": self.rho_prime,
+            "sigma": self.sigma,
+            "gamma": self.gamma,
+            "tau": self.tau,
+            "z": self.z,
+            "z_prime": self.z_prime,
+            "t": self.t,
+            "v": self.v,
+            "w": self.w,
+            "u": self.u
+        }
+        
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            alpha=data["alpha"],
+            beta=data["beta"],
+            rho=data["rho"],
+            rho_prime=data["rho_prime"],
+            sigma=data["sigma"],
+            gamma=data["gamma"],
+            tau=data["tau"],
+            z=data["z"],
+            z_prime=data["z_prime"],
+            t=data["t"],
+            v=data["v"],
+            w=data["w"],
+            u=data["u"]
+        )
+    
+    
 class Bob_ZKProof_Proof_For_Challenge:
     def __init__(self, s, s1, s2, t1, t2):
         self.s = s

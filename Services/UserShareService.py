@@ -31,14 +31,12 @@ def handle_incoming_key_generation_share(key_generation_share_obj : wallet_key_g
         print(f"User share not found in the wallet")
         return
     signature_generator = UserSignatureGenerator(wallet=wallet,  user_public_keys=user_secret)
-    
-    user_secret = signature_generator.aggregate_received_share(peer_share=key_generation_share_obj, user_secret=user_secret)
-    if not user_secret:
+    success = signature_generator.aggregate_received_share(peer_share=key_generation_share_obj, user_secret=user_secret)
+    if not success:
         print(f"Failed applying received share")
         return False
-    else:
-        print(f"User share applied successfully")
-        sql_db_dal.update_signature_share(key_generation_share_obj.wallet_id, user_secret)
+        
+        
         
     if user_secret.user_index == wallet.max_num_of_users:
         send_g_power_x_message_to_wallet_room(x = user_secret.user_evaluation, wallet=wallet)

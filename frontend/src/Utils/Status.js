@@ -7,7 +7,8 @@ export const numberToStatus = {
      '3':'Stage Two',
      '4':'Stage Three',
      '5':'Stage Four',
-     '6':'Completed'
+     '6':'Completed',
+     '7':'Processing'
 }
 
 export const statusColors = {
@@ -19,5 +20,6 @@ export const statusColors = {
     '3': '#2196f3', // Blue for stage two
     '4': '#9c27b0', // Purple for stage three
     '5': '#009688', // Teal for stage four
-    '6': '#4caf50' // Green for completed
+    '6': '#4caf50', // Green for completed
+    '7': '#009688' // Teal for processing
 }

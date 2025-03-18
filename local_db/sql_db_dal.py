@@ -1,5 +1,5 @@
 from local_db import sql_db
-from local_db.sql_db import DB, Transaction, Mta_As_Alice_Users_Data, Mta_As_Bob_Users_Data, MtaWc_As_Alice_Users_Data, MtaWc_As_Bob_Users_Data
+from local_db.sql_db import DB, Transaction, Mta_As_Alice_Users_Data, Mta_As_Bob_Users_Data, MtaWc_As_Alice_Users_Data, MtaWc_As_Bob_Users_Data, TransactionUpdatesTracker
 from typing import List
 from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
@@ -254,6 +254,20 @@ def update_signature_share(wallet_id : str, share : wallet_key_generation_share)
             return True
         except Exception as e:
             print(f"Failed to update signature share for wallet {wallet_id}", e)
+
+def update_user_secret_signature_share_evaluation(wallet_id : str, user_id : str, user_index : int, evaluation : int) -> bool:
+    with DB.session() as session:
+        try:
+            shares = session.query(sql_db.user_secret_signature_share).filter(
+                sql_db.user_secret_signature_share.user_id == user_id,
+                sql_db.user_secret_signature_share.user_index == user_index,
+                sql_db.user_secret_signature_share.wallet_id == wallet_id).first()
+            shares.user_evaluation = evaluation
+            session.commit()
+            return True
+        except Exception as e:
+            print(f"Failed to update user secret signature share evaluation for wallet {wallet_id}", e)
+            return False
 
         
 def get_transaction_responses_by_transaction_id(transaction_id : str) -> sql_db.TransactionResponse:
@@ -808,3 +822,115 @@ def get_mtawc_as_bob(transaction_id: str, user_index: int, user_paillier_pub_key
         record.bob_proof_for_challenge = Bob_ZKProof_Proof_For_Challenge.from_dict(record.bob_proof_for_challenge) if record.bob_proof_for_challenge else None
 
         return record
+
+def get_transaction_updates_tracker(transaction_id: str) -> TransactionUpdatesTracker:
+    with DB.session() as session:
+        try:
+            # get the existing tracker
+            tracker = session.query(TransactionUpdatesTracker).filter(TransactionUpdatesTracker.transaction_id == transaction_id).first()
+            return tracker
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to get transaction updates tracker for transaction {transaction_id}: {e}")
+            raise e
+
+def upsert_transaction_updates_tracker_alpha(transaction_id: str, alpha: int) -> bool:
+    with DB.session() as session:
+        try:
+            tracker = session.query(TransactionUpdatesTracker).filter(TransactionUpdatesTracker.transaction_id == transaction_id).first()
+            if not tracker:
+                tracker = TransactionUpdatesTracker(transaction_id=transaction_id, alpha={"value": alpha, "num_of_updates": 1})
+                session.add(tracker)
+            else:
+                tracker.alpha["value"] = alpha
+                if tracker.alpha["num_of_updates"] is None:
+                    tracker.alpha["num_of_updates"] = 1
+                else:
+                    tracker.alpha["num_of_updates"] += 1
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to upsert transaction updates tracker for transaction {transaction_id}: {e}")
+            raise e
+
+def upsert_transaction_updates_tracker_beta(transaction_id: str, beta: int) -> bool:
+    with DB.session() as session:
+        try:
+            tracker = session.query(TransactionUpdatesTracker).filter(TransactionUpdatesTracker.transaction_id == transaction_id).first()
+            if not tracker:
+                tracker = TransactionUpdatesTracker(transaction_id=transaction_id, beta={"value": beta, "num_of_updates": 1})
+                session.add(tracker)
+            else:
+                tracker.beta["value"] = beta
+                if tracker.beta["num_of_updates"] is None:
+                    tracker.beta["num_of_updates"] = 1
+                else:
+                    tracker.beta["num_of_updates"] += 1
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to upsert transaction updates tracker for transaction {transaction_id}: {e}")
+            raise e
+
+def upsert_transaction_updates_tracker_mu(transaction_id: str, mu: int) -> bool:
+    with DB.session() as session:
+        try:
+            tracker = session.query(TransactionUpdatesTracker).filter(TransactionUpdatesTracker.transaction_id == transaction_id).first()
+            if not tracker:
+                tracker = TransactionUpdatesTracker(transaction_id=transaction_id, mu={"value": mu, "num_of_updates": 1})
+                session.add(tracker)
+            else:
+                tracker.mu["value"] = mu
+                if tracker.mu["num_of_updates"] is None:
+                    tracker.mu["num_of_updates"] = 1
+                else:
+                    tracker.mu["num_of_updates"] += 1
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to upsert transaction updates tracker for transaction {transaction_id}: {e}")
+            raise e
+
+def upsert_transaction_updates_tracker_nu(transaction_id: str, nu: int) -> bool:
+    with DB.session() as session:
+        try:
+            tracker = session.query(TransactionUpdatesTracker).filter(TransactionUpdatesTracker.transaction_id == transaction_id).first()
+            if not tracker:
+                tracker = TransactionUpdatesTracker(transaction_id=transaction_id, nu={"value": nu, "num_of_updates": 1})
+                session.add(tracker)
+            else:
+                tracker.nu["value"] = nu
+                if tracker.nu["num_of_updates"] is None:
+                    tracker.nu["num_of_updates"] = 1
+                else:
+                    tracker.nu["num_of_updates"] += 1
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to upsert transaction updates tracker for transaction {transaction_id}: {e}")
+            raise e
+
+def upsert_transaction_updates_tracker_delta(transaction_id: str, delta: int) -> bool:
+    with DB.session() as session:
+        try:
+            tracker = session.query(TransactionUpdatesTracker).filter(TransactionUpdatesTracker.transaction_id == transaction_id).first()
+            if not tracker:
+                tracker = TransactionUpdatesTracker(transaction_id=transaction_id, delta={"value": delta, "num_of_updates": 1})
+                session.add(tracker)
+            else:
+                tracker.delta["value"] = delta
+                if tracker.delta["num_of_updates"] is None:
+                    tracker.delta["num_of_updates"] = 1
+                else:
+                    tracker.delta["num_of_updates"] += 1
+            session.commit()
+            return True
+        except Exception as e:
+            session.rollback()
+            print(f"Failed to upsert transaction updates tracker for transaction {transaction_id}: {e}")
+            raise e
+    

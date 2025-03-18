@@ -14,7 +14,7 @@ from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZK
 from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment, BobMtaCommitmentMessage
 import time
 from common_utils import deserialize_encrypted_number
-from local_db.sql_db_dal import get_specific_wallet_user_data
+from local_db.sql_db_dal import get_specific_wallet_user_data, upsert_transaction_updates_tracker_beta, get_transaction_updates_tracker, get_all_wallet_user_data
 from models.protocols.MtaAndMtaWcMessages import MtaCommitmentAlice
 class MatrixRoomListener:
     """
@@ -167,15 +167,22 @@ class MatrixRoomListener:
                     s1=alice_proof_obj["s1"],
                     s2=alice_proof_obj["s2"]
                 )
-                #Gilad to do : store the encrypted value in beta (user as bob ...)
-                # When reached the last user, sum up to get the actual beta. 
-                StepTwoMtaBobOperations.verify_alice_proof_and_encrypt_value(
+                
+                beta = StepTwoMtaBobOperations.verify_alice_proof_and_encrypt_value(
                     transaction_id=transaction_id,
                     user_index=self.client.user_id,
                     alice_index=sender_id,
                     alice_proof=alice_proof,
                     wallet_id=wallet_id
                 )
+                upsert_transaction_updates_tracker_beta(transaction_id, beta)
+                tracker = get_transaction_updates_tracker(transaction_id)
+                wallet_users_count = len(get_all_wallet_user_data(wallet_id))
+                if tracker.beta.get("num_of_updates", 0) == wallet_users_count:
+                    beta = tracker.beta.get("value", 0)
+                    # save in transaction the beta value
+                    # TODO: RON - now what?
+                return
 
             elif message_dto.type == MessageType.MtaAliceChallengeToBob:
                 print(f"MTA challenge received from Alice")

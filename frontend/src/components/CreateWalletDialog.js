@@ -16,17 +16,19 @@ import {
     OutlinedInput,
     CircularProgress
 } from '@mui/material';
-import { getFriends } from '../api/api';
+import { getFriends, getWalletCurves } from '../api/api';
 
 const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
     const [formData, setFormData] = useState({
         name: '',
         threshold: 2,
         total_signers: 2,
-        selectedFriends: []
+        selectedFriends: [],
+        curve: ''
     });
     const [error, setError] = useState('');
     const [friends, setFriends] = useState([]);
+    const [curves, setCurves] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
@@ -42,8 +44,27 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
             }
         };
 
+        const loadCurves = async () => {
+            try {
+                const response = await getWalletCurves();
+                if (response) {
+                    setCurves(response);
+                    if (response.length > 0) {
+                        setFormData(prev => ({
+                            ...prev,
+                            curve: response[0]
+                        }));
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading curves:', error);
+                setError('Failed to load curve options');
+            }
+        };
+
         if (open) {
             loadFriends();
+            loadCurves();
         }
     }, [open]);
 
@@ -85,12 +106,19 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
             return;
         }
 
+        if (!formData.curve) {
+            setError('Please select a curve');
+            setIsLoading(false);
+            return;
+        }
+
         // Transform the data to match API requirements
         const submitData = {
             wallet_name: formData.name,
             threshold: formData.threshold,
             users: formData.selectedFriends.map(friend => friend.email),
-            max_participants: formData.total_signers
+            max_participants: formData.total_signers,
+            curve: formData.curve
         };
 
         try {
@@ -138,6 +166,23 @@ const CreateWalletDialog = ({ open, onClose, onSubmit }) => {
                                 inputProps={{ min: 1 }}
                             />
                         </Box>
+                        <FormControl fullWidth>
+                            <InputLabel id="curve-select-label">Select Curve</InputLabel>
+                            <Select
+                                labelId="curve-select-label"
+                                name="curve"
+                                value={formData.curve}
+                                onChange={handleChange}
+                                input={<OutlinedInput label="Select Curve" />}
+                                required
+                            >
+                                {curves.map((curve) => (
+                                    <MenuItem key={curve} value={curve}>
+                                        {curve}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                         <FormControl fullWidth>
                             <InputLabel id="friends-select-label">Select Friends</InputLabel>
                             <Select

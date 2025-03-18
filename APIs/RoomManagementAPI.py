@@ -11,7 +11,7 @@ from typing import List
 from models.DTOs.message_dto import MessageDTO, MessageType
 from models.models import user_public_share, WalletGenerationMessage, user_secret_signature_share
 import common_utils as Utils
-from ecdsa import NIST256p
+from ecdsa import NIST256p, curves
 from APIs.Algorithm_Steps_Implementation.user_signature_generation import UserSignatureGenerator
 from Services.Context import Context
 
@@ -106,6 +106,10 @@ def create_new_wallet(invited_users_emails : List[str], wallet_name : str, walle
     Creating matrix room and sending invitaiton for the specified users. 
     In addition, sharing Public keys of the generating user.
     """
+    # validate curve name
+    if curve_name not in [c.name for c in curves.curves]:
+        print(f"Invalid curve name: {curve_name}")
+        raise ValueError(f"Invalid curve name: {curve_name}")
     user_id = Context.matrix_user_id()
     if (max_participants < len(invited_users_emails)):
         print(f"Max participants {max_participants} is less than the number of invited users {len(invited_users_emails)}")

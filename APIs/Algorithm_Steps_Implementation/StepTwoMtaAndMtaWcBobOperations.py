@@ -41,6 +41,7 @@ class StepTwoMtaBobOperations:
         dstination_user_pub_key = user_public_share.from_dict(destination_user_wallet_user_data.user_public_keys_data)
         bob_mta_data = db_dal.get_mta_as_bob(transaction_id = transaction_id, user_index = user_index, user_paillier_pub_key=user_pub_key,
                                               counterparty_index= alice_index, counter_party_paillier_pub_key= dstination_user_pub_key)
+
         protocol, alice_matrix_id = StepTwoMtaBobOperations.get_mta_protocol(wallet_id, alice_index)
         enc_result, beta_prime, bobs_commitment = protocol.bob_verify_a_commiting_encrypting_b(
             b=bob_mta_data.b, enc_a=bob_mta_data.enc_a, challenge=bob_mta_data.bobs_challenge, 
@@ -52,6 +53,8 @@ class StepTwoMtaBobOperations:
         commitment_message = BobMtaCommitmentMessage(zk_proof_commitment=bobs_commitment, encrypted_value=enc_result)
         enc_result_message = MessageDTO(type=MessageType.MtaBobCommitment, data=commitment_message).model_dump_json()
         MatrixService.instance().send_private_message_to_user(target_user_matrix_id=alice_matrix_id, message=enc_result_message)
+        
+        return  protocol.q - beta_prime
 
     def process_alice_challenge_and_send_proof(self, transaction_id: str, user_index: int, alice_index: int, 
                                                alice_challenge: int, wallet_id: str):

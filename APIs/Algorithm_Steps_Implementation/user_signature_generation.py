@@ -14,7 +14,7 @@ class UserSignatureGenerator:
     def __init__(self, wallet : Wallet, user_public_keys : user_public_share):
         curve = curves.curve_by_name(wallet.curve_name)
         self.wallet_id = wallet.wallet_id
-        self.key_gen_protocol = Feldman_VSS_Protocol(n=wallet.max_num_of_users, t=wallet.threshold, curve=curve, generating_user_Index=user_public_keys.user_index)
+        self.key_gen_protocol = Feldman_VSS_Protocol(n=wallet.max_num_of_users, t=wallet.threshold, curve_name=wallet.curve_name, generating_user_Index=user_public_keys.user_index)
         self.q = curve.order
         self.curve = curve
         self.n =wallet.max_num_of_users
@@ -72,9 +72,10 @@ class UserSignatureGenerator:
             # TODO: maybe keep print(f'User {peer_share.generating_user_index} sent unvalid key share!')
             raise ValueError(f'User {peer_share.generating_user_index} sent unvalid key share!')
         user_secret.user_evaluation += peer_share.target_user_evaluation
-        return user_secret
+        DB_DAL.update_user_secret_signature_share_evaluation(wallet_id=self.wallet_id, user_id=self.user_public_keys.user_id, user_index=self.user_index, evaluation=user_secret.user_evaluation)
+        return True
     
     def _validate_peer_share(self, peer_share : wallet_key_generation_share):
-        peer_user_protocol = Feldman_VSS_Protocol(n=self.n, t=self.t, generating_user_Index=peer_share.generating_user_index, curve=peer_share.curve)
+        peer_user_protocol = Feldman_VSS_Protocol(n=self.n, t=self.t, generating_user_Index=peer_share.generating_user_index, curve_name=peer_share.curve_name)
         is_valid = peer_user_protocol.verify_share(peer_share)
         return is_valid

@@ -1,7 +1,6 @@
 from pydantic import BaseModel, ConfigDict, field_serializer, field_validator, model_validator
 from typing import List, Optional, Dict
 from ecdsa.ellipticcurve import PointJacobi, CurveFp
-from ecdsa.curves import NIST256p
 from ecdsa import curves
 import json
 from phe import paillier
@@ -54,7 +53,7 @@ class wallet_key_generation_share(BaseModel):
     target_user_evaluation : int
     v_i: Optional[List[PointJacobi]] = None
     v_0 : Optional[PointJacobi]
-    curve : str
+    curve_name : str
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -79,7 +78,7 @@ class wallet_key_generation_share(BaseModel):
                 return {
                     "x": int(affine_p.x()), 
                     "y": int(affine_p.y()),
-                    "curve_name": self.curve  # Include curve name in serialized data
+                    "curve_name": self.curve_name  # Include curve name in serialized data
                 }
             return None
         
@@ -95,7 +94,7 @@ class wallet_key_generation_share(BaseModel):
                 return {"x": int(affine_p.x()), "y": int(affine_p.y())}  #  Convert mpz to int
             return None  
         
-        curve_instance = curves.curve_by_name(self.curve)
+        curve_instance = curves.curve_by_name(self.curve_name)
 
         if hasattr(curve_instance, "curve"): 
             curve_fp = curve_instance.curve  
@@ -104,10 +103,10 @@ class wallet_key_generation_share(BaseModel):
                 "a": int(curve_fp.a()),
                 "b": int(curve_fp.b()),
                 "order": int(curve_instance.order),
-                "name": self.curve
+                "name": self.curve_name
             }
         else:
-            raise AttributeError(f"Curve {self.curve} does not have a valid curve definition.")
+            raise AttributeError(f"Curve {self.curve_name} does not have a valid curve definition.")
 
 
         return {
@@ -161,7 +160,7 @@ class wallet_key_generation_share(BaseModel):
             target_user_evaluation=data["target_user_evaluation"],
             v_i=v_i,
             v_0=v_0,
-            curve=curve_data["name"],
+            curve_name=curve_data["name"],
             wallet_id=share.wallet_id
         )
     
@@ -234,6 +233,7 @@ class user_secret_signature_share(BaseModel):
     user_index: int
     user_id: str
     user_evaluation: Optional[int] = None
+    wallet_id: str
     group: str
     paillier_public_key: paillier.PaillierPublicKey
     paillier_secret_key: paillier.PaillierPrivateKey
@@ -309,6 +309,8 @@ class user_secret_signature_share(BaseModel):
 
 class user_index_to_user_id_message(BaseModel):
     index_to_user_id: Dict[int, str]
+    
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def to_dict(self):
         return {
@@ -319,13 +321,45 @@ class user_index_to_user_id_message(BaseModel):
     def from_dict(cls, data):
         return cls(index_to_user_id=data["index_to_user_id"])
 
-# RON TODO : Fix that class and the usages. Should be Point Jacobi not int. Not necessary the save the additonal properties
+
 class GPowerX(BaseModel):
-    value: PointJacobi
-    user_matrix_id: str
-    wallet_id: str
-# GILAD TODO : Here we should also support Point Jacobi Serialization and Deserialization.
+    value: PointJacobi = None
+    curve_name: str
+    
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    def to_dict(self):
+        return {
+            "value": self.point_to_dict(self.value),
+            "curve_name": self.curve_name
+        }
+        
+    
+
+    @classmethod
+    def from_dict(cls, data):
+        return cls(value=cls.deserialize_point(data), curve_name=data["curve_name"])
+    
+    @field_validator("value", mode="before")
+    @classmethod
+    def deserialize_point(cls, data):
+        curve_instance = curves.curve_by_name(data["curve_name"])
+        return PointJacobi(curve_instance, int(data["value"]["x"]), int(data["value"]["y"]), 1)
+
+    @field_serializer("value")
+    def point_to_dict(self, p):
+        if isinstance(p, PointJacobi):
+                affine_p = p.to_affine()
+                return {
+                    "x": int(affine_p.x()), 
+                    "y": int(affine_p.y()),
+                    "curve_name": self.curve_name  # Include curve name in serialized data
+                }
+        return None
+    
 
 class delta_i_message(BaseModel):
     transaction_id : str
     delta_i : int
+    
+    model_config = ConfigDict(arbitrary_types_allowed=True)

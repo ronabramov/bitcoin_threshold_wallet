@@ -4,7 +4,7 @@ import logging
 from APIs.RoomManagementAPI import create_new_wallet, respond_to_room_invitation
 from Services.WalletService import get_wallet_users_data
 from Services.WalletService import get_my_wallets
-
+from ecdsa import curves
 
 logger = logging.getLogger("uvicorn")
 router = APIRouter(prefix="/wallets", tags=["wallets"])
@@ -14,6 +14,7 @@ class Wallet(BaseModel):
     threshold: int
     users: list[str]
     max_participants: int
+    curve: str
 
 class WalletResponse(BaseModel):
     accept: bool
@@ -23,11 +24,18 @@ def get_user_wallets():
     # Find wallets containing the user
     return get_my_wallets()
 
-    # set params in the body:
+@router.get("/curves")
+def get_curves():
+    return [c.name for c in curves.curves]
+
 @router.post("/")
 async def create_wallet(wallet_payload: Wallet):
     # Validate the threshold
-    success, wallet = create_new_wallet(invited_users_emails=wallet_payload.users,wallet_name=wallet_payload.wallet_name,wallet_threshold=wallet_payload.threshold,max_participants=wallet_payload.max_participants)
+    success, wallet = create_new_wallet(invited_users_emails=wallet_payload.users,
+                                        wallet_name=wallet_payload.wallet_name,
+                                        wallet_threshold=wallet_payload.threshold,
+                                        max_participants=wallet_payload.max_participants, 
+                                        curve_name=wallet_payload.curve)
     # set users to a comma separated string
     
     pending_users_data, existing_users_data = get_wallet_users_data(wallet)

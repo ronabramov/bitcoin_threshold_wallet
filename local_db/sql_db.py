@@ -303,6 +303,16 @@ class MtaWc_As_Bob_Users_Data(Base):
     bob_proof_for_challenge = Column(JSON, nullable=True)  # Bob's proof for Alice's challenge (Bob_ZKProof_Proof_For_Challenge, serialized as JSON)
 
 
+class TransactionUpdatesTracker(Base):
+    __tablename__ = "TransactionUpdatesTracker"
+    transaction_id = Column(String, primary_key=True, nullable=False)
+    alpha = Column(JSON, nullable=True)
+    beta = Column(JSON, nullable=True)
+    mu = Column(JSON, nullable=True)
+    nu = Column(JSON, nullable=True)
+    delta = Column(JSON, nullable=True)
+
+
 
 def create_db_if_not_exists(db_file_name): 
     # Get the directory path
@@ -335,8 +345,8 @@ def create_db_if_not_exists(db_file_name):
     # Session maker
     Session = sessionmaker(bind=engine)
     return Session
-
-
+    
+    
 class DB():
     sessions = {
         'user1': create_db_if_not_exists(Config.DB_FILE1),

@@ -72,9 +72,7 @@ def respond_to_new_transaction(transaction_id : str,wallet_id : str, user_respon
         
         sql_db_dal.update_transaction_status(transaction_id=transaction_id, status=TransactionStatus.PENDING_OTHERS_APPROVAL)
         if TransactionService.threshold_reached( transaction.wallet_id, transaction.transaction_id):
-            TransactionService.handle_reached_threshold_transaction(transaction=transaction)
-            
-        
+            TransactionService.handle_reached_threshold_transaction(transaction=transaction, user_index=my_wallet_user_data.user_index)
         return True
     
 

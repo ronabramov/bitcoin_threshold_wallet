@@ -6,12 +6,18 @@ export const getWallets = withErrorHandler(async () => {
     return response.data;
 });
 
-export const createWallet = withErrorHandler(async ({ wallet_name, threshold, users, max_participants }) => {
+export const getWalletCurves = withErrorHandler(async () => {
+    const response = await apiClient.get(`/wallets/curves`);
+    return response.data;
+});
+
+export const createWallet = withErrorHandler(async ({ wallet_name, threshold, users, max_participants, curve }) => {
     const response = await apiClient.post(`/wallets`, {
         wallet_name,
         threshold,
         users,
         max_participants,
+        curve
     });
     return response.data;
 });

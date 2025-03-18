@@ -155,6 +155,7 @@ class MtaWcCommitmentBob(MtaCommitmentBob):
     
     def to_dict(self):
         base_data = super().to_dict()
+        # fix this using curveF
         base_data["u"] = {"x": self.u.x(), "y": self.u.y(), "z": self.u.z()}
         return base_data
 

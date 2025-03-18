@@ -11,7 +11,8 @@ Moreover, given shares, enables verification that the shares are valid
 """
 
 class Feldman_VSS_Protocol:
-    def __init__(self,  n : int, t: int,  generating_user_Index, curve : curves.Curve = NIST256p, ):
+    def __init__(self,  n : int, t: int,  generating_user_Index, curve_name : str = "NIST256p"):
+        curve = curves.curve_by_name(curve_name)
         self.curve = curve
         self.G = curve.generator
         self.n =n
@@ -39,7 +40,7 @@ class Feldman_VSS_Protocol:
         v_i = self.compute_v_i(coeffs)
         g_secret = v_i[0]
         shares = [
-            wallet_key_generation_share(wallet_id=wallet_id, generating_user_index=self.generating_user_index,curve=self.curve.name, target_user_index=i, v_i = v_i,
+            wallet_key_generation_share(wallet_id=wallet_id, generating_user_index=self.generating_user_index,curve_name=self.curve.name, target_user_index=i, v_i = v_i,
                                          target_user_evaluation=self.evaluate_polynomial(i, coeffs), v_0=g_secret)
         # TODO: check if we should start from 1 or 0
          for i in range(1, self.n + 1)]

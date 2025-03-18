@@ -28,7 +28,7 @@ def generate_user_room_keys(user_index : int, user_matrix_id : str, wallet :  Wa
     paillier_public_key, paillier_private_key = generate_paillier_keypair()
     room_secret_user_share = user_secret_signature_share(threshold=wallet.threshold, user_index=user_index, user_id=user_matrix_id,
                                                    user_modulus=user_modulus, paillier_secret_key = paillier_private_key, paillier_public_key=paillier_public_key,
-                                                     group=wallet.curve_name)
+                                                     group=wallet.curve_name, wallet_id=wallet.wallet_id)
     room_public_user_data = user_public_share(user_index=user_index, user_id=user_matrix_id, paillier_public_key=paillier_public_key, user_modulus=user_modulus)
     
     return room_secret_user_share, room_public_user_data
