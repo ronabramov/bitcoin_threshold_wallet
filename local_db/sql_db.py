@@ -68,6 +68,7 @@ class Transaction(Base):
     shrunken_secret_share = Column(Integer, nullable=True)
     name = Column(String, nullable=True)
     amount = Column(Integer, nullable=True)
+    delta_inversed = Column(Integer, nullable=True)
     wallet_id = Column(String, ForeignKey("Wallet.wallet_id"), nullable=False)
     wallet = relationship("Wallet", back_populates="transactions")
     mta_as_alice_data = relationship("Mta_As_Alice_Users_Data", back_populates="transaction")
@@ -301,6 +302,19 @@ class MtaWc_As_Bob_Users_Data(Base):
     beta_prime = Column(Integer, nullable=True)  # Bob's additive term for decryption
     alice_challenge = Column(Integer, nullable=True)  # Challenge received from Alice
     bob_proof_for_challenge = Column(JSON, nullable=True)  # Bob's proof for Alice's challenge (Bob_ZKProof_Proof_For_Challenge, serialized as JSON)
+
+class TransactionParticipatnsGammaValue(Base):
+    """
+    Used for phase 4 - The listner should store the values here after verifying using Schnorr the value is valid
+    The last share should trigger calculating R,r.
+    """
+    __tablename__ = "TransactionParticipatnsGammaValue"
+    id = Column(String, primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    transaction_id = Column(String, ForeignKey("Transaction.transaction_id"), nullable=False)
+    user_index = Column(Integer, nullable=False) 
+    user_gamma = Column(JSON, nullable=True) # PointJacobi to_dict
+    
+
 
 
 class TransactionUpdatesTracker(Base):

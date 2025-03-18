@@ -1,5 +1,5 @@
 from local_db import sql_db
-from local_db.sql_db import DB, Transaction, Mta_As_Alice_Users_Data, Mta_As_Bob_Users_Data, MtaWc_As_Alice_Users_Data, MtaWc_As_Bob_Users_Data, TransactionUpdatesTracker
+from local_db.sql_db import DB, Transaction, Mta_As_Alice_Users_Data, Mta_As_Bob_Users_Data, MtaWc_As_Alice_Users_Data, MtaWc_As_Bob_Users_Data, TransactionUpdatesTracker, TransactionParticipatnsGammaValue
 from typing import List
 from models.DTOs.transaction_dto import TransactionDTO as TransactionDTO
 from models.transaction_status import TransactionStatus
@@ -9,6 +9,8 @@ from phe import EncryptedNumber, PaillierPublicKey
 from common_utils import serialize_encryped_number, deserialize_encrypted_number
 from models.protocols.AliceZKProofModels import AliceZKProof_Commitment, AliceZKProof_Proof_For_Challenge
 from models.protocols.BobZKProofMtAModels import Bob_ZKProof_Proof_For_Challenge, Bob_ZKProof_ProverCommitment, Bob_ZKProof_RegMta_Prover_Settings, Bob_ZKProof_RegMta_Settings
+from ecdsa.ellipticcurve import PointJacobi
+from ecdsa.curves import curve_by_name
 from Services.Context import Context
 
 def get_friend_by_email(email : str) -> sql_db.Friend:
@@ -127,18 +129,16 @@ def insert_new_transaction(transaction : TransactionDTO) -> bool:
             print(f'failed to insert transaction {transaction.id} to db.', e)
             return False
 
-def update_transaction(transaction : sql_db.Transaction) -> bool:
+def update_delta_inversed_for_transaction(transaction_id : str, delta_inversed : int) -> bool:
     with DB.session() as session:
         try:
-            existing_transaction = session.query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction.transaction_id).first()
-            if existing_transaction is None:
-                print(f"Transaction {transaction.transaction_id} not found")
-                return False
+            transaction : sql_db.Transaction = session.query(sql_db.Transaction).filter(sql_db.Transaction.transaction_id == transaction_id).first()
+            transaction.delta_inversed = delta_inversed
             session.commit()
-            print(f"Successfully updated transaction {transaction.transaction_id}")
+            print(f'Successfully added inversed delta to transaction')
             return True
         except Exception as e:
-            print(f'failed to update transaction {transaction.transaction_id} to db.', e)
+            print(f'Failed to update delta_inversed for transaction {transaction_id}')
             return False
 
 def update_transaction_status(transaction_id : str, status : TransactionStatus) -> bool:
@@ -392,6 +392,8 @@ def delete_wallet(wallet_id : str) -> bool:
         session.query(sql_db.Wallet).filter(sql_db.Wallet.wallet_id == wallet_id).delete()
         session.commit()
         return True
+
+
     
 # ================================================================================================
 # MTA Protocl Methods - When the user is in Alice's shoes. The relevant steps are:
@@ -934,3 +936,44 @@ def upsert_transaction_updates_tracker_delta(transaction_id: str, delta: int) ->
             print(f"Failed to upsert transaction updates tracker for transaction {transaction_id}: {e}")
             raise e
     
+# ==================================================================================================
+# ==================================================================================================
+
+def insert_user_gamma_i_step_four(gamma_i : PointJacobi, wallet_id : str, user_index : int, transaction_id : str):
+    with DB.session() as session:
+        try:
+            curve = curve_by_name(get_wallet_by_id(wallet_id=wallet_id).curve_name)
+            gamma_i_json = gamma_i.to_dict() # GILAD TODO : Given the curve and point run to dict
+            entry = TransactionParticipatnsGammaValue(transaction_id = transaction_id, user_index = user_index, user_gamma = gamma_i_json)
+            session.add(entry)
+            session.commit()
+            return True
+        except Exception as e:
+            print(f'Failed to insert user gamma for stage 4')
+            return False
+
+def get_my_user_gamma(wallet_id , transaction_id : str):
+    with DB.session() as session:
+        user_index = get_my_wallet_user_data(wallet_id=wallet_id).user_index
+        try:
+            gamma_i = session.query(TransactionParticipatnsGammaValue).filter(
+                TransactionParticipatnsGammaValue.user_index == user_index,
+                TransactionParticipatnsGammaValue.transaction_id == transaction_id
+            ).first()
+            gamma_i_jacobi_point = PointJacobi() #Gilad TODO : to dict the point Jacobi
+            return gamma_i
+        except Exception as e:
+            print(f'Failed retrieving my gamma_i for transaction {transaction_id} : {e}')
+
+
+
+def get_users_gamma_shares_by_transaction_id(transaction_id : str) -> list[PointJacobi]:
+    with DB.session as session:
+        try:
+            shares = session.query(TransactionParticipatnsGammaValue).filter(
+                TransactionParticipatnsGammaValue.transaction_id == transaction_id
+            ).all()
+            shares_as_jacobi_point = [jp.from_dict() for jp in shares]
+            return shares_as_jacobi_point
+        except Exception as e:
+            print(f'Failed to retrieve gamma shares for transaction id {transaction_id} : {e}')

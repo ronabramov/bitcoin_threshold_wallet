@@ -7,7 +7,7 @@ class Schnorr_ZK_Proof:
     Using input Eliptic Curve from ECDSA 
     Hashing via sha256
     Implementing two phase - version of Schnorr ZK proof for knowing a value.
-    Will be Used in the Key Generation Protocol.
+    Will be Used in the Last steps of Signature Generation alg.
     """
     def __init__(self, curve: curves.Curve):
         self.curve = curve
